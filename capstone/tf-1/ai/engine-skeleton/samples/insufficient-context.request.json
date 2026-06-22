@@ -1,0 +1,26 @@
+{
+  "correlation_id": "corr-insufficient-001",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-insufficient-001",
+  "environment": "sandbox",
+  "received_at": "2026-06-22T11:05:00Z",
+  "alert": {
+    "alert_id": "alert-insufficient-001",
+    "source": "synthetic-pack",
+    "service": "billing-api",
+    "severity": "medium",
+    "title": "billing-api alert fired",
+    "description": "Alert source did not include supporting context",
+    "started_at": "2026-06-22T11:00:00Z",
+    "labels": {
+      "region": "us-east-1"
+    }
+  },
+  "metrics": [],
+  "logs": [],
+  "recent_deploys": [],
+  "ownership": {
+    "service": "billing-api",
+    "runbooks": []
+  }
+}

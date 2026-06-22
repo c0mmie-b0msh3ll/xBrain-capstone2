@@ -1,0 +1,39 @@
+{
+  "incident_id": "inc-insufficient-001",
+  "classification": "insufficient_context",
+  "severity": "medium",
+  "confidence": 0.25,
+  "status": "INSUFFICIENT_CONTEXT",
+  "suspected_root_cause": {
+    "summary": "Alert metadata was provided, but supporting metrics, logs, deploys, and ownership context are missing.",
+    "evidence": [
+      "No supporting telemetry context was included with the alert."
+    ]
+  },
+  "recommended_actions": [
+    {
+      "type": "ESCALATE_OWNER",
+      "priority": 1,
+      "summary": "Ask CDO ingestion to attach metrics, logs, recent deploys, and ownership context before diagnosis.",
+      "runbook_ref": null
+    }
+  ],
+  "ticket_payload": {
+    "project": "OPS",
+    "summary": "[medium] billing-api insufficient_context",
+    "description": "Alert metadata was provided, but supporting metrics, logs, deploys, and ownership context are missing. Evidence: No supporting telemetry context was included with the alert.",
+    "labels": ["ai-triage", "tenant-a", "billing-api", "insufficient_context"],
+    "fields": {
+      "confidence": 0.25,
+      "owner_team": null,
+      "correlation_id": "corr-insufficient-001",
+      "audit_id": "audit-1a2499464085",
+      "status": "INSUFFICIENT_CONTEXT"
+    }
+  },
+  "slack_payload": {
+    "channel": "#oncall",
+    "text": "billing-api: insufficient_context (INSUFFICIENT_CONTEXT, confidence 0.25). Audit: audit-1a2499464085."
+  },
+  "audit_id": "audit-1a2499464085"
+}

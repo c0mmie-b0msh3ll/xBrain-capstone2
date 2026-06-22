@@ -1,0 +1,70 @@
+{
+  "correlation_id": "corr-latency-001",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-latency-001",
+  "environment": "sandbox",
+  "received_at": "2026-06-22T09:05:00Z",
+  "alert": {
+    "alert_id": "alert-latency-001",
+    "source": "synthetic-pack",
+    "service": "checkout-api",
+    "severity": "high",
+    "title": "High p95 latency on checkout-api",
+    "description": "p95 latency above threshold for 5 minutes",
+    "started_at": "2026-06-22T09:00:00Z",
+    "labels": {
+      "region": "us-east-1"
+    }
+  },
+  "metrics": [
+    {
+      "metric_name": "http_latency_p95_ms",
+      "service": "checkout-api",
+      "unit": "ms",
+      "points": [
+        {"ts": "2026-06-22T08:55:00Z", "value": 220},
+        {"ts": "2026-06-22T09:01:00Z", "value": 950}
+      ],
+      "labels": {
+        "endpoint": "/v1/orders",
+        "region": "us-east-1"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "service": "checkout-api",
+      "ts": "2026-06-22T09:02:00Z",
+      "level": "error",
+      "message": "database timeout after 3000ms",
+      "trace_id": "trace-latency-001",
+      "labels": {
+        "pod": "checkout-api-7d9f",
+        "version": "sha-latency"
+      }
+    }
+  ],
+  "recent_deploys": [
+    {
+      "service": "checkout-api",
+      "version": "sha-latency",
+      "deployed_at": "2026-06-22T08:50:00Z",
+      "deployed_by": "ci",
+      "change_summary": "changed database query path",
+      "rollback_ref": "sha-prev-latency"
+    }
+  ],
+  "ownership": {
+    "service": "checkout-api",
+    "owner_team": "payments-platform",
+    "slack_channel": "#oncall-payments",
+    "jira_project": "PAY",
+    "runbooks": [
+      {
+        "title": "Database timeout triage",
+        "url": "runbook://db-timeout",
+        "excerpt": "Check DB connections, recent deploys, and slow query logs before rollback."
+      }
+    ]
+  }
+}

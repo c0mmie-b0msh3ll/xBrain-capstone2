@@ -1,0 +1,48 @@
+{
+  "incident_id": "inc-critical-001",
+  "classification": "critical_service_down",
+  "severity": "critical",
+  "confidence": 0.86,
+  "status": "DIAGNOSED",
+  "suspected_root_cause": {
+    "summary": "checkout-api appears unavailable or critically degraded based on the alert and supporting context.",
+    "evidence": [
+      "Metrics provided: availability_success_rate.",
+      "Representative log: health check failed: dependency connection refused",
+      "Recent deploy sha-critical at 2026-06-22T07:52:00Z.",
+      "Runbook available: Service down triage."
+    ]
+  },
+  "recommended_actions": [
+    {
+      "type": "RUNBOOK_CHECK",
+      "priority": 1,
+      "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
+      "runbook_ref": "runbook://service-down"
+    },
+    {
+      "type": "ESCALATE_OWNER",
+      "priority": 2,
+      "summary": "Page or notify the owning team for immediate human review.",
+      "runbook_ref": "runbook://service-down"
+    }
+  ],
+  "ticket_payload": {
+    "project": "PAY",
+    "summary": "[critical] checkout-api critical_service_down",
+    "description": "checkout-api appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: availability_success_rate.; Representative log: health check failed: dependency connection refused; Recent deploy sha-critical at 2026-06-22T07:52:00Z.; Runbook available: Service down triage.",
+    "labels": ["ai-triage", "tenant-a", "checkout-api", "critical_service_down"],
+    "fields": {
+      "confidence": 0.86,
+      "owner_team": "payments-platform",
+      "correlation_id": "corr-critical-001",
+      "audit_id": "audit-df867aed9ccd",
+      "status": "DIAGNOSED"
+    }
+  },
+  "slack_payload": {
+    "channel": "#oncall-payments",
+    "text": "checkout-api: critical_service_down (DIAGNOSED, confidence 0.86). Audit: audit-df867aed9ccd."
+  },
+  "audit_id": "audit-df867aed9ccd"
+}

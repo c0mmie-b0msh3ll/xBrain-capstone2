@@ -1,0 +1,305 @@
+from __future__ import annotations
+
+import hashlib
+import os
+from typing import Any, Literal
+
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+
+app = FastAPI(title="TF1 AI Triage Engine", version="v1")
+
+
+Severity = Literal["critical", "high", "medium", "low", "unknown"]
+Environment = Literal["prod", "staging", "sandbox"]
+Status = Literal["DIAGNOSED", "INVESTIGATE", "INSUFFICIENT_CONTEXT", "UNSAFE_SUGGESTION_BLOCKED"]
+ActionType = Literal["HUMAN_REVIEW", "RUNBOOK_CHECK", "ROLLBACK_CONSIDER", "ESCALATE_OWNER", "OBSERVE"]
+
+
+class Alert(BaseModel):
+    alert_id: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    service: str = Field(min_length=1)
+    severity: Severity
+    title: str = Field(min_length=1)
+    description: str | None = None
+    started_at: str = Field(min_length=1)
+    labels: dict[str, Any] = Field(default_factory=dict)
+
+
+class MetricPoint(BaseModel):
+    ts: str
+    value: float
+
+
+class MetricSeries(BaseModel):
+    metric_name: str = Field(min_length=1)
+    service: str = Field(min_length=1)
+    unit: str | None = None
+    points: list[MetricPoint] = Field(default_factory=list)
+    labels: dict[str, Any] = Field(default_factory=dict)
+
+
+class LogEntry(BaseModel):
+    service: str = Field(min_length=1)
+    ts: str = Field(min_length=1)
+    level: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+    trace_id: str | None = None
+    labels: dict[str, Any] = Field(default_factory=dict)
+
+
+class RecentDeploy(BaseModel):
+    service: str = Field(min_length=1)
+    version: str = Field(min_length=1)
+    deployed_at: str = Field(min_length=1)
+    deployed_by: str | None = None
+    change_summary: str | None = None
+    rollback_ref: str | None = None
+
+
+class Runbook(BaseModel):
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    excerpt: str | None = None
+
+
+class Ownership(BaseModel):
+    service: str = Field(min_length=1)
+    owner_team: str | None = None
+    slack_channel: str | None = None
+    jira_project: str | None = None
+    runbooks: list[Runbook] = Field(default_factory=list)
+
+
+class TriageRequest(BaseModel):
+    correlation_id: str = Field(min_length=1)
+    tenant_id: str = Field(min_length=1)
+    incident_id: str = Field(min_length=1)
+    environment: Environment
+    received_at: str = Field(min_length=1)
+    alert: Alert
+    metrics: list[MetricSeries] = Field(default_factory=list)
+    logs: list[LogEntry] = Field(default_factory=list)
+    recent_deploys: list[RecentDeploy] = Field(default_factory=list)
+    ownership: Ownership | None = None
+
+
+class RootCause(BaseModel):
+    summary: str
+    evidence: list[str]
+
+
+class RecommendedAction(BaseModel):
+    type: ActionType
+    priority: int
+    summary: str
+    runbook_ref: str | None = None
+
+
+class TicketPayload(BaseModel):
+    project: str
+    summary: str
+    description: str
+    labels: list[str]
+    fields: dict[str, Any]
+
+
+class SlackPayload(BaseModel):
+    channel: str
+    text: str
+
+
+class TriageResponse(BaseModel):
+    incident_id: str
+    classification: str
+    severity: Severity
+    confidence: float
+    status: Status
+    suspected_root_cause: RootCause
+    recommended_actions: list[RecommendedAction]
+    ticket_payload: TicketPayload
+    slack_payload: SlackPayload
+    audit_id: str
+
+
+@app.get("/healthz")
+def healthz() -> dict[str, str]:
+    return {"status": "ok", "service": "tf1-ai-triage-engine", "version": "v1"}
+
+
+@app.post("/v1/triage", response_model=TriageResponse)
+def triage(
+    request: TriageRequest,
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+    x_correlation_id: str = Header(..., alias="X-Correlation-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> TriageResponse:
+    validate_headers(request, x_tenant_id, x_correlation_id, authorization)
+    audit_id = build_audit_id(request)
+    decision = classify(request)
+    return build_response(request, audit_id, decision)
+
+
+def validate_headers(
+    request: TriageRequest,
+    tenant_header: str,
+    correlation_header: str,
+    authorization: str | None,
+) -> None:
+    if tenant_header != request.tenant_id:
+        raise HTTPException(status_code=400, detail="X-Tenant-Id must match body tenant_id")
+    if correlation_header != request.correlation_id:
+        raise HTTPException(status_code=400, detail="X-Correlation-Id must match body correlation_id")
+
+    expected_token = os.getenv("SERVICE_AUTH_TOKEN")
+    if expected_token and authorization != f"Bearer {expected_token}":
+        raise HTTPException(status_code=401, detail="Invalid service token")
+
+
+def build_audit_id(request: TriageRequest) -> str:
+    seed = f"{request.tenant_id}:{request.correlation_id}:{request.incident_id}"
+    return "audit-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12]
+
+
+def classify(request: TriageRequest) -> dict[str, Any]:
+    text = " ".join(
+        [
+            request.alert.title,
+            request.alert.description or "",
+            " ".join(log.message for log in request.logs),
+            " ".join(metric.metric_name for metric in request.metrics),
+            " ".join((deploy.change_summary or "") for deploy in request.recent_deploys),
+        ]
+    ).lower()
+
+    has_context = bool(request.metrics or request.logs or request.recent_deploys or has_ownership_context(request))
+    if not has_context:
+        return {
+            "status": "INSUFFICIENT_CONTEXT",
+            "classification": "insufficient_context",
+            "confidence": 0.25,
+            "summary": "Alert metadata was provided, but supporting metrics, logs, deploys, and ownership context are missing.",
+            "evidence": ["No supporting telemetry context was included with the alert."],
+            "actions": [
+                ("ESCALATE_OWNER", "Ask CDO ingestion to attach metrics, logs, recent deploys, and ownership context before diagnosis."),
+            ],
+        }
+
+    if any(token in text for token in ["noisy", "flapping", "false alarm", "ambiguous"]) or request.alert.severity in {
+        "low",
+        "unknown",
+    }:
+        return {
+            "status": "INVESTIGATE",
+            "classification": "noisy_or_ambiguous_alert",
+            "confidence": 0.45,
+            "summary": "Signals are weak or ambiguous; the alert should be investigated without assigning a firm root cause.",
+            "evidence": collect_evidence(request, fallback="Alert text or severity indicates a noisy or ambiguous condition."),
+            "actions": [
+                ("OBSERVE", "Check whether the alert repeats and compare it against user-impacting metrics."),
+                ("HUMAN_REVIEW", "Have the service owner confirm whether this is actionable before creating remediation work."),
+            ],
+        }
+
+    if request.alert.severity == "critical" or any(token in text for token in ["down", "unavailable", "connection refused"]):
+        return {
+            "status": "DIAGNOSED",
+            "classification": "critical_service_down",
+            "confidence": 0.86,
+            "summary": f"{request.alert.service} appears unavailable or critically degraded based on the alert and supporting context.",
+            "evidence": collect_evidence(request, fallback="Critical severity alert indicates service availability impact."),
+            "actions": [
+                ("RUNBOOK_CHECK", "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status."),
+                ("ESCALATE_OWNER", "Page or notify the owning team for immediate human review."),
+            ],
+        }
+
+    if "latency" in text or "p95" in text or "timeout" in text:
+        return {
+            "status": "DIAGNOSED",
+            "classification": "latency_degradation",
+            "confidence": 0.82,
+            "summary": f"{request.alert.service} is showing latency degradation, likely related to timeout or recent change signals.",
+            "evidence": collect_evidence(request, fallback="Latency-related alert title or metrics were included."),
+            "actions": [
+                ("HUMAN_REVIEW", "Check saturation metrics, dependency latency, and slow query or timeout logs."),
+                ("ROLLBACK_CONSIDER", "If recent deploy correlation is confirmed, consider rollback through the approved runbook."),
+            ],
+        }
+
+    return {
+        "status": "INVESTIGATE",
+        "classification": "general_investigation",
+        "confidence": 0.55,
+        "summary": "The alert has context but does not match a high-confidence TF1 skeleton scenario.",
+        "evidence": collect_evidence(request, fallback="Context was present but did not match a known deterministic rule."),
+        "actions": [
+            ("HUMAN_REVIEW", "Review supplied logs, metrics, and deploys before assigning a root cause."),
+        ],
+    }
+
+
+def has_ownership_context(request: TriageRequest) -> bool:
+    ownership = request.ownership
+    return bool(ownership and (ownership.owner_team or ownership.slack_channel or ownership.jira_project or ownership.runbooks))
+
+
+def collect_evidence(request: TriageRequest, fallback: str) -> list[str]:
+    evidence: list[str] = []
+    if request.metrics:
+        names = ", ".join(metric.metric_name for metric in request.metrics[:3])
+        evidence.append(f"Metrics provided: {names}.")
+    if request.logs:
+        evidence.append(f"Representative log: {request.logs[0].message}")
+    if request.recent_deploys:
+        deploy = request.recent_deploys[0]
+        evidence.append(f"Recent deploy {deploy.version} at {deploy.deployed_at}.")
+    if request.ownership and request.ownership.runbooks:
+        evidence.append(f"Runbook available: {request.ownership.runbooks[0].title}.")
+    return evidence or [fallback]
+
+
+def build_response(request: TriageRequest, audit_id: str, decision: dict[str, Any]) -> TriageResponse:
+    owner = request.ownership or Ownership(service=request.alert.service)
+    project = owner.jira_project or "OPS"
+    channel = owner.slack_channel or "#oncall"
+    runbook_ref = owner.runbooks[0].url if owner.runbooks else None
+    labels = ["ai-triage", request.tenant_id, request.alert.service, decision["classification"]]
+
+    actions = [
+        RecommendedAction(type=action_type, priority=index + 1, summary=summary, runbook_ref=runbook_ref)
+        for index, (action_type, summary) in enumerate(decision["actions"])
+    ]
+
+    return TriageResponse(
+        incident_id=request.incident_id,
+        classification=decision["classification"],
+        severity=request.alert.severity,
+        confidence=decision["confidence"],
+        status=decision["status"],
+        suspected_root_cause=RootCause(summary=decision["summary"], evidence=decision["evidence"]),
+        recommended_actions=actions,
+        ticket_payload=TicketPayload(
+            project=project,
+            summary=f"[{request.alert.severity}] {request.alert.service} {decision['classification']}",
+            description=f"{decision['summary']} Evidence: {'; '.join(decision['evidence'])}",
+            labels=labels,
+            fields={
+                "confidence": decision["confidence"],
+                "owner_team": owner.owner_team,
+                "correlation_id": request.correlation_id,
+                "audit_id": audit_id,
+                "status": decision["status"],
+            },
+        ),
+        slack_payload=SlackPayload(
+            channel=channel,
+            text=(
+                f"{request.alert.service}: {decision['classification']} "
+                f"({decision['status']}, confidence {decision['confidence']:.2f}). Audit: {audit_id}."
+            ),
+        ),
+        audit_id=audit_id,
+    )

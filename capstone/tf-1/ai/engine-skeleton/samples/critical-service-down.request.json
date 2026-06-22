@@ -1,0 +1,68 @@
+{
+  "correlation_id": "corr-critical-001",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-critical-001",
+  "environment": "sandbox",
+  "received_at": "2026-06-22T08:05:00Z",
+  "alert": {
+    "alert_id": "alert-critical-001",
+    "source": "synthetic-pack",
+    "service": "checkout-api",
+    "severity": "critical",
+    "title": "checkout-api is down",
+    "description": "Synthetic health check reports checkout-api unavailable for 5 minutes",
+    "started_at": "2026-06-22T08:00:00Z",
+    "labels": {
+      "region": "us-east-1"
+    }
+  },
+  "metrics": [
+    {
+      "metric_name": "availability_success_rate",
+      "service": "checkout-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T07:59:00Z", "value": 99.9},
+        {"ts": "2026-06-22T08:01:00Z", "value": 42.0}
+      ],
+      "labels": {
+        "region": "us-east-1"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "service": "checkout-api",
+      "ts": "2026-06-22T08:01:30Z",
+      "level": "error",
+      "message": "health check failed: dependency connection refused",
+      "trace_id": "trace-critical-001",
+      "labels": {
+        "pod": "checkout-api-7d9f"
+      }
+    }
+  ],
+  "recent_deploys": [
+    {
+      "service": "checkout-api",
+      "version": "sha-critical",
+      "deployed_at": "2026-06-22T07:52:00Z",
+      "deployed_by": "ci",
+      "change_summary": "updated dependency client configuration",
+      "rollback_ref": "sha-prev-critical"
+    }
+  ],
+  "ownership": {
+    "service": "checkout-api",
+    "owner_team": "payments-platform",
+    "slack_channel": "#oncall-payments",
+    "jira_project": "PAY",
+    "runbooks": [
+      {
+        "title": "Service down triage",
+        "url": "runbook://service-down",
+        "excerpt": "Check service health, dependencies, and recent deploys before rollback."
+      }
+    ]
+  }
+}
