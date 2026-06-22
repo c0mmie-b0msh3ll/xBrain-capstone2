@@ -18,14 +18,15 @@ normalized incident context
   -> structured diagnosis + Jira/Slack payloads
 ```
 
-The LLM is not the primary detector. Continuous detection happens in the AIOps observability layer, and incident-level RCA begins inside the AI compute service. Bedrock is optional and used only after the engine has grounded evidence.
+The LLM is not the primary detector. Platform/DevOps provides observability data through bounded, secure access. AIOps performs normalization, windowing, baseline comparison, lightweight detection, and incident-level RCA. Bedrock is optional and used only after the engine has grounded evidence.
 
 ### 1.1 Responsibilities
 
 | Layer | Responsibility |
 |---|---|
-| AIOps detection layer | Continuously ingest telemetry, run lightweight anomaly/alert detection, and produce incident candidates. |
-| AIOps context aggregation | Build a bounded context bundle around the alert/anomaly window. |
+| Platform observability layer | Collect, retain, secure, and expose metrics/logs/traces/deploy events through bounded query/export. |
+| AIOps detection layer | Normalize telemetry, aggregate windows, compute baselines, run lightweight anomaly/alert detection, and produce incident candidates. |
+| AIOps context aggregation | Build a bounded triage context bundle around the alert/anomaly window. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
 | Optional Bedrock synthesis | Convert grounded evidence into clear Jira/Slack wording and runbook-aware recommendations. |
 
@@ -53,21 +54,24 @@ The skeleton uses `AI_MODE=rules`. A later release may enable `AI_MODE=hybrid`, 
 
 ## 3. Invocation Pattern
 
-The triage engine is **event-driven**, while the broader AIOps observability/detection layer is continuous.
+The triage engine is **event-driven**, while platform telemetry collection and AIOps lightweight detection are continuous.
 
 ```text
 continuous telemetry
+  -> platform observability stack
+  -> bounded query/export
+  -> AIOps normalization/windowing/baseline
   -> AIOps lightweight detection
   -> alert/anomaly/incident candidate
   -> AIOps context aggregation
   -> POST /v1/triage
 ```
 
-The AIOps app may own connectors to CloudWatch, Prometheus, Datadog, log stores, deploy systems, Jira, or Slack. The triage function still receives normalized bounded context so RCA logic remains replayable and testable.
+Platform/DevOps may operate CloudWatch, Prometheus, Grafana, Loki, OpenTelemetry, or related data plumbing. AIOps consumes bounded telemetry from those systems and owns the interpretation/detection/RCA logic. The triage function receives normalized bounded context so RCA logic remains replayable and testable.
 
 ## 4. Input And Feature Extraction
 
-Input is defined in `../contracts/telemetry-contract.md`.
+Triage input is defined in `../contracts/telemetry-contract.md`. Upstream observability access is defined in `../contracts/observability-data-contract.md`.
 
 Feature extraction should produce at least:
 
@@ -175,7 +179,8 @@ Skeleton evaluation validates contract behavior. Final evaluation should include
 
 The main cost control is event-driven invocation:
 
-- continuous telemetry detection remains lightweight in the AIOps observability layer,
+- observability collection stays in the platform layer,
+- lightweight detection remains in the AIOps app,
 - AI compute runs only for incident candidates,
 - Bedrock runs only when synthesis is enabled and grounded evidence exists.
 
@@ -185,7 +190,8 @@ Initial skeleton cost is ECS/Fargate or local runtime only. LLM token costs are 
 
 ```mermaid
 graph TB
-    Detector[AIOps detector and context aggregation] --> ALB[Internal ALB]
+    Obs[Platform observability stack] --> Context[AIOps detector and context aggregation]
+    Context --> ALB[Internal ALB]
     ALB --> ECS[ECS Fargate AI triage engine]
     ECS --> Rules[Compute-first RCA rules and scoring]
     Rules --> Response[Structured triage response]
@@ -201,5 +207,6 @@ Deployment details are defined in `../contracts/deployment-contract.md`.
 - [`04_eval_report.md`](04_eval_report.md)
 - [`05_adrs.md`](05_adrs.md)
 - [`../contracts/ai-api-contract.md`](../contracts/ai-api-contract.md)
+- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md)
 - [`../contracts/telemetry-contract.md`](../contracts/telemetry-contract.md)
 - [`../contracts/deployment-contract.md`](../contracts/deployment-contract.md)

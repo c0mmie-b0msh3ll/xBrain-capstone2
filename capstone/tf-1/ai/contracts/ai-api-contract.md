@@ -8,7 +8,7 @@ Freeze target: 2026-06-25
 
 Define the API exposed by the AI triage engine and consumed by the AIOps detector/context layer or deployment platform. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that the integration layer can use for Jira and Slack.
 
-The AIOps detector/context layer invokes this API after continuous telemetry ingestion and lightweight detection has produced an alert/anomaly/incident candidate. The API is not designed for streaming all metrics/logs directly into the triage engine.
+The AIOps detector/context layer invokes this API after bounded observability data has been normalized, windowed, compared against baseline, and classified as an alert/anomaly/incident candidate. The API is not designed for streaming all raw metrics/logs directly into the triage engine.
 
 ## Versioning
 
@@ -90,7 +90,7 @@ The endpoint performs compute-first triage: validation, feature extraction, RCA 
 }
 ```
 
-Field definitions are in `telemetry-contract.md`.
+Field definitions are in `telemetry-contract.md`. Upstream observability access requirements are in `observability-data-contract.md`.
 
 Sample request fixtures are stored in `../engine-skeleton/samples/`.
 

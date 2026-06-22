@@ -1,4 +1,4 @@
-# Telemetry Contract - TF1 Triage Hub
+# Triage Context Contract - TF1 Triage Hub
 
 Owner: AI team TF1  
 Status: Draft for CDO review  
@@ -6,13 +6,13 @@ Freeze target: 2026-06-25
 
 ## Purpose
 
-Define the normalized context bundle passed from the AIOps detection/context layer to the AI triage engine. For TF1, the triage request is one alert/incident context bundle, not a continuous raw metrics stream.
+Define the normalized incident context bundle passed from the AIOps context service to the AI triage engine. For TF1, the triage request is one bounded alert/incident package, not continuous raw metrics/logs.
 
 The current assumption is:
 
 ```text
-Continuous telemetry or demo workload
-  -> AIOps ingestion and lightweight detection
+Observability data contract
+  -> AIOps ingestion, normalization, windowing, baseline, detection
   -> Alert/anomaly/incident candidate
   -> AIOps context aggregation
   -> Triage API request with normalized context bundle
@@ -22,9 +22,11 @@ Continuous telemetry or demo workload
 
 The triage engine is event-driven. It is invoked when the AIOps detector has found an alert/anomaly/incident candidate and the context layer has assembled bounded context around that event.
 
+The upstream platform/observability handoff is defined separately in `observability-data-contract.md`.
+
 ## Contract Boundary
 
-The AIOps app continuously ingests telemetry, runs lightweight detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the triage engine.
+The AIOps app consumes bounded observability data, runs normalization/windowing/baseline/detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the triage engine.
 
 Field-name differences in the datapack should be handled in an adapter. The contract changes only when the datapack exposes a missing concept that cannot be represented by existing fields.
 
@@ -173,6 +175,7 @@ Mapping type must be one of:
 
 ## Delivery And Quality
 
+- Upstream dependency: platform/DevOps provides bounded observability access as defined in `observability-data-contract.md`.
 - Delivery mode: request payload from the AIOps detector/context layer to the triage API.
 - Invocation mode: event-driven after lightweight detection, not continuous full triage over all telemetry.
 - Detection ownership: the AIOps app continuously detects candidate alerts/anomalies; the triage engine performs incident-level RCA after invocation.

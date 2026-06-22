@@ -7,11 +7,11 @@ Reviewers: AI Lead, CDO Leads, reviewer panel
 
 ## Purpose
 
-Define how the TF1 AIOps triage components are packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to provision infrastructure and call the triage endpoint safely.
+Define how the TF1 AIOps triage components are packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to provision infrastructure, observability access, and safe triage endpoint connectivity.
 
 The AI engine is hosted once for TF1 and consumed by the AIOps detector/context layer or demo integration path through a shared, multi-tenant API. Separate engine deployments require a formal contract change.
 
-The AI engine is an event-driven triage compute service. The AIOps observability components continuously ingest telemetry and run lightweight detection; they call the AI engine only when an alert/anomaly/incident candidate needs triage.
+The AI engine is an event-driven triage compute service. Platform/DevOps provides the observability stack and bounded access to metrics/logs/traces. The AIOps app performs normalization, windowing, baseline comparison, detection, context aggregation, and calls the AI engine only when an alert/anomaly/incident candidate needs triage.
 
 ## Runtime Boundary
 
@@ -72,6 +72,16 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 | Ingress | Allow only detector/context or approved platform security groups on port `8080` or ALB listener port |
 | Egress | AWS service endpoints required for CloudWatch, Secrets Manager, and Bedrock if enabled |
 | DNS | Private hosted zone record such as `https://ai-engine.tf1.internal` |
+
+## Observability Stack Dependency
+
+| Responsibility | Owner | Notes |
+|---|---|---|
+| Deploy metrics/logs/traces backend | Platform/DevOps | Prometheus/Grafana/Loki/CloudWatch/OpenTelemetry mix to be finalized. |
+| Preserve required metadata | Platform/DevOps + app emitters | `tenant_id`, `service`, `environment`, `timestamp`, labels. |
+| Provide bounded query/export path | Platform/DevOps | Query by tenant/service/env/time window. |
+| Interpret telemetry and detect anomalies | AIOps app | Normalize, aggregate windows, compute baselines, detect incidents. |
+| RCA/confidence/LLM synthesis | AIOps triage engine | Compute-first RCA; Bedrock optional. |
 
 ```mermaid
 graph TB

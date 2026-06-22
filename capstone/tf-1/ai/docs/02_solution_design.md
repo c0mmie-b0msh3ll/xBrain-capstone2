@@ -6,27 +6,29 @@ Last updated: 2026-06-22
 
 ## 1. High-Level Architecture
 
-TF1 uses an event-driven triage design inside the AIOps application. The observability stack ingests telemetry continuously and runs lightweight detection continuously, but the heavier triage/RCA flow is invoked only after an alert, anomaly, or incident candidate exists.
+TF1 uses an event-driven triage design. Production-grade ownership is split between platform observability and AIOps reasoning. Platform/DevOps makes telemetry observable, queryable, secure, and bounded. The AIOps app consumes bounded telemetry windows, then performs normalization, aggregation, baseline comparison, anomaly detection, context packaging, RCA, and optional LLM synthesis.
 
 ```mermaid
 graph LR
-    A[Services emit metrics logs traces deploy events] --> B[AIOps observability ingestion]
-    B --> C[Lightweight detection: threshold anomaly SLO burn rate]
-    C -->|Alert or anomaly candidate| D[Context aggregation window]
-    D -->|Internal event or POST /v1/triage| E[TF1 AI triage engine]
-    E --> F[Compute-first RCA and confidence gate]
-    F -->|Optional grounded synthesis| G[Bedrock LLM]
-    F --> H[Jira payload Slack payload audit id]
-    G --> H
+    A[Services emit metrics logs traces deploy events] --> B[Platform observability stack: OTel Prometheus Loki CloudWatch]
+    B -->|bounded query/export by tenant service env window| C[AIOps ingestion and context service]
+    C --> D[Normalize window baseline trend]
+    D --> E[Lightweight anomaly detection]
+    E -->|Incident candidate| F[Context package]
+    F -->|POST /v1/triage| G[Compute-first RCA and confidence gate]
+    G -->|Optional grounded synthesis| H[Bedrock LLM]
+    G --> I[Jira Slack audit payload]
+    H --> I
 ```
 
-The AIOps system includes the continuous observability/detection components and the incident-level AI triage engine. The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute service that performs schema validation, feature extraction, deterministic RCA scoring, confidence gating, safety checks, and optional LLM synthesis.
+The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute service that receives bounded context, performs schema validation, feature extraction, deterministic RCA scoring, confidence gating, safety checks, and optional LLM synthesis.
 
 ## 2. Component Breakdown
 
 | Component | Owner | Responsibility | Tech choice | Reason |
 |---|---|---|---|---|
-| Telemetry ingestion | AIOps app | Continuously collect metrics, logs, traces, deploy events, and alert-source events. | OpenTelemetry/Prometheus/log pipeline or capstone simulator | This is part of the product capability, not external to triage. |
+| Observability stack | Platform/DevOps | Collect, store, retain, secure, and expose metrics/logs/traces/deploy events. | OpenTelemetry, Prometheus/Grafana, Loki, CloudWatch, or capstone simulator | Platform ensures data is observable and accessible safely. |
+| AIOps ingestion/context | AIOps app | Query bounded telemetry windows, normalize schema, aggregate windows, compute baseline/trend. | Python/FastAPI worker or service | This is product logic, not platform plumbing. |
 | Lightweight detection | AIOps app | Detect threshold breaches, anomaly candidates, SLO burn rate, and alert grouping. | Rules/statistics initially; ML/anomaly model later if needed | Runs continuously and cheaply before expensive RCA or LLM synthesis. |
 | Context aggregation | AIOps app | Build bounded incident context windows for triage. | Internal service/workflow | Converts raw telemetry into a normalized incident context bundle. |
 | AI triage engine | AIOps app | Validate request, extract features, run RCA scoring, confidence gate, and produce response payloads. | Dockerized FastAPI service on ECS/Fargate | Gives the team full control of diagnosis behavior and API contract. |
@@ -37,16 +39,18 @@ The AIOps system includes the continuous observability/detection components and 
 ## 3. Data Flow
 
 1. Services continuously emit telemetry: metrics, logs, traces, deploy events, and alert-source events.
-2. The AIOps observability stack stores or streams telemetry and runs lightweight detection continuously.
-3. When an alert/anomaly/incident candidate is detected, the AIOps app creates a bounded context bundle around the event window.
-4. The detector/context layer invokes the triage engine, either through an internal event or `POST /v1/triage`, with normalized alert metadata, metrics, logs, recent deploys, ownership, and runbook/docs context.
-5. The AI engine validates tenant/correlation headers, validates schema, extracts features, and runs compute-first RCA rules/scoring.
-6. The AI engine applies confidence gates:
+2. Platform observability stack collects/stores telemetry and exposes bounded query/export paths by tenant, service, environment, and time window.
+3. AIOps ingestion/context service queries bounded slices, normalizes schema, aggregates windows, and computes baseline/trend.
+4. AIOps detector runs lightweight anomaly/alert logic continuously over bounded summaries.
+5. When an alert/anomaly/incident candidate is detected, the AIOps app creates a bounded context bundle around the event window.
+6. The detector/context layer invokes the triage engine, either through an internal event or `POST /v1/triage`, with normalized alert metadata, metrics, logs, recent deploys, ownership, and runbook/docs context.
+7. The AI engine validates tenant/correlation headers, validates schema, extracts features, and runs compute-first RCA rules/scoring.
+8. The AI engine applies confidence gates:
    - high enough signal: `DIAGNOSED`
    - weak or conflicting signal: `INVESTIGATE`
    - missing supporting context: `INSUFFICIENT_CONTEXT`
-7. If enabled, the AI engine calls Bedrock only to synthesize grounded human-readable diagnosis, recommendations, Jira description, and Slack text.
-8. The AIOps integration layer uses the response to create Jira/Slack artifacts and persists or links the audit ID.
+9. If enabled, the AI engine calls Bedrock only to synthesize grounded human-readable diagnosis, recommendations, Jira description, and Slack text.
+10. The AIOps integration layer uses the response to create Jira/Slack artifacts and persists or links the audit ID.
 
 ## 4. Key Design Decisions
 
@@ -77,11 +81,11 @@ Chosen: Option B. Bedrock is optional synthesis after grounded compute evidence.
 - Option A: The triage/RCA function pulls directly from every raw telemetry store at request time.
   - Pros: triage has direct retrieval control.
   - Cons: tighter coupling, higher latency, broader runtime permissions, and harder testing.
-- Option B: The AIOps observability/context layer continuously ingests telemetry and builds a bounded context bundle before triage.
-  - Pros: clearer internal separation, cheaper triage calls, easier replay/eval, and safer LLM prompting.
-  - Cons: detector/context logic must preserve enough evidence for RCA.
+- Option B: Platform observability exposes bounded telemetry, then AIOps context logic builds a normalized context bundle before triage.
+  - Pros: clearer platform/AIOps separation, cheaper triage calls, easier replay/eval, and safer LLM prompting.
+  - Cons: observability data contract must preserve enough evidence for RCA.
 
-Chosen: Option B. The AIOps app owns continuous ingestion, detection, and context aggregation; the triage engine owns incident-level RCA.
+Chosen: Option B. Platform owns observability plumbing and bounded access. AIOps owns normalization, detection, context aggregation, and incident-level RCA.
 
 ## 5. Risk And Mitigation
 
@@ -104,6 +108,7 @@ Chosen: Option B. The AIOps app owns continuous ingestion, detection, and contex
 ## Related Documents
 
 - [`03_ai_engine_spec.md`](03_ai_engine_spec.md) - AI engine architecture detail, governance, and security.
+- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md) - platform observability handoff.
 - [`../contracts/telemetry-contract.md`](../contracts/telemetry-contract.md) - normalized context bundle contract.
 - [`../contracts/ai-api-contract.md`](../contracts/ai-api-contract.md) - API consumed by the detector/context layer.
 - [`../contracts/deployment-contract.md`](../contracts/deployment-contract.md) - deployment topology.

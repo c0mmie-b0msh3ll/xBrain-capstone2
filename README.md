@@ -8,7 +8,9 @@ TF1 uses an **event-driven, compute-first triage architecture**:
 
 ```text
 Continuous telemetry
-  -> AIOps ingestion and lightweight detection
+  -> Platform observability stack
+  -> bounded query/export by tenant/service/env/window
+  -> AIOps normalize/window/baseline/detection
   -> Alert/anomaly/incident candidate
   -> AIOps context aggregation
   -> TF1 AI compute service
@@ -16,7 +18,7 @@ Continuous telemetry
   -> Jira/Slack/audit payloads
 ```
 
-This is not a direct Bedrock workflow. The AIOps app owns the observability stack, lightweight detector, context aggregation, and triage compute service. The triage engine validates the request, extracts features, performs deterministic RCA/scoring, applies confidence gates, and only then may call Bedrock to synthesize grounded human-readable output.
+This is not a direct Bedrock workflow and not an unbounded raw-data dump into AI. Platform/DevOps owns observability plumbing: metrics/logs/traces collection, retention, secure access, and bounded query/export. The AIOps app owns data interpretation: normalize, window, baseline, detect, context package, RCA, confidence, and optional Bedrock synthesis.
 
 ## Project Layout
 
@@ -28,6 +30,7 @@ This is not a direct Bedrock workflow. The AIOps app owns the observability stac
 |           |-- contracts/
 |           |   |-- ai-api-contract.md
 |           |   |-- deployment-contract.md
+|           |   |-- observability-data-contract.md
 |           |   `-- telemetry-contract.md
 |           |-- docs/
 |           |   |-- 01_requirements.md
@@ -54,7 +57,8 @@ This is not a direct Bedrock workflow. The AIOps app owns the observability stac
 
 TF1 AIOps app owns:
 
-- continuous telemetry ingestion,
+- telemetry interpretation after bounded platform access,
+- normalization/windowing/baseline,
 - lightweight alert/anomaly detection,
 - context aggregation before calling `/v1/triage`,
 - triage API contract,
@@ -66,7 +70,7 @@ TF1 AIOps app owns:
 - AI evaluation docs,
 - Jira and Slack integration.
 
-Platform/deployment owners still provide infrastructure concerns such as networking, secrets, monitoring, and deployment pipelines.
+Platform/deployment owners provide observability plumbing and infrastructure concerns: Prometheus/Grafana/Loki/CloudWatch/OTel setup, bounded telemetry access, networking, secrets, monitoring, and deployment pipelines.
 
 The AI service does **not** auto-remediate. It only produces human-reviewed recommendations.
 
@@ -74,6 +78,7 @@ The AI service does **not** auto-remediate. It only produces human-reviewed reco
 
 The contract set is under `capstone/tf-1/ai/contracts/`.
 
+- `observability-data-contract.md`: platform observability handoff into the AIOps app.
 - `telemetry-contract.md`: normalized incident context that the AIOps detector/context layer sends to triage after detection.
 - `ai-api-contract.md`: HTTP API shape for `/healthz` and `/v1/triage`.
 - `deployment-contract.md`: TF1-specific deployment handoff for platform owners.
