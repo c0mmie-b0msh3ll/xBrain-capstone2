@@ -1,57 +1,76 @@
 # xBrain Capstone 2
 
-Capstone workspace for AI/CDO task-force deliverables. The current implemented focus is **Task Force 1 - Triage Hub**, an AI-assisted incident triage service that receives normalized alert context and returns diagnosis, confidence, evidence, Jira payload, Slack payload, and an audit ID.
+Capstone workspace for AI/CDO task-force deliverables. The current implemented focus is **Task Force 1 - Triage Hub**, an AI-assisted incident triage service that receives normalized incident context and returns diagnosis, confidence, evidence, Jira payload, Slack payload, and an audit ID.
+
+## Architecture Summary
+
+TF1 uses an **event-driven, compute-first triage architecture**:
+
+```text
+Continuous telemetry
+  -> CDO ingestion and lightweight detection
+  -> Alert/anomaly/incident candidate
+  -> CDO context aggregation
+  -> TF1 AI compute service
+  -> optional Bedrock synthesis
+  -> Jira/Slack/audit payloads
+```
+
+This is not `CDO -> Bedrock directly`. The AI engine is a Dockerized compute service. It validates the request, extracts features, performs deterministic RCA/scoring, applies confidence gates, and only then may call Bedrock to synthesize grounded human-readable output.
 
 ## Project Layout
 
 ```text
 .
-├── capstone/
-│   └── tf-1/
-│       └── ai/
-│           ├── contracts/
-│           │   ├── ai-api-contract.md
-│           │   ├── deployment-contract.md
-│           │   └── telemetry-contract.md
-│           ├── docs/
-│           │   ├── 01_requirements.md
-│           │   ├── 02_solution_design.md
-│           │   ├── 03_ai_engine_spec.md
-│           │   ├── 04_eval_report.md
-│           │   └── 05_adrs.md
-│           └── engine-skeleton/
-│               ├── app/
-│               │   └── main.py
-│               ├── samples/
-│               ├── Dockerfile
-│               ├── README.md
-│               ├── datapack-mapping.md
-│               └── requirements.txt
-└── docs/
-    ├── reference/
-    └── templates/
+|-- capstone/
+|   `-- tf-1/
+|       `-- ai/
+|           |-- contracts/
+|           |   |-- ai-api-contract.md
+|           |   |-- deployment-contract.md
+|           |   `-- telemetry-contract.md
+|           |-- docs/
+|           |   |-- 01_requirements.md
+|           |   |-- 02_solution_design.md
+|           |   |-- 03_ai_engine_spec.md
+|           |   |-- 04_eval_report.md
+|           |   `-- 05_adrs.md
+|           `-- engine-skeleton/
+|               |-- app/
+|               |   `-- main.py
+|               |-- samples/
+|               |-- Dockerfile
+|               |-- README.md
+|               |-- datapack-mapping.md
+|               `-- requirements.txt
+`-- docs/
+    |-- reference/
+    `-- templates/
 ```
 
 `capstone/tf-1/ai/PLAN.md` is intentionally ignored by Git because it is a local working tracker.
 
-## TF1 Triage Hub Scope
+## Ownership Boundary
 
-TF1 builds the AI triage engine for incident investigation. The AI team owns:
+TF1 AI owns:
 
-- triage API contract
-- telemetry schema
-- diagnosis logic
-- confidence behavior
-- safety boundaries
-- AI evaluation docs
+- triage API contract,
+- telemetry schema,
+- incident-level diagnosis logic,
+- confidence behavior,
+- safety boundaries,
+- optional LLM synthesis behavior,
+- AI evaluation docs.
 
 CDO owns:
 
-- deployment platform
-- networking and secrets
-- context aggregation
-- monitoring
-- Jira and Slack integration
+- continuous telemetry ingestion,
+- lightweight alert/anomaly detection,
+- context aggregation before calling `/v1/triage`,
+- deployment platform,
+- networking and secrets,
+- monitoring,
+- Jira and Slack integration.
 
 The AI service does **not** auto-remediate. It only produces human-reviewed recommendations.
 
@@ -59,11 +78,11 @@ The AI service does **not** auto-remediate. It only produces human-reviewed reco
 
 The contract set is under `capstone/tf-1/ai/contracts/`.
 
-- `telemetry-contract.md`: normalized request context that CDO sends to AI.
+- `telemetry-contract.md`: normalized incident context that CDO sends to AI after detection.
 - `ai-api-contract.md`: HTTP API shape for `/healthz` and `/v1/triage`.
 - `deployment-contract.md`: TF1-specific deployment handoff for CDO platforms.
 
-The current boundary assumes CDO aggregates logs, metrics, deploys, ownership, and runbook snippets before calling the AI service. Mentor datapack files are treated as raw input and mapped into the telemetry contract through an adapter.
+Mentor datapack files are treated as raw input and mapped into the telemetry contract through an adapter.
 
 ## Engine Skeleton
 
@@ -74,7 +93,7 @@ Implemented endpoints:
 - `GET /healthz`
 - `POST /v1/triage`
 
-The current triage logic is deterministic and rule-based so CDO can integrate before the final AI/LLM layer is ready.
+The current triage logic is deterministic and rule-based so CDO can integrate before the final hybrid AI mode is ready.
 
 Response behavior:
 
@@ -198,9 +217,9 @@ The adapter should emit at least three valid `/v1/triage` request fixtures: crit
 
 Completed:
 
-- TF1 AI tracking plan created locally and ignored by Git.
 - Deployment contract customized for TF1.
 - Telemetry and API contracts refined.
+- Event-driven compute-first architecture documented.
 - FastAPI skeleton implemented.
 - Sample request/response JSON added.
 - Deterministic scenario behavior implemented.
@@ -210,6 +229,6 @@ Pending:
 
 - Mentor datapack mapping.
 - Datapack adapter implementation.
-- Final rule-based or LLM-backed AI logic.
-- Runbook/doc-aware suggestion layer beyond synthetic fixtures.
+- Final RCA scoring beyond skeleton rules.
+- Optional Bedrock synthesis layer.
 - Final eval report with precision, recall, F1, latency, and cost.

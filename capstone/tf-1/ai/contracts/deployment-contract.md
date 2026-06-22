@@ -11,12 +11,16 @@ Define how the TF1 AI triage engine is packaged, deployed, connected, observed, 
 
 The AI engine is hosted once for TF1 and consumed by 2-3 CDO platforms through a shared, multi-tenant API. CDO platforms do not deploy separate AI engines unless a formal contract change is approved.
 
+The AI engine is an event-driven triage compute service. CDO/observability components continuously ingest telemetry and run lightweight detection; they call the AI engine only when an alert/anomaly/incident candidate needs triage.
+
 ## Runtime Boundary
 
 | Aspect | Decision |
 |---|---|
 | Service type | Dockerized HTTP API |
 | API surface | `GET /healthz`, `POST /v1/triage` |
+| Invocation pattern | Event-driven after CDO detection, not continuous telemetry streaming |
+| AI pattern | Compute-first RCA, optional Bedrock synthesis |
 | Port | `8080` |
 | Tenant isolation | `X-Tenant-Id` header must match body `tenant_id` |
 | Correlation | `X-Correlation-Id` header must match body `correlation_id` |
@@ -51,8 +55,8 @@ The AI engine is hosted once for TF1 and consumed by 2-3 CDO platforms through a
 |---|---|---|---|
 | `APP_ENV` | env var | ECS task definition | `sandbox`, `staging`, or `prod` |
 | `LOG_LEVEL` | env var | ECS task definition | Default `INFO` |
-| `AI_MODE` | env var | ECS task definition | `rules` for skeleton; `llm` after model integration |
-| `BEDROCK_MODEL_ID` | env var | ECS task definition | Required only when `AI_MODE=llm` |
+| `AI_MODE` | env var | ECS task definition | `rules` for skeleton; `hybrid` when optional Bedrock synthesis is enabled |
+| `BEDROCK_MODEL_ID` | env var | ECS task definition | Required only when `AI_MODE=hybrid` |
 | `AWS_REGION` | env var | ECS task definition | `us-east-1` |
 | `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
 
@@ -82,7 +86,7 @@ graph TB
         ECS --> SM
         ECS --> CW
     end
-    Bedrock[AWS Bedrock, optional after skeleton]
+    Bedrock[AWS Bedrock, optional synthesis after compute RCA]
     ECS --> Bedrock
 
     subgraph "CDO Platforms"
@@ -154,7 +158,7 @@ Abort and roll back if any of these occur during canary:
 |---|---|---|
 | Task crash | ECS health check | Auto-restart task |
 | AI unavailable | ALB/ECS 5xx or 503 | CDO queues retry or creates fallback ticket |
-| Bedrock throttling | App metric after LLM integration | Fall back to rule-based `INVESTIGATE` response |
+| Bedrock throttling | App metric after optional LLM synthesis is enabled | Fall back to compute-only response |
 | Tenant mismatch | API validation | Return `400`; CDO must fix request |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 

@@ -8,6 +8,8 @@ Freeze target: 2026-06-25
 
 Define the API exposed by the AI triage engine and consumed by CDO platforms. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that CDO can use for Jira and Slack integration.
 
+CDO invokes this API after continuous telemetry ingestion and lightweight detection has produced an alert/anomaly/incident candidate. The API is not designed for streaming all metrics/logs directly into the AI engine.
+
 ## Versioning
 
 - Current version: `v1.0`
@@ -45,6 +47,8 @@ Allow CDO load balancers, deployment checks, and smoke tests to verify the servi
 ### Purpose
 
 Diagnose an incident from alert metadata plus logs, metrics, recent deploys, ownership, and runbook/docs context.
+
+The endpoint performs compute-first triage: validation, feature extraction, RCA scoring, confidence gating, and safety checks. Bedrock/LLM synthesis may be enabled later, but only after grounded evidence has been produced by the compute layer.
 
 ### Request Headers
 

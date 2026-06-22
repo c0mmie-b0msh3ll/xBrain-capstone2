@@ -32,3 +32,15 @@
 - **Alternatives considered**:
   - Always produce a best-effort root cause: more impressive demo, but unsafe when data is noisy.
   - Refuse all ambiguous alerts: safe, but poor utility for the noisy-alert scenario.
+
+## ADR-004 - Event-Driven Compute-First Triage
+
+- **Status**: Proposed
+- **Date**: 2026-06-22
+- **Context**: AIOps telemetry is continuous, but running full triage and LLM synthesis over every metric/log event would be expensive, noisy, and difficult to defend. TF1 also needs RCA decisions to be explainable and confidence-gated.
+- **Decision**: CDO/observability continuously ingests telemetry and runs lightweight alert/anomaly detection. The TF1 AI engine is invoked only after an alert/anomaly/incident candidate exists. Inside the AI engine, deterministic compute logic performs validation, feature extraction, RCA scoring, confidence gating, and safety checks before optional Bedrock synthesis.
+- **Consequence**: Bedrock is not the engine of record for RCA. It is used only for grounded summarization and human-readable Jira/Slack output when enabled. This reduces cost and hallucination risk while keeping the CDO/AI boundary clear.
+- **Alternatives considered**:
+  - Continuous full AI triage over all telemetry: richer detection potential, but too expensive and noisy for capstone scope.
+  - CDO calls Bedrock directly: faster demo path, but loses AI-owned schema validation, RCA scoring, confidence behavior, and safety controls.
+  - AI directly pulls all telemetry stores: more control for AI team, but requires broad credentials and connector ownership that belongs in CDO/platform.

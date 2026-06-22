@@ -11,19 +11,24 @@ Define the data CDO must provide to the AI triage engine. For TF1, telemetry is 
 The current assumption is:
 
 ```text
-Alert/data pack or demo workload
-  -> CDO ingestion/context aggregation
+Continuous telemetry or demo workload
+  -> CDO ingestion and lightweight detection
+  -> Alert/anomaly/incident candidate
+  -> CDO context aggregation
   -> AI API request with normalized context bundle
+  -> AI compute-first RCA + optional LLM synthesis
   -> AI diagnosis + ticket/slack payload
 ```
 
-This contract must be revised if mentors require the AI engine to pull directly from logs/metrics/deploy stores.
+The AI triage engine is event-driven. It is invoked when CDO has detected an alert/anomaly/incident candidate and assembled bounded context around that event.
 
 ## Contract Boundary
 
-CDO sends normalized telemetry to `POST /v1/triage`. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the AI engine.
+CDO continuously ingests telemetry, runs lightweight detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the AI engine.
 
 Field-name differences in the datapack should be handled in an adapter. The contract changes only when the datapack exposes a missing concept that cannot be represented by existing fields.
+
+The AI team does not own direct pull connectors to logs, metrics, traces, deploy stores, Jira, or Slack in this contract.
 
 ## Required Envelope
 
@@ -169,6 +174,8 @@ Mapping type must be one of:
 ## Delivery And Quality
 
 - Delivery mode: request payload from CDO to AI API.
+- Invocation mode: event-driven after CDO detection, not continuous full triage over all telemetry.
+- Detection ownership: CDO/observability continuously detects candidate alerts/anomalies; AI performs incident-level RCA after invocation.
 - Duplicate handling: CDO must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
@@ -178,5 +185,4 @@ Mapping type must be one of:
 
 - [ ] Exact data pack format from mentor.
 - [ ] Whether runbook/docs are provided or AI-authored.
-- [ ] Whether CDO owns context aggregation or AI pulls context directly.
 - [ ] Target alert burst volume for CDO load test.
