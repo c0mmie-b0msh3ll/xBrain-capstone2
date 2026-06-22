@@ -18,14 +18,14 @@ normalized incident context
   -> structured diagnosis + Jira/Slack payloads
 ```
 
-The LLM is not the primary detector. Continuous detection happens in the CDO/observability layer, and incident-level RCA begins inside the AI compute service. Bedrock is optional and used only after the engine has grounded evidence.
+The LLM is not the primary detector. Continuous detection happens in the AIOps observability layer, and incident-level RCA begins inside the AI compute service. Bedrock is optional and used only after the engine has grounded evidence.
 
 ### 1.1 Responsibilities
 
 | Layer | Responsibility |
 |---|---|
-| CDO detection layer | Continuously ingest telemetry, run lightweight anomaly/alert detection, and produce incident candidates. |
-| CDO context aggregation | Build a bounded context bundle around the alert/anomaly window. |
+| AIOps detection layer | Continuously ingest telemetry, run lightweight anomaly/alert detection, and produce incident candidates. |
+| AIOps context aggregation | Build a bounded context bundle around the alert/anomaly window. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
 | Optional Bedrock synthesis | Convert grounded evidence into clear Jira/Slack wording and runbook-aware recommendations. |
 
@@ -53,17 +53,17 @@ The skeleton uses `AI_MODE=rules`. A later release may enable `AI_MODE=hybrid`, 
 
 ## 3. Invocation Pattern
 
-The AI engine is **event-driven**, not a continuous telemetry reader.
+The triage engine is **event-driven**, while the broader AIOps observability/detection layer is continuous.
 
 ```text
 continuous telemetry
-  -> CDO lightweight detection
+  -> AIOps lightweight detection
   -> alert/anomaly/incident candidate
-  -> CDO context aggregation
+  -> AIOps context aggregation
   -> POST /v1/triage
 ```
 
-The AI team does not own direct connectors to CloudWatch, Prometheus, Datadog, log stores, deploy systems, Jira, or Slack in the current capstone contract.
+The AIOps app may own connectors to CloudWatch, Prometheus, Datadog, log stores, deploy systems, Jira, or Slack. The triage function still receives normalized bounded context so RCA logic remains replayable and testable.
 
 ## 4. Input And Feature Extraction
 
@@ -110,7 +110,7 @@ Bedrock may be called only after the compute service has:
 - applied confidence gates,
 - removed or redacted unsafe/PII content.
 
-The LLM prompt should receive grounded evidence, not raw unbounded telemetry dumps. The LLM output must be schema validated before returning to CDO.
+The LLM prompt should receive grounded evidence, not raw unbounded telemetry dumps. The LLM output must be schema validated before returning to the integration layer.
 
 Allowed LLM outputs:
 
@@ -154,7 +154,7 @@ Disallowed LLM outputs:
 |---|---|
 | Prompt injection through logs or alert text | Treat telemetry as data, delimit prompt inputs, and sanitize before LLM. |
 | Hallucinated RCA | Compute-first evidence and schema validation. |
-| PII leakage | CDO avoids PII in snippets; AI redacts before LLM when enabled. |
+| PII leakage | The observability/context layer avoids PII in snippets; AI redacts before LLM when enabled. |
 | Cross-tenant leakage | Header/body tenant enforcement and stateless processing. |
 | Bedrock throttling | Fall back to deterministic rule-based response. |
 | Unsafe action suggestion | Allowed action types are advisory only and schema constrained. |
@@ -175,7 +175,7 @@ Skeleton evaluation validates contract behavior. Final evaluation should include
 
 The main cost control is event-driven invocation:
 
-- continuous telemetry detection remains lightweight in CDO/observability systems,
+- continuous telemetry detection remains lightweight in the AIOps observability layer,
 - AI compute runs only for incident candidates,
 - Bedrock runs only when synthesis is enabled and grounded evidence exists.
 
@@ -185,7 +185,7 @@ Initial skeleton cost is ECS/Fargate or local runtime only. LLM token costs are 
 
 ```mermaid
 graph TB
-    CDO[CDO platform: detection and context aggregation] --> ALB[Internal ALB]
+    Detector[AIOps detector and context aggregation] --> ALB[Internal ALB]
     ALB --> ECS[ECS Fargate AI triage engine]
     ECS --> Rules[Compute-first RCA rules and scoring]
     Rules --> Response[Structured triage response]

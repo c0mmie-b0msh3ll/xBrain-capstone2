@@ -63,6 +63,6 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 
 - [ ] What exact format will the mentor-provided data pack use: JSON events, CSV, log files, traces, or mixed files?
 - [ ] Does the data pack include runbooks/docs, or should the AI team author minimal runbook snippets for the 3 scenarios?
-- [ ] Should CDO aggregate the context bundle and call AI, or should AI pull from observability stores directly?
+- [ ] Which AIOps component owns each context source: metrics, logs, deploys, ownership, and runbooks?
 - [ ] What Jira and Slack integrations are expected to be live vs mocked?
 - [ ] What manual baseline should be used for MTTA/MTTR comparison?

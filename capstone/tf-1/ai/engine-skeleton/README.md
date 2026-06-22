@@ -2,7 +2,7 @@
 
 Small HTTP service that implements the TF1 AI API contract before optional Bedrock synthesis is integrated.
 
-The service is event-driven. CDO/observability continuously ingests telemetry and detects alert/anomaly candidates, then calls this service with a bounded context bundle. The skeleton performs compute-first validation, scenario classification, confidence gating, and payload generation.
+The service is event-driven. The broader AIOps app continuously ingests telemetry and detects alert/anomaly candidates, then calls this service with a bounded context bundle. The skeleton performs compute-first validation, scenario classification, confidence gating, and payload generation.
 
 ## Endpoints
 

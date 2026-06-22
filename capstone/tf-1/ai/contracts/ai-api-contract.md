@@ -6,9 +6,9 @@ Freeze target: 2026-06-25
 
 ## Purpose
 
-Define the API exposed by the AI triage engine and consumed by CDO platforms. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that CDO can use for Jira and Slack integration.
+Define the API exposed by the AI triage engine and consumed by the AIOps detector/context layer or deployment platform. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that the integration layer can use for Jira and Slack.
 
-CDO invokes this API after continuous telemetry ingestion and lightweight detection has produced an alert/anomaly/incident candidate. The API is not designed for streaming all metrics/logs directly into the AI engine.
+The AIOps detector/context layer invokes this API after continuous telemetry ingestion and lightweight detection has produced an alert/anomaly/incident candidate. The API is not designed for streaming all metrics/logs directly into the triage engine.
 
 ## Versioning
 
@@ -22,7 +22,7 @@ CDO invokes this API after continuous telemetry ingestion and lightweight detect
 
 Draft assumption:
 
-- CDO calls AI over private network or protected API Gateway.
+- The detector/context layer calls AI over private network or protected API Gateway.
 - Each request includes `X-Tenant-Id` and `X-Correlation-Id`.
 - Production design should use IAM SigV4 or service-to-service JWT. Capstone demo may use a scoped bearer token if agreed in Deployment Contract.
 
@@ -30,7 +30,7 @@ Draft assumption:
 
 ### Purpose
 
-Allow CDO load balancers, deployment checks, and smoke tests to verify the service is reachable.
+Allow load balancers, deployment checks, and smoke tests to verify the service is reachable.
 
 ### Response Body
 
@@ -170,7 +170,7 @@ The API must not return auto-executing action types.
 
 ### Response Status Values
 
-| Status | Meaning | CDO action |
+| Status | Meaning | Integration action |
 |---|---|---|
 | `DIAGNOSED` | AI has enough context to suggest next steps. | Create ticket and notify owner. |
 | `INVESTIGATE` | Weak or ambiguous signal; do not overstate cause. | Create ticket with investigation label. |
@@ -188,11 +188,11 @@ Before LLM integration, the skeleton service returns rule-based deterministic re
 | Latency title or latency metric with supporting deploy/log evidence | `DIAGNOSED` | `latency_degradation` |
 | Low severity, noisy, flapping, or conflicting signals | `INVESTIGATE` | `noisy_or_ambiguous_alert` |
 
-This behavior exists so CDO can integrate against stable response shapes before the final AI logic is added.
+This behavior exists so the detector/context and Jira/Slack integration layers can integrate against stable response shapes before the final AI logic is added.
 
 ## Error Codes
 
-| Code | Meaning | CDO action |
+| Code | Meaning | Integration action |
 |---:|---|---|
 | 400 | Invalid schema or tenant mismatch | Do not retry until request fixed. |
 | 401 | Authentication failed | Refresh credentials and retry once. |
@@ -206,7 +206,7 @@ This behavior exists so CDO can integrate against stable response shapes before 
 |---|---:|
 | P99 latency | < 2 seconds for demo |
 | Availability | >= 99.5% design target |
-| Max payload size | 512 KB unless changed by CDO |
+| Max payload size | 512 KB unless changed by platform constraints |
 
 ## Safety Rules
 
@@ -217,6 +217,6 @@ This behavior exists so CDO can integrate against stable response shapes before 
 
 ## Open Questions
 
-- [ ] Final auth mechanism with each CDO platform.
-- [ ] Whether Slack/Jira payload generation belongs in AI response or CDO transforms from AI summary.
+- [ ] Final auth mechanism if detector/context and triage are deployed as separate services.
+- [ ] Whether Slack/Jira payload generation belongs in AI response or integration transforms from AI summary.
 - [ ] Exact payload size limit after mentor data pack is reviewed.

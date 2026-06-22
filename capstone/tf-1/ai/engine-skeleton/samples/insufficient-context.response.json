@@ -14,7 +14,7 @@
     {
       "type": "ESCALATE_OWNER",
       "priority": 1,
-      "summary": "Ask CDO ingestion to attach metrics, logs, recent deploys, and ownership context before diagnosis.",
+      "summary": "Ask the AIOps context layer to attach metrics, logs, recent deploys, and ownership context before diagnosis.",
       "runbook_ref": null
     }
   ],

@@ -8,15 +8,15 @@ TF1 uses an **event-driven, compute-first triage architecture**:
 
 ```text
 Continuous telemetry
-  -> CDO ingestion and lightweight detection
+  -> AIOps ingestion and lightweight detection
   -> Alert/anomaly/incident candidate
-  -> CDO context aggregation
+  -> AIOps context aggregation
   -> TF1 AI compute service
   -> optional Bedrock synthesis
   -> Jira/Slack/audit payloads
 ```
 
-This is not `CDO -> Bedrock directly`. The AI engine is a Dockerized compute service. It validates the request, extracts features, performs deterministic RCA/scoring, applies confidence gates, and only then may call Bedrock to synthesize grounded human-readable output.
+This is not a direct Bedrock workflow. The AIOps app owns the observability stack, lightweight detector, context aggregation, and triage compute service. The triage engine validates the request, extracts features, performs deterministic RCA/scoring, applies confidence gates, and only then may call Bedrock to synthesize grounded human-readable output.
 
 ## Project Layout
 
@@ -52,25 +52,21 @@ This is not `CDO -> Bedrock directly`. The AI engine is a Dockerized compute ser
 
 ## Ownership Boundary
 
-TF1 AI owns:
+TF1 AIOps app owns:
 
+- continuous telemetry ingestion,
+- lightweight alert/anomaly detection,
+- context aggregation before calling `/v1/triage`,
 - triage API contract,
 - telemetry schema,
 - incident-level diagnosis logic,
 - confidence behavior,
 - safety boundaries,
 - optional LLM synthesis behavior,
-- AI evaluation docs.
-
-CDO owns:
-
-- continuous telemetry ingestion,
-- lightweight alert/anomaly detection,
-- context aggregation before calling `/v1/triage`,
-- deployment platform,
-- networking and secrets,
-- monitoring,
+- AI evaluation docs,
 - Jira and Slack integration.
+
+Platform/deployment owners still provide infrastructure concerns such as networking, secrets, monitoring, and deployment pipelines.
 
 The AI service does **not** auto-remediate. It only produces human-reviewed recommendations.
 
@@ -78,9 +74,9 @@ The AI service does **not** auto-remediate. It only produces human-reviewed reco
 
 The contract set is under `capstone/tf-1/ai/contracts/`.
 
-- `telemetry-contract.md`: normalized incident context that CDO sends to AI after detection.
+- `telemetry-contract.md`: normalized incident context that the AIOps detector/context layer sends to triage after detection.
 - `ai-api-contract.md`: HTTP API shape for `/healthz` and `/v1/triage`.
-- `deployment-contract.md`: TF1-specific deployment handoff for CDO platforms.
+- `deployment-contract.md`: TF1-specific deployment handoff for platform owners.
 
 Mentor datapack files are treated as raw input and mapped into the telemetry contract through an adapter.
 
@@ -93,7 +89,7 @@ Implemented endpoints:
 - `GET /healthz`
 - `POST /v1/triage`
 
-The current triage logic is deterministic and rule-based so CDO can integrate before the final hybrid AI mode is ready.
+The current triage logic is deterministic and rule-based so the detector/context and Jira/Slack integration layers can integrate before the final hybrid AI mode is ready.
 
 Response behavior:
 
@@ -158,7 +154,7 @@ Request/response samples are under `capstone/tf-1/ai/engine-skeleton/samples/`.
 - `insufficient-context.request.json`
 - `insufficient-context.response.json`
 
-These fixtures prove the API shape and provide CDO-ready examples for Jira/Slack integration.
+These fixtures prove the API shape and provide integration-ready examples for Jira/Slack integration.
 
 ## Verification
 

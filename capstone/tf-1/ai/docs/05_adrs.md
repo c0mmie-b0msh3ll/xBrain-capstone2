@@ -1,15 +1,15 @@
 # Architecture Decision Records - TF1 AI
 
-## ADR-001 - CDO Aggregates Context Bundle Before Calling AI
+## ADR-001 - Context Layer Aggregates Bundle Before Calling Triage
 
 - **Status**: Proposed
 - **Date**: 2026-06-22
-- **Context**: TF1 requires logs, metrics, recent deploys, ownership, and runbook/docs context. If AI pulls directly from each observability system, the AI team must own infra credentials, network paths, and data connectors, which increases W12 risk.
-- **Decision**: Draft contracts assume CDO aggregates a normalized context bundle and calls `POST /v1/triage`.
-- **Consequence**: CDO owns ingestion and integration reliability. AI owns schema validation, diagnosis, confidence, and response payload. This keeps the AI/CDO boundary clear.
+- **Context**: TF1 requires logs, metrics, recent deploys, ownership, and runbook/docs context. The broader AIOps app owns observability ingestion and detection, but the triage/RCA function should not pull from every raw telemetry store at request time.
+- **Decision**: The AIOps detector/context layer aggregates a normalized context bundle and calls `POST /v1/triage`.
+- **Consequence**: The AIOps app owns ingestion, detection, context aggregation, triage, and output integration. The triage engine owns schema validation, diagnosis, confidence, and response payload. This keeps the internal detector/triage boundary clear.
 - **Alternatives considered**:
-  - AI pulls directly from observability stores: richer control, but higher integration and security risk.
-  - CDO sends only alert metadata: simpler, but AI suggestions become too generic.
+  - Triage pulls directly from observability stores at request time: richer control, but higher coupling and latency.
+  - Detector sends only alert metadata: simpler, but AI suggestions become too generic.
 
 ## ADR-002 - Use Runbook/Docs-Backed Suggestions
 
@@ -38,9 +38,9 @@
 - **Status**: Proposed
 - **Date**: 2026-06-22
 - **Context**: AIOps telemetry is continuous, but running full triage and LLM synthesis over every metric/log event would be expensive, noisy, and difficult to defend. TF1 also needs RCA decisions to be explainable and confidence-gated.
-- **Decision**: CDO/observability continuously ingests telemetry and runs lightweight alert/anomaly detection. The TF1 AI engine is invoked only after an alert/anomaly/incident candidate exists. Inside the AI engine, deterministic compute logic performs validation, feature extraction, RCA scoring, confidence gating, and safety checks before optional Bedrock synthesis.
-- **Consequence**: Bedrock is not the engine of record for RCA. It is used only for grounded summarization and human-readable Jira/Slack output when enabled. This reduces cost and hallucination risk while keeping the CDO/AI boundary clear.
+- **Decision**: The TF1 AIOps app continuously ingests telemetry and runs lightweight alert/anomaly detection. The incident-level triage engine is invoked only after an alert/anomaly/incident candidate exists. Inside the triage engine, deterministic compute logic performs validation, feature extraction, RCA scoring, confidence gating, and safety checks before optional Bedrock synthesis.
+- **Consequence**: Bedrock is not the engine of record for RCA. It is used only for grounded summarization and human-readable Jira/Slack output when enabled. This reduces cost and hallucination risk while keeping a clear internal boundary between continuous detection and event-driven triage.
 - **Alternatives considered**:
   - Continuous full AI triage over all telemetry: richer detection potential, but too expensive and noisy for capstone scope.
-  - CDO calls Bedrock directly: faster demo path, but loses AI-owned schema validation, RCA scoring, confidence behavior, and safety controls.
-  - AI directly pulls all telemetry stores: more control for AI team, but requires broad credentials and connector ownership that belongs in CDO/platform.
+  - Detector calls Bedrock directly: faster demo path, but loses schema validation, RCA scoring, confidence behavior, and safety controls.
+  - Triage directly pulls all telemetry stores per incident: more control in one function, but broader permissions and weaker replayability.

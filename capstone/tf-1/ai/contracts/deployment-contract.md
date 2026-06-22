@@ -7,11 +7,11 @@ Reviewers: AI Lead, CDO Leads, reviewer panel
 
 ## Purpose
 
-Define how the TF1 AI triage engine is packaged, deployed, connected, observed, and rolled back. CDO uses this contract to provision platform infrastructure and call the shared AI endpoint safely.
+Define how the TF1 AIOps triage components are packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to provision infrastructure and call the triage endpoint safely.
 
-The AI engine is hosted once for TF1 and consumed by 2-3 CDO platforms through a shared, multi-tenant API. CDO platforms do not deploy separate AI engines unless a formal contract change is approved.
+The AI engine is hosted once for TF1 and consumed by the AIOps detector/context layer or demo integration path through a shared, multi-tenant API. Separate engine deployments require a formal contract change.
 
-The AI engine is an event-driven triage compute service. CDO/observability components continuously ingest telemetry and run lightweight detection; they call the AI engine only when an alert/anomaly/incident candidate needs triage.
+The AI engine is an event-driven triage compute service. The AIOps observability components continuously ingest telemetry and run lightweight detection; they call the AI engine only when an alert/anomaly/incident candidate needs triage.
 
 ## Runtime Boundary
 
@@ -19,7 +19,7 @@ The AI engine is an event-driven triage compute service. CDO/observability compo
 |---|---|
 | Service type | Dockerized HTTP API |
 | API surface | `GET /healthz`, `POST /v1/triage` |
-| Invocation pattern | Event-driven after CDO detection, not continuous telemetry streaming |
+| Invocation pattern | Event-driven after AIOps detection, not continuous telemetry streaming into triage |
 | AI pattern | Compute-first RCA, optional Bedrock synthesis |
 | Port | `8080` |
 | Tenant isolation | `X-Tenant-Id` header must match body `tenant_id` |
@@ -47,7 +47,7 @@ The AI engine is an event-driven triage compute service. CDO/observability compo
 | Autoscale trigger 2 | Target request count 100 per task |
 | Scale-up cooldown | 60 seconds |
 | Scale-down cooldown | 300 seconds |
-| Load test input | CDO provides target alert burst volume before freeze |
+| Load test input | Team defines target alert burst volume before freeze |
 
 ## Configuration And Secrets
 
@@ -69,7 +69,7 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 | Subnet type | Private subnets |
 | Load balancer | Internal ALB only |
 | Security group | `tf1-ai-engine-sg` |
-| Ingress | Allow only CDO platform security groups on port `8080` or ALB listener port |
+| Ingress | Allow only detector/context or approved platform security groups on port `8080` or ALB listener port |
 | Egress | AWS service endpoints required for CloudWatch, Secrets Manager, and Bedrock if enabled |
 | DNS | Private hosted zone record such as `https://ai-engine.tf1.internal` |
 
@@ -89,23 +89,20 @@ graph TB
     Bedrock[AWS Bedrock, optional synthesis after compute RCA]
     ECS --> Bedrock
 
-    subgraph "CDO Platforms"
-        CDO1[CDO Platform 1]
-        CDO2[CDO Platform 2]
-        CDO3[CDO Platform 3]
+    subgraph "AIOps Platform"
+        DET[Detector and context aggregation]
+        INT[Jira Slack integration]
     end
-    CDO1 --> ALB
-    CDO2 --> ALB
-    CDO3 --> ALB
+    DET --> ALB
+    INT --> ALB
 ```
 
-## Per-CDO Platform Pointer
+## Platform Pointer
 
-| CDO platform | Endpoint URL | Auth draft |
+| Consumer | Endpoint URL | Auth draft |
 |---|---|---|
-| CDO-1 | `https://ai-engine.tf1.internal` | IAM SigV4 preferred; bearer token fallback |
-| CDO-2 | Same shared endpoint | IAM SigV4 preferred; bearer token fallback |
-| CDO-3 | Same shared endpoint if present | IAM SigV4 preferred; bearer token fallback |
+| AIOps detector/context layer | `https://ai-engine.tf1.internal` | IAM SigV4 preferred; bearer token fallback |
+| Demo/manual smoke test | Same shared endpoint | Scoped bearer token fallback |
 
 ## Health Check
 
@@ -119,7 +116,7 @@ graph TB
 
 ## Rollout Strategy
 
-Use canary rollout once CDO has a working endpoint integration.
+Use canary rollout once the detector/context layer has a working endpoint integration.
 
 | Step | Traffic | Interval |
 |---|---:|---|
@@ -149,7 +146,7 @@ Abort and roll back if any of these occur during canary:
 |---|---|
 | Logs | Structured JSON logs to CloudWatch Logs, 14-day capstone retention |
 | Metrics | Request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures |
-| Traces | Accept and propagate `X-Correlation-Id`; OpenTelemetry optional for CDO platform |
+| Traces | Accept and propagate `X-Correlation-Id`; OpenTelemetry recommended for the AIOps platform |
 | Audit | Every successful triage response includes `audit_id`; persistent audit store is design target |
 
 ## Failure Modes And Response
@@ -157,13 +154,13 @@ Abort and roll back if any of these occur during canary:
 | Failure | Detection | Response |
 |---|---|---|
 | Task crash | ECS health check | Auto-restart task |
-| AI unavailable | ALB/ECS 5xx or 503 | CDO queues retry or creates fallback ticket |
+| AI unavailable | ALB/ECS 5xx or 503 | Detector/context layer queues retry or creates fallback ticket |
 | Bedrock throttling | App metric after optional LLM synthesis is enabled | Fall back to compute-only response |
-| Tenant mismatch | API validation | Return `400`; CDO must fix request |
+| Tenant mismatch | API validation | Return `400`; caller must fix request |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 
 ## Open Questions
 
 - [ ] Final auth mechanism for demo: IAM SigV4, service-to-service JWT, or scoped bearer token.
-- [ ] CDO target alert burst volume for load test.
-- [ ] Whether persistent audit storage is implemented by AI service or CDO platform for capstone.
+- [ ] Target alert burst volume for load test.
+- [ ] Whether persistent audit storage is implemented inside triage service or shared AIOps platform for capstone.

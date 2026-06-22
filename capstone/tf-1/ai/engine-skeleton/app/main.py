@@ -183,7 +183,7 @@ def classify(request: TriageRequest) -> dict[str, Any]:
             "summary": "Alert metadata was provided, but supporting metrics, logs, deploys, and ownership context are missing.",
             "evidence": ["No supporting telemetry context was included with the alert."],
             "actions": [
-                ("ESCALATE_OWNER", "Ask CDO ingestion to attach metrics, logs, recent deploys, and ownership context before diagnosis."),
+                ("ESCALATE_OWNER", "Ask the AIOps context layer to attach metrics, logs, recent deploys, and ownership context before diagnosis."),
             ],
         }
 

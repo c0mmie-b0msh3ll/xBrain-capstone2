@@ -6,29 +6,29 @@ Freeze target: 2026-06-25
 
 ## Purpose
 
-Define the data CDO must provide to the AI triage engine. For TF1, telemetry is a context bundle for one alert/incident, not a generic metrics stream.
+Define the normalized context bundle passed from the AIOps detection/context layer to the AI triage engine. For TF1, the triage request is one alert/incident context bundle, not a continuous raw metrics stream.
 
 The current assumption is:
 
 ```text
 Continuous telemetry or demo workload
-  -> CDO ingestion and lightweight detection
+  -> AIOps ingestion and lightweight detection
   -> Alert/anomaly/incident candidate
-  -> CDO context aggregation
-  -> AI API request with normalized context bundle
+  -> AIOps context aggregation
+  -> Triage API request with normalized context bundle
   -> AI compute-first RCA + optional LLM synthesis
   -> AI diagnosis + ticket/slack payload
 ```
 
-The AI triage engine is event-driven. It is invoked when CDO has detected an alert/anomaly/incident candidate and assembled bounded context around that event.
+The triage engine is event-driven. It is invoked when the AIOps detector has found an alert/anomaly/incident candidate and the context layer has assembled bounded context around that event.
 
 ## Contract Boundary
 
-CDO continuously ingests telemetry, runs lightweight detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the AI engine.
+The AIOps app continuously ingests telemetry, runs lightweight detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the triage engine.
 
 Field-name differences in the datapack should be handled in an adapter. The contract changes only when the datapack exposes a missing concept that cannot be represented by existing fields.
 
-The AI team does not own direct pull connectors to logs, metrics, traces, deploy stores, Jira, or Slack in this contract.
+The detector/context layer may connect to logs, metrics, traces, deploy stores, Jira, or Slack as part of the broader AIOps app. The triage endpoint itself receives normalized bounded context instead of pulling unbounded raw telemetry during RCA.
 
 ## Required Envelope
 
@@ -40,7 +40,7 @@ Every request to AI must include:
 | `tenant_id` | string | yes | Required for isolation. Missing tenant is rejected. |
 | `incident_id` | string | yes | Unique incident/alert grouping id. |
 | `environment` | enum | yes | `prod`, `staging`, `sandbox`. |
-| `received_at` | RFC3339 | yes | When CDO received or generated the alert. |
+| `received_at` | RFC3339 | yes | When the AIOps app received or generated the alert. |
 
 Validation rules:
 
@@ -88,7 +88,7 @@ Minimum useful metric types for TF1:
 
 ## Logs Window
 
-Logs should be sampled, not dumped raw. CDO should provide relevant snippets around the alert window.
+Logs should be sampled, not dumped raw. The context layer should provide relevant snippets around the alert window.
 
 ```json
 {
@@ -120,7 +120,7 @@ Rules:
 }
 ```
 
-Required for deploy-related diagnosis. If not available, CDO must pass an empty array and AI will lower confidence.
+Required for deploy-related diagnosis. If not available, the context layer must pass an empty array and AI will lower confidence.
 
 ## Ownership And Runbook Docs
 
@@ -168,15 +168,15 @@ Mapping type must be one of:
 
 - `direct`: same value and meaning.
 - `derived`: transformed or inferred from one or more raw fields.
-- `defaulted`: supplied by TF1/CDO when source lacks the field.
+- `defaulted`: supplied by TF1/AIOps when source lacks the field.
 - `missing`: unavailable and not safely defaulted.
 
 ## Delivery And Quality
 
-- Delivery mode: request payload from CDO to AI API.
-- Invocation mode: event-driven after CDO detection, not continuous full triage over all telemetry.
-- Detection ownership: CDO/observability continuously detects candidate alerts/anomalies; AI performs incident-level RCA after invocation.
-- Duplicate handling: CDO must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
+- Delivery mode: request payload from the AIOps detector/context layer to the triage API.
+- Invocation mode: event-driven after lightweight detection, not continuous full triage over all telemetry.
+- Detection ownership: the AIOps app continuously detects candidate alerts/anomalies; the triage engine performs incident-level RCA after invocation.
+- Duplicate handling: the caller must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
 - Safety behavior: AI must never return an executable auto-remediation action.
@@ -185,4 +185,4 @@ Mapping type must be one of:
 
 - [ ] Exact data pack format from mentor.
 - [ ] Whether runbook/docs are provided or AI-authored.
-- [ ] Target alert burst volume for CDO load test.
+- [ ] Target alert burst volume for load test.
