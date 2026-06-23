@@ -368,6 +368,7 @@ def build_report(
         "rca_candidates": response.get("rca_candidates", []),
         "causal_hints": response.get("causal_hints", []),
         "investigation_summary": response.get("investigation_summary"),
+        "llm_metadata": response.get("llm_metadata", {}),
         "slack_payload": response.get("slack_payload", {}),
         "jira_payload": response.get("ticket_payload", {}),
     }

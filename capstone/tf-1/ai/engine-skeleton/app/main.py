@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from app.llm import synthesize_investigation_summary
 from app.rca import analyze_request
 from app.report_store import list_reports, read_report
 
@@ -144,6 +145,7 @@ class TriageResponse(BaseModel):
     rca_candidates: list[dict[str, Any]] = Field(default_factory=list)
     causal_hints: list[dict[str, Any]] = Field(default_factory=list)
     investigation_summary: str | None = None
+    llm_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 @app.get("/healthz")
@@ -326,7 +328,9 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
     service_topology = request.service_topology or rca.get("service_topology")
     rca_candidates = request.rca_candidates or rca.get("rca_candidates", [])
     causal_hints = request.causal_hints or rca.get("causal_hints", [])
-    investigation_summary = request.investigation_summary or rca.get("investigation_summary")
+    llm_result = synthesize_investigation_summary(request, decision, rca)
+    investigation_summary = request.investigation_summary or llm_result.get("summary") or rca.get("investigation_summary")
+    llm_metadata = {key: value for key, value in llm_result.items() if key != "summary"}
     evidence_preview = "; ".join(item.get("reason", "") for item in anomaly_evidence[:2])
 
     actions = [
@@ -369,4 +373,5 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
         rca_candidates=rca_candidates,
         causal_hints=causal_hints,
         investigation_summary=investigation_summary,
+        llm_metadata=llm_metadata,
     )

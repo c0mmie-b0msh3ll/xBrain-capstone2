@@ -66,6 +66,66 @@ The worker queries Prometheus/Loki/Jaeger with tenant, service, environment, and
 
 Slack is the alert surface: the worker sends or prints a concise summary with top evidence, confidence, and the report URL. Grafana remains the raw observability dashboard. The React report UI is the full investigation and audit surface, backed by JSON reports written under `reports/{incident_id}.json`.
 
+## Connect Slack
+
+Slack is dry-run by default. To send real messages, create a Slack Incoming Webhook for the target channel, then set `SLACK_WEBHOOK_URL` before running the worker:
+
+```bash
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
+```
+
+PowerShell:
+
+```powershell
+$env:SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/..."
+python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
+```
+
+If `SLACK_WEBHOOK_URL` is not set, the worker prints `slack_dry_run` and does not send anything.
+
+## Connect Bedrock LLM
+
+The triage API can optionally call Amazon Bedrock for the investigator summary. It still runs deterministic RCA first, sends only bounded evidence to the model, and falls back to the deterministic summary if Bedrock is disabled or errors.
+
+Required env:
+
+```bash
+export AWS_REGION="us-east-1"
+export BEDROCK_MODEL_IDS="us.anthropic.claude-opus-4-8,us.anthropic.claude-opus-4-6-v1,us.amazon.nova-2-lite-v1:0"
+export ENABLE_BEDROCK_LLM="true"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
+```
+
+PowerShell:
+
+```powershell
+$env:AWS_REGION = "us-east-1"
+$env:BEDROCK_MODEL_IDS = "us.anthropic.claude-opus-4-8,us.anthropic.claude-opus-4-6-v1,us.amazon.nova-2-lite-v1:0"
+$env:ENABLE_BEDROCK_LLM = "true"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
+```
+
+The local machine has AWS CLI access to the project AWS account, so local non-Docker runs can use that profile directly. Docker runs need credentials provided separately through your normal AWS credential mechanism; the Compose file only passes region/model/env values.
+
+Default model fallback order:
+
+```text
+us.anthropic.claude-opus-4-8
+us.anthropic.claude-opus-4-6-v1
+us.amazon.nova-2-lite-v1:0
+```
+
+These are Bedrock inference profile IDs. If a model/profile is unavailable or the account does not have access, the triage API tries the next model and records fallback errors in `llm_metadata`.
+
+Useful model discovery commands:
+
+```bash
+aws bedrock list-foundation-models --region us-east-1 --query "modelSummaries[?contains(modelId, 'claude')].[modelId,modelName]" --output table
+aws bedrock list-foundation-models --region us-east-1 --query "modelSummaries[?contains(modelId, 'nova') || contains(modelName, 'Nova')].[modelId,modelName]" --output table
+aws bedrock list-inference-profiles --region us-east-1 --type-equals SYSTEM_DEFINED --query "inferenceProfileSummaries[?contains(inferenceProfileId, 'opus') || contains(inferenceProfileId, 'nova-2-lite')].[inferenceProfileId,inferenceProfileName,status]" --output table
+```
+
 ## Trigger Reports
 
 Reports are created by the AIOps worker after it detects an incident candidate and receives a `/v1/triage` response. The React UI only lists and renders existing report files through `GET /v1/reports`; opening the UI does not create reports.

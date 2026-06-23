@@ -199,6 +199,7 @@ function ReportDetail({ incidentId }) {
           <div><dt>Audit</dt><dd>{report.audit_id || triage.audit_id}</dd></div>
           <div><dt>Correlation</dt><dd>{request.correlation_id || "unknown"}</dd></div>
           <div><dt>Created</dt><dd>{formatDate(report.created_at)}</dd></div>
+          <div><dt>LLM</dt><dd>{llmLabel(report.llm_metadata || triage.llm_metadata)}</dd></div>
         </dl>
         {report.report_url && <a className="inlineLink" href={report.report_url}><ExternalLink size={14} /> Report URL</a>}
       </ReportSection>
@@ -239,6 +240,12 @@ function formatDate(value) {
   if (!value) return "unknown time";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function llmLabel(metadata) {
+  if (!metadata?.enabled) return "deterministic";
+  if (metadata.error) return `bedrock error: ${metadata.error}`;
+  return `${metadata.provider || "bedrock"} ${metadata.model_id || ""}`.trim();
 }
 
 createRoot(document.getElementById("root")).render(<App />);

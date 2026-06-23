@@ -288,9 +288,9 @@ Completed:
 - AIOps query worker added for bounded observability queries, statistical detection, context building, triage invocation, report JSON persistence, and Slack dry-run output.
 - Report APIs and React/Vite triage report UI added.
 - Topology-aware RCA candidates, causal hints, and deterministic investigator summaries added.
+- Optional Bedrock investigator synthesis added with fallback order: Claude Opus 4.8, Claude Opus 4.6, then Amazon Nova 2 Lite.
 
 Pending:
 
 - Download/map RCAEval cases for external RCA validation.
-- Optional Bedrock synthesis layer.
 - Final eval report with precision, recall, F1, latency, and cost.

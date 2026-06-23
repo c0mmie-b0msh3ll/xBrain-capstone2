@@ -7,6 +7,11 @@ services:
     environment:
       SERVICE_AUTH_TOKEN: ""
       REPORTS_DIR: /app/reports
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-}
+      BEDROCK_MODEL_IDS: ${BEDROCK_MODEL_IDS:-}
+      ENABLE_BEDROCK_LLM: ${ENABLE_BEDROCK_LLM:-false}
     volumes:
       - ./reports:/app/reports
 
@@ -57,6 +62,7 @@ services:
       TRIAGE_URL: http://triage-engine:8080/v1/triage
       REPORTS_DIR: /app/reports
       REPORT_BASE_URL: http://localhost:5173/#/reports
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
       TENANT_ID: tenant-a
       ENVIRONMENT: sandbox
     volumes:
