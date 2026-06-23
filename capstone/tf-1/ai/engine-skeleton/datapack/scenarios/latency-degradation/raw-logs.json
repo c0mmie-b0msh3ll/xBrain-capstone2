@@ -1,0 +1,38 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "payment-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T10:05:22Z",
+    "source": "loki",
+    "level": "error",
+    "message": "redis: i/o timeout while processing /checkout",
+    "trace_id": "trace-latency-001",
+    "labels": {"pod": "payment-api-844c", "version": "v1.2.3"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "payment-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T10:05:41Z",
+    "source": "loki",
+    "level": "error",
+    "message": "connection pool exhausted for redis client",
+    "trace_id": "trace-latency-002",
+    "labels": {"pod": "payment-api-844c", "version": "v1.2.3"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "payment-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T10:06:02Z",
+    "source": "loki",
+    "level": "error",
+    "message": "context deadline exceeded calling redis dependency",
+    "trace_id": "trace-latency-003",
+    "labels": {"pod": "payment-api-844c", "version": "v1.2.3"}
+  }
+]

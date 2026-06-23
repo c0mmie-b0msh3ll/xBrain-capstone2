@@ -1,0 +1,7 @@
+[
+  {
+    "title": "Service down triage",
+    "url": "runbook://service-down",
+    "excerpt": "Check service health, dependency availability, and recent deploys before rollback."
+  }
+]

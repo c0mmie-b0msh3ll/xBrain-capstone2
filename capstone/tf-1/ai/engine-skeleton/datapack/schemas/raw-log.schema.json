@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TF1 synthetic raw log",
+  "type": "object",
+  "required": ["tenant_id", "service", "environment", "timestamp", "source", "level", "message"],
+  "properties": {
+    "tenant_id": {"type": "string"},
+    "service": {"type": "string"},
+    "environment": {"type": "string"},
+    "region": {"type": "string"},
+    "timestamp": {"type": "string"},
+    "source": {"type": "string"},
+    "level": {"type": "string"},
+    "message": {"type": "string"},
+    "trace_id": {"type": "string"},
+    "labels": {"type": "object"}
+  }
+}

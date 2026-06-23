@@ -1,0 +1,38 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "search-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T11:00:00Z",
+    "source": "prometheus",
+    "metric_name": "http_5xx_rate",
+    "value": 0.1,
+    "unit": "percent",
+    "labels": {"window": "baseline", "endpoint": "/search"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "search-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T11:06:00Z",
+    "source": "prometheus",
+    "metric_name": "http_5xx_rate",
+    "value": 0.1,
+    "unit": "percent",
+    "labels": {"window": "current", "endpoint": "/search"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "search-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T11:06:00Z",
+    "source": "prometheus",
+    "metric_name": "http_latency_p95_ms",
+    "value": 180,
+    "unit": "ms",
+    "labels": {"window": "current", "endpoint": "/search"}
+  }
+]

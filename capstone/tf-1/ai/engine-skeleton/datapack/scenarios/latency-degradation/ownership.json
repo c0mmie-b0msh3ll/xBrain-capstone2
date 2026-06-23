@@ -1,0 +1,6 @@
+{
+  "service": "payment-api",
+  "owner_team": "payments-platform",
+  "slack_channel": "#oncall-payments",
+  "jira_project": "PAY"
+}

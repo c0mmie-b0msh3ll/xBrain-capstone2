@@ -1,0 +1,14 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "search-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T11:05:03Z",
+    "source": "loki",
+    "level": "warning",
+    "message": "synthetic probe timeout recovered on retry",
+    "trace_id": "trace-noisy-001",
+    "labels": {"pod": "search-api-55bf", "version": "sha-search"}
+  }
+]

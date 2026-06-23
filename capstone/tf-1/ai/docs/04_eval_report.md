@@ -1,8 +1,8 @@
 # Eval Report - TF1 Triage Hub
 
 Owner: AI team TF1  
-Status: Skeleton results, pending mentor datapack and final AI logic  
-Last updated: 2026-06-22
+Status: Skeleton + synthetic datapack results, pending final AI logic  
+Last updated: 2026-06-23
 
 ## 1. Test Scenarios
 
@@ -16,6 +16,8 @@ The current eval set validates the deterministic skeleton contract. It is not th
 | 4 | `insufficient-context.request.json` | Alert with no supporting context | `INSUFFICIENT_CONTEXT` | `insufficient_context` |
 
 Fixtures live in `../engine-skeleton/samples/`.
+
+Synthetic datapack scenarios live in `../engine-skeleton/datapack/scenarios/`.
 
 ## 2. Methodology
 
@@ -40,6 +42,14 @@ Fixtures live in `../engine-skeleton/samples/`.
 | Tenant mismatch | `400` | `400` | Pass |
 | Required output fields | diagnosis, confidence, evidence, recommendation, ticket payload, Slack payload, audit ID | Present | Pass |
 | Auto-remediation boundary | No executable remediation actions | Advisory actions only | Pass |
+
+### 3.1 Synthetic Datapack Results
+
+| Scenario | Expected | Actual | Pass/Fail |
+|---|---|---|---|
+| `critical-service-down` | `DIAGNOSED / critical_service_down` | `DIAGNOSED / critical_service_down` | Pass |
+| `latency-degradation` | `DIAGNOSED / latency_degradation` | `DIAGNOSED / latency_degradation` | Pass |
+| `noisy-false-alert` | `INVESTIGATE / noisy_or_ambiguous_alert` | `INVESTIGATE / noisy_or_ambiguous_alert` | Pass |
 
 Verification command used:
 
@@ -75,6 +85,12 @@ print('contract checks passed')
 '@ | python -
 ```
 
+Datapack verification command:
+
+```powershell
+python scripts/validate_datapack.py
+```
+
 ## 4. Current Rule Logic
 
 | Input pattern | Output behavior |
@@ -87,7 +103,7 @@ print('contract checks passed')
 
 ## 5. Gaps Before Final Eval
 
-- Mentor datapack has not arrived, so datapack-to-contract mapping is still TBD.
+- Mentor confirmed the team should self-generate synthetic incident data; v1 datapack covers 3 required scenarios.
 - Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until the final test set and AI logic exist.
 - Current logic is deterministic scenario routing, not LLM reasoning.
 - Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
@@ -103,4 +119,4 @@ print('contract checks passed')
 | Scenario coverage | 3 E2E scenarios plus 5-10 additional test cases |
 | Confidence behavior | Low confidence maps to `INVESTIGATE` or `INSUFFICIENT_CONTEXT` |
 
-Final eval will run after the mentor datapack is transformed into valid `/v1/triage` requests.
+Final eval will expand the synthetic datapack into 5-10 additional variants and replace deterministic skeleton logic with final RCA scoring and optional Bedrock synthesis.

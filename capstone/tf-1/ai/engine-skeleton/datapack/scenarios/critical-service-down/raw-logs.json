@@ -1,0 +1,26 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:01:30Z",
+    "source": "loki",
+    "level": "error",
+    "message": "health check failed: dependency connection refused",
+    "trace_id": "trace-critical-001",
+    "labels": {"pod": "checkout-api-7d9f", "version": "sha-critical"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:02:10Z",
+    "source": "loki",
+    "level": "error",
+    "message": "readiness probe failed for checkout-api",
+    "trace_id": "trace-critical-002",
+    "labels": {"pod": "checkout-api-7d9f", "version": "sha-critical"}
+  }
+]

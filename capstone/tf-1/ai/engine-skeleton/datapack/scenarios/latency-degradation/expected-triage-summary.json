@@ -1,0 +1,7 @@
+{
+  "expected_status": "DIAGNOSED",
+  "expected_classification": "latency_degradation",
+  "confidence_min": 0.75,
+  "confidence_max": 0.9,
+  "must_include_fields": ["ticket_payload", "slack_payload", "audit_id", "recommended_actions"]
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "title": "Redis timeout triage",
+    "url": "runbook://redis-timeout",
+    "excerpt": "Check Redis latency, connection limits, pool configuration, and deploy correlation before rollback."
+  }
+]

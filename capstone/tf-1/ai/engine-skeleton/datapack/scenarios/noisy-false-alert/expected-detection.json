@@ -1,0 +1,6 @@
+{
+  "should_fire": false,
+  "detector": "single_probe_noise_filter",
+  "reason": "single probe failure recovered and user-impacting metrics stayed healthy",
+  "incident_type": "noisy_or_ambiguous_alert"
+}

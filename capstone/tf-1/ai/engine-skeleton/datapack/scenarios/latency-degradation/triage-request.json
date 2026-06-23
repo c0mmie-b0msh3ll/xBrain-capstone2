@@ -1,0 +1,72 @@
+{
+  "correlation_id": "corr-payment-latency-001",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-payment-latency-001",
+  "environment": "sandbox",
+  "received_at": "2026-06-22T10:07:00Z",
+  "alert": {
+    "alert_id": "alert-payment-latency-001",
+    "source": "synthetic-pack",
+    "service": "payment-api",
+    "severity": "high",
+    "title": "High p95 latency and Redis timeout on payment-api",
+    "description": "p95 latency and error rate exceeded threshold for /checkout",
+    "started_at": "2026-06-22T10:05:00Z",
+    "labels": {"region": "us-east-1", "endpoint": "/checkout", "detector": "latency_error_and_dependency_threshold"}
+  },
+  "metrics": [
+    {
+      "metric_name": "http_latency_p95_ms",
+      "service": "payment-api",
+      "unit": "ms",
+      "points": [
+        {"ts": "2026-06-22T09:00:00Z", "value": 220},
+        {"ts": "2026-06-22T10:06:00Z", "value": 2800}
+      ],
+      "labels": {"region": "us-east-1", "endpoint": "/checkout"}
+    },
+    {
+      "metric_name": "redis_timeout_count",
+      "service": "payment-api",
+      "unit": "count",
+      "points": [
+        {"ts": "2026-06-22T09:00:00Z", "value": 0},
+        {"ts": "2026-06-22T10:06:00Z", "value": 340}
+      ],
+      "labels": {"region": "us-east-1", "dependency": "redis"}
+    }
+  ],
+  "logs": [
+    {
+      "service": "payment-api",
+      "ts": "2026-06-22T10:05:22Z",
+      "level": "error",
+      "message": "redis: i/o timeout while processing /checkout",
+      "trace_id": "trace-latency-001",
+      "labels": {"pod": "payment-api-844c", "version": "v1.2.3"}
+    }
+  ],
+  "recent_deploys": [
+    {
+      "service": "payment-api",
+      "version": "v1.2.3",
+      "deployed_at": "2026-06-22T09:58:00Z",
+      "deployed_by": "ci",
+      "change_summary": "changed redis connection pool config",
+      "rollback_ref": "v1.2.2"
+    }
+  ],
+  "ownership": {
+    "service": "payment-api",
+    "owner_team": "payments-platform",
+    "slack_channel": "#oncall-payments",
+    "jira_project": "PAY",
+    "runbooks": [
+      {
+        "title": "Redis timeout triage",
+        "url": "runbook://redis-timeout",
+        "excerpt": "Check Redis latency, connection limits, pool configuration, and deploy correlation before rollback."
+      }
+    ]
+  }
+}

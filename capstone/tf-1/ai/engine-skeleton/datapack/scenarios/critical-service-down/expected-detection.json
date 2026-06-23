@@ -1,0 +1,6 @@
+{
+  "should_fire": true,
+  "detector": "availability_and_5xx_threshold",
+  "reason": "availability dropped below 95% and 5xx rate exceeded 5% in the current window",
+  "incident_type": "critical_service_down"
+}

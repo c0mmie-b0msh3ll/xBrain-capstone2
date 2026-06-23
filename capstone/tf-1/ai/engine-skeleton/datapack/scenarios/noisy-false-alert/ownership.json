@@ -1,0 +1,6 @@
+{
+  "service": "search-api",
+  "owner_team": "search-platform",
+  "slack_channel": "#oncall-search",
+  "jira_project": "SRCH"
+}

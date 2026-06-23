@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TF1 synthetic raw metric",
+  "type": "object",
+  "required": ["tenant_id", "service", "environment", "timestamp", "source", "metric_name", "value"],
+  "properties": {
+    "tenant_id": {"type": "string"},
+    "service": {"type": "string"},
+    "environment": {"type": "string"},
+    "region": {"type": "string"},
+    "timestamp": {"type": "string"},
+    "source": {"type": "string"},
+    "metric_name": {"type": "string"},
+    "value": {"type": "number"},
+    "unit": {"type": "string"},
+    "labels": {"type": "object"}
+  }
+}

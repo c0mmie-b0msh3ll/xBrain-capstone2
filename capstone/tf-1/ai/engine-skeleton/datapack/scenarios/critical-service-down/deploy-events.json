@@ -1,0 +1,15 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T07:52:00Z",
+    "source": "github-actions",
+    "version": "sha-critical",
+    "deployed_by": "ci",
+    "change_summary": "updated dependency client configuration",
+    "rollback_ref": "sha-prev-critical",
+    "labels": {"pipeline": "checkout-api-deploy"}
+  }
+]

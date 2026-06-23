@@ -1,0 +1,6 @@
+{
+  "should_fire": true,
+  "detector": "latency_error_and_dependency_threshold",
+  "reason": "p95 latency exceeded 1000ms, error rate exceeded 5%, and redis timeout count increased",
+  "incident_type": "latency_degradation"
+}

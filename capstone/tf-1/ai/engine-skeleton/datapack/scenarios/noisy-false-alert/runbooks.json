@@ -1,0 +1,7 @@
+[
+  {
+    "title": "Noisy alert triage",
+    "url": "runbook://noisy-alert",
+    "excerpt": "Check alert repetition and user impact before escalating."
+  }
+]

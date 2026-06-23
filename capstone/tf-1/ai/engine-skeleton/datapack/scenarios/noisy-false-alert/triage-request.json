@@ -1,0 +1,63 @@
+{
+  "correlation_id": "corr-noisy-001",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-noisy-001",
+  "environment": "sandbox",
+  "received_at": "2026-06-22T11:07:00Z",
+  "alert": {
+    "alert_id": "alert-noisy-001",
+    "source": "synthetic-pack",
+    "service": "search-api",
+    "severity": "low",
+    "title": "Noisy flapping alert on search-api",
+    "description": "Single probe failure recovered before user-impacting metrics changed",
+    "started_at": "2026-06-22T11:05:00Z",
+    "labels": {"region": "us-east-1", "detector": "single_probe_noise_filter"}
+  },
+  "metrics": [
+    {
+      "metric_name": "http_5xx_rate",
+      "service": "search-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T11:00:00Z", "value": 0.1},
+        {"ts": "2026-06-22T11:06:00Z", "value": 0.1}
+      ],
+      "labels": {"region": "us-east-1", "endpoint": "/search"}
+    },
+    {
+      "metric_name": "http_latency_p95_ms",
+      "service": "search-api",
+      "unit": "ms",
+      "points": [
+        {"ts": "2026-06-22T11:00:00Z", "value": 170},
+        {"ts": "2026-06-22T11:06:00Z", "value": 180}
+      ],
+      "labels": {"region": "us-east-1", "endpoint": "/search"}
+    }
+  ],
+  "logs": [
+    {
+      "service": "search-api",
+      "ts": "2026-06-22T11:05:03Z",
+      "level": "warning",
+      "message": "synthetic probe timeout recovered on retry",
+      "trace_id": "trace-noisy-001",
+      "labels": {"pod": "search-api-55bf", "version": "sha-search"}
+    }
+  ],
+  "recent_deploys": [],
+  "ownership": {
+    "service": "search-api",
+    "owner_team": "search-platform",
+    "slack_channel": "#oncall-search",
+    "jira_project": "SRCH",
+    "runbooks": [
+      {
+        "title": "Noisy alert triage",
+        "url": "runbook://noisy-alert",
+        "excerpt": "Check alert repetition and user impact before escalating."
+      }
+    ]
+  }
+}

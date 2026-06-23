@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TF1 synthetic deploy event",
+  "type": "object",
+  "required": ["tenant_id", "service", "environment", "timestamp", "source", "version"],
+  "properties": {
+    "tenant_id": {"type": "string"},
+    "service": {"type": "string"},
+    "environment": {"type": "string"},
+    "region": {"type": "string"},
+    "timestamp": {"type": "string"},
+    "source": {"type": "string"},
+    "version": {"type": "string"},
+    "deployed_by": {"type": "string"},
+    "change_summary": {"type": "string"},
+    "rollback_ref": {"type": "string"},
+    "labels": {"type": "object"}
+  }
+}

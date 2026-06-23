@@ -1,0 +1,38 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T07:59:00Z",
+    "source": "prometheus",
+    "metric_name": "availability_success_rate",
+    "value": 99.9,
+    "unit": "percent",
+    "labels": {"window": "baseline", "endpoint": "/healthz"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:01:00Z",
+    "source": "prometheus",
+    "metric_name": "availability_success_rate",
+    "value": 42.0,
+    "unit": "percent",
+    "labels": {"window": "current", "endpoint": "/healthz"}
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:01:00Z",
+    "source": "prometheus",
+    "metric_name": "http_5xx_rate",
+    "value": 38.0,
+    "unit": "percent",
+    "labels": {"window": "current", "endpoint": "/v1/orders"}
+  }
+]
