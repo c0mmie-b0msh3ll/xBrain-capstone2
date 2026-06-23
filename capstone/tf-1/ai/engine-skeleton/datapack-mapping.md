@@ -1,8 +1,15 @@
-# Synthetic Datapack Mapping
+# Datapack Mapping
 
-Status: Synthetic v1 complete  
+Status: Synthetic fixtures complete, RCAEval external adapter scaffolded  
 Owner: TF1 AI team  
 Last updated: 2026-06-23
+
+## Dataset Strategy
+
+- **Primary RCA validation direction**: RCAEval public dataset.
+- **Demo/smoke fixtures**: `datapack/scenarios/*` synthetic fixtures.
+
+Synthetic fixtures should be used to prove API shape and Jira/Slack payload wiring. RCAEval should be used for credible RCA evaluation once the external data is downloaded.
 
 ## Workflow
 

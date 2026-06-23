@@ -1,15 +1,17 @@
-# TF1 Synthetic Datapack
+# TF1 Synthetic Demo Fixtures
 
-Status: Synthetic v1  
+Status: Synthetic v1, demo/smoke only  
 Owner: TF1 AI team  
 Last updated: 2026-06-23
 
-This datapack simulates incident telemetry for the TF1 Triage Hub. It is intentionally synthetic because the mentor confirmed the team should generate data to simulate incidents.
+This folder contains controlled synthetic fixtures for the TF1 Triage Hub. These files are useful for API smoke tests, deterministic demo flows, and Jira/Slack payload examples.
+
+Synthetic fixtures are **not** the primary evidence dataset for RCA quality. The preferred external dataset direction is RCAEval, documented in `datapack/external/README.md` and `docs/public-dataset-review.md`.
 
 ## Flow
 
 ```text
-raw-ish synthetic telemetry
+synthetic telemetry fixture
   -> observability data contract
   -> AIOps normalize/window/baseline/detect
   -> triage context contract
@@ -45,4 +47,4 @@ From `capstone/tf-1/ai/engine-skeleton`:
 python scripts/validate_datapack.py
 ```
 
-The validator checks required raw metadata, calls the local FastAPI app through `TestClient`, and verifies status/classification/confidence against expectations.
+The validator checks required fixture metadata, calls the local FastAPI app through `TestClient`, and verifies status/classification/confidence against expectations.

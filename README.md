@@ -82,6 +82,7 @@ The contract set is under `capstone/tf-1/ai/contracts/`.
 - `telemetry-contract.md`: normalized incident context that the AIOps detector/context layer sends to triage after detection.
 - `ai-api-contract.md`: HTTP API shape for `/healthz` and `/v1/triage`.
 - `deployment-contract.md`: TF1-specific deployment handoff for platform owners.
+- `docs/public-dataset-review.md`: why RCAEval is selected as the primary external RCA dataset.
 
 Mentor datapack files are treated as raw input and mapped into the telemetry contract through an adapter.
 
@@ -228,8 +229,7 @@ Completed:
 
 Pending:
 
-- Mentor datapack mapping.
-- Datapack adapter implementation.
+- Download/map RCAEval cases for external RCA validation.
 - Final RCA scoring beyond skeleton rules.
 - Optional Bedrock synthesis layer.
 - Final eval report with precision, recall, F1, latency, and cost.

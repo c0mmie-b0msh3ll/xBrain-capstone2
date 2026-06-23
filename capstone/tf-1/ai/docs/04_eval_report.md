@@ -1,7 +1,7 @@
 # Eval Report - TF1 Triage Hub
 
 Owner: AI team TF1  
-Status: Skeleton + synthetic datapack results, pending final AI logic  
+Status: Skeleton + synthetic fixture results, RCAEval selected for external validation  
 Last updated: 2026-06-23
 
 ## 1. Test Scenarios
@@ -17,7 +17,8 @@ The current eval set validates the deterministic skeleton contract. It is not th
 
 Fixtures live in `../engine-skeleton/samples/`.
 
-Synthetic datapack scenarios live in `../engine-skeleton/datapack/scenarios/`.
+Synthetic fixture scenarios live in `../engine-skeleton/datapack/scenarios/`.
+External dataset direction is documented in `public-dataset-review.md`.
 
 ## 2. Methodology
 
@@ -43,7 +44,7 @@ Synthetic datapack scenarios live in `../engine-skeleton/datapack/scenarios/`.
 | Required output fields | diagnosis, confidence, evidence, recommendation, ticket payload, Slack payload, audit ID | Present | Pass |
 | Auto-remediation boundary | No executable remediation actions | Advisory actions only | Pass |
 
-### 3.1 Synthetic Datapack Results
+### 3.1 Synthetic Fixture Results
 
 | Scenario | Expected | Actual | Pass/Fail |
 |---|---|---|---|
@@ -85,7 +86,7 @@ print('contract checks passed')
 '@ | python -
 ```
 
-Datapack verification command:
+Synthetic fixture verification command:
 
 ```powershell
 python scripts/validate_datapack.py
@@ -103,8 +104,9 @@ python scripts/validate_datapack.py
 
 ## 5. Gaps Before Final Eval
 
-- Mentor confirmed the team should self-generate synthetic incident data; v1 datapack covers 3 required scenarios.
-- Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until the final test set and AI logic exist.
+- Synthetic fixtures cover 3 required demo scenarios, but they are not enough for credible RCA quality claims.
+- RCAEval is selected as the primary external/public dataset direction for RCA validation.
+- Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until RCAEval mapping and final AI logic exist.
 - Current logic is deterministic scenario routing, not LLM reasoning.
 - Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
 
@@ -119,4 +121,4 @@ python scripts/validate_datapack.py
 | Scenario coverage | 3 E2E scenarios plus 5-10 additional test cases |
 | Confidence behavior | Low confidence maps to `INVESTIGATE` or `INSUFFICIENT_CONTEXT` |
 
-Final eval will expand the synthetic datapack into 5-10 additional variants and replace deterministic skeleton logic with final RCA scoring and optional Bedrock synthesis.
+Final eval will map RCAEval cases into the observability/triage contracts and use synthetic fixtures only for stable demo wiring.
