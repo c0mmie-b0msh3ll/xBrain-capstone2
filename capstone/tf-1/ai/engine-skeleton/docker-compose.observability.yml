@@ -1,0 +1,145 @@
+services:
+  triage-engine:
+    build: .
+    container_name: tf1-triage-engine
+    ports:
+      - "8080:8080"
+    environment:
+      SERVICE_AUTH_TOKEN: ""
+      REPORTS_DIR: /app/reports
+    volumes:
+      - ./reports:/app/reports
+
+  telemetry-simulator:
+    build: .
+    container_name: tf1-telemetry-simulator
+    command:
+      - python
+      - -m
+      - app.simulator
+      - --datapack-root
+      - /app/datapack/scenarios
+      - --scenario
+      - ${SIM_SCENARIO:-latency-degradation}
+      - --speed
+      - ${SIM_SPEED:-4}
+      - --loop
+      - --metrics-port
+      - "9108"
+    volumes:
+      - ./datapack:/app/datapack:ro
+    environment:
+      LOKI_URL: http://loki:3100
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+    ports:
+      - "9108:9108"
+    depends_on:
+      - otel-collector
+      - loki
+
+  aiops-worker:
+    build: .
+    container_name: tf1-aiops-worker
+    command:
+      - python
+      - -m
+      - app.aiops_worker
+      - --scenario
+      - ${SIM_SCENARIO:-latency-degradation}
+      - --service
+      - ${AIOPS_SERVICE:-payment-api}
+      - --poll-seconds
+      - ${AIOPS_POLL_SECONDS:-30}
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      LOKI_URL: http://loki:3100
+      JAEGER_URL: http://jaeger:16686
+      TRIAGE_URL: http://triage-engine:8080/v1/triage
+      REPORTS_DIR: /app/reports
+      REPORT_BASE_URL: http://localhost:5173/#/reports
+      TENANT_ID: tenant-a
+      ENVIRONMENT: sandbox
+    volumes:
+      - ./reports:/app/reports
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+      - triage-engine
+      - telemetry-simulator
+
+  report-ui:
+    image: node:22-alpine
+    container_name: tf1-report-ui
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    volumes:
+      - ./report-ui:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - triage-engine
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    container_name: tf1-otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    volumes:
+      - ./observability/otel/config.yml:/etc/otelcol-contrib/config.yml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "9464:9464"
+    depends_on:
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: tf1-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=24h
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: tf1-loki
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./observability/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
+    ports:
+      - "3100:3100"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: tf1-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+      - "4319:4317"
+      - "4320:4318"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: tf1-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger

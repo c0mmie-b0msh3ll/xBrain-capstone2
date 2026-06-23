@@ -14,11 +14,27 @@ Continuous telemetry
   -> Alert/anomaly/incident candidate
   -> AIOps context aggregation
   -> TF1 AI compute service
-  -> optional Bedrock synthesis
-  -> Jira/Slack/audit payloads
+  -> topology-aware RCA + deterministic investigator summary
+  -> report JSON artifact
+  -> Slack summary + React report UI + Jira payload
 ```
 
 This is not a direct Bedrock workflow and not an unbounded raw-data dump into AI. Platform/DevOps owns observability plumbing: metrics/logs/traces collection, retention, secure access, and bounded query/export. The AIOps app owns data interpretation: normalize, window, baseline, detect, context package, RCA, confidence, and optional Bedrock synthesis.
+
+The local demo implements that boundary with a Docker Compose observability stack:
+
+```text
+sanitized RCAEval-style scenarios
+  -> telemetry simulator
+  -> OpenTelemetry Collector
+  -> Prometheus / Loki / Jaeger
+  -> Grafana
+  -> AIOps query worker
+  -> /v1/triage
+  -> reports/{incident_id}.json
+  -> Slack dry-run summary
+  -> React report UI
+```
 
 ## Project Layout
 
@@ -40,9 +56,16 @@ This is not a direct Bedrock workflow and not an unbounded raw-data dump into AI
 |           |   `-- 05_adrs.md
 |           `-- engine-skeleton/
 |               |-- app/
-|               |   `-- main.py
+|               |   |-- aiops_worker.py
+|               |   |-- main.py
+|               |   |-- rca.py
+|               |   |-- report_store.py
+|               |   `-- simulator.py
+|               |-- observability/
+|               |-- report-ui/
 |               |-- samples/
 |               |-- Dockerfile
+|               |-- docker-compose.observability.yml
 |               |-- README.md
 |               |-- datapack-mapping.md
 |               `-- requirements.txt
@@ -94,8 +117,11 @@ Implemented endpoints:
 
 - `GET /healthz`
 - `POST /v1/triage`
+- `GET /v1/reports`
+- `GET /v1/reports/{incident_id}`
+- `GET /v1/reports/{incident_id}/raw`
 
-The current triage logic is deterministic and rule-based so the detector/context and Jira/Slack integration layers can integrate before the final hybrid AI mode is ready.
+The current triage logic is deterministic and rule-based so the detector/context, report UI, and Jira/Slack integration layers can integrate before the final hybrid AI mode is ready. The RCA pipeline adds threshold/log detection, 3-sigma evidence, EWMA drift evidence, Isolation Forest evidence, topology-aware candidate ranking, bounded causal hints, and a deterministic investigator summary.
 
 Response behavior:
 
@@ -145,6 +171,37 @@ Build and run from `capstone/tf-1/ai/engine-skeleton`:
 ```powershell
 docker build -t tf1-ai-triage-engine .
 docker run --rm -p 8080:8080 tf1-ai-triage-engine
+```
+
+Full local observability demo:
+
+```powershell
+docker compose -f docker-compose.observability.yml up --build
+```
+
+Open Grafana at `http://localhost:3000` with `admin` / `admin`, then view the `TF1 AIOps Observability Demo` dashboard. Open the report UI at `http://localhost:5173`.
+
+Slack is the notification surface, Grafana is the raw telemetry surface, and the React report UI is the RCA explanation and audit surface.
+
+The default scenario is `latency-degradation`; use `SIM_SCENARIO=critical-service-down` and `AIOPS_SERVICE=checkout-api` to switch scenarios.
+
+Offline detector-to-triage smoke path without Docker:
+
+```powershell
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
+python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
+cd report-ui
+npm install
+npm run dev
+```
+
+Reports are created by the AIOps worker after it detects an incident and receives a `/v1/triage` response. The UI only reads report artifacts from `GET /v1/reports`; opening the UI does not create new reports.
+
+Additional offline report triggers:
+
+```powershell
+python -m app.aiops_worker --offline-scenario --scenario critical-service-down --service checkout-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
+python -m app.aiops_worker --offline-scenario --scenario noisy-false-alert --service notification-worker --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
 ```
 
 ## Sample Fixtures
@@ -226,10 +283,14 @@ Completed:
 - Sample request/response JSON added.
 - Deterministic scenario behavior implemented.
 - Eval report updated with skeleton verification results.
+- Telemetry simulator added for sanitized RCAEval-style scenario replay.
+- Local Prometheus/Loki/Jaeger/Grafana/OTel Compose stack added.
+- AIOps query worker added for bounded observability queries, statistical detection, context building, triage invocation, report JSON persistence, and Slack dry-run output.
+- Report APIs and React/Vite triage report UI added.
+- Topology-aware RCA candidates, causal hints, and deterministic investigator summaries added.
 
 Pending:
 
 - Download/map RCAEval cases for external RCA validation.
-- Final RCA scoring beyond skeleton rules.
 - Optional Bedrock synthesis layer.
 - Final eval report with precision, recall, F1, latency, and cost.

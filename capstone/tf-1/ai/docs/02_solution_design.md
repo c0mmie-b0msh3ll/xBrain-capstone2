@@ -10,14 +10,15 @@ TF1 uses an event-driven triage design. Production-grade ownership is split betw
 
 ```mermaid
 graph LR
-    A[Services emit metrics logs traces deploy events] --> B[Platform observability stack: OTel Prometheus Loki CloudWatch]
+    A[Services or simulator emit metrics logs traces deploy events] --> B[Platform observability stack: OTel Prometheus Loki Jaeger Grafana CloudWatch]
     B -->|bounded query/export by tenant service env window| C[AIOps ingestion and context service]
     C --> D[Normalize window baseline trend]
     D --> E[Lightweight anomaly detection]
     E -->|Incident candidate| F[Context package]
     F -->|POST /v1/triage| G[Compute-first RCA and confidence gate]
     G -->|Optional grounded synthesis| H[Bedrock LLM]
-    G --> I[Jira Slack audit payload]
+    G --> I[Report JSON audit artifact]
+    I --> J[Slack summary Jira payload React report UI]
     H --> I
 ```
 
@@ -34,23 +35,29 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
 | AI triage engine | AIOps app | Validate request, extract features, run RCA scoring, confidence gate, and produce response payloads. | Dockerized FastAPI service on ECS/Fargate | Gives the team full control of diagnosis behavior and API contract. |
 | Optional LLM synthesis | AIOps app | Turn grounded RCA evidence into concise Jira/Slack wording and runbook-aware recommendations. | Bedrock via AI engine | LLM is used after compute evidence exists, not as the first decision-maker. |
 | Ticket/notification integration | AIOps app, with platform credentials/config | Create Jira issue and send Slack notification using AI response payloads. | Jira/Slack APIs or mocks | Required for E2E demo flow. |
-| Audit | AIOps app | Persist traceable AI decisions and link them to ticket/notification artifacts. | DynamoDB/S3/CloudWatch, or local store for demo | Required for confidence behavior and demo evidence. |
+| Audit/report store | AIOps app | Persist traceable AI decisions and link them to ticket/notification artifacts. | JSON files for local demo; DynamoDB/S3/CloudWatch later | Required for confidence behavior and demo evidence. |
+| Report UI | AIOps app | Render incident list, RCA candidates, evidence, topology, causal hints, Slack/Jira previews, and audit metadata. | React/Vite local demo UI | Keeps Slack concise while preserving a complete investigation surface. |
+| Telemetry simulator | AIOps app for demo/eval | Replay sanitized RCAEval-style cases into observability as metrics, logs, and traces. | Python, Prometheus client, Loki push API, OTLP traces | Lets the capstone demonstrate production-like data flow without committing the full RCAEval dataset. |
+| Local observability stack | Platform-like demo fixture | Collect and expose metrics/logs/traces for bounded worker queries. | Docker Compose, OpenTelemetry Collector, Prometheus, Loki, Jaeger, Grafana | Keeps DevOps/CDO ownership boundaries visible in local evaluation. |
 
 ## 3. Data Flow
 
 1. Services continuously emit telemetry: metrics, logs, traces, deploy events, and alert-source events.
 2. Platform observability stack collects/stores telemetry and exposes bounded query/export paths by tenant, service, environment, and time window.
 3. AIOps ingestion/context service queries bounded slices, normalizes schema, aggregates windows, and computes baseline/trend.
-4. AIOps detector runs lightweight anomaly/alert logic continuously over bounded summaries.
+4. AIOps detector runs threshold/log checks plus 3-sigma, EWMA drift, and Isolation Forest anomaly logic continuously over bounded summaries.
 5. When an alert/anomaly/incident candidate is detected, the AIOps app creates a bounded context bundle around the event window.
 6. The detector/context layer invokes the triage engine, either through an internal event or `POST /v1/triage`, with normalized alert metadata, metrics, logs, recent deploys, ownership, and runbook/docs context.
-7. The AI engine validates tenant/correlation headers, validates schema, extracts features, and runs compute-first RCA rules/scoring.
+7. The AI engine validates tenant/correlation headers, validates schema, extracts features, and runs compute-first RCA rules/scoring with topology-aware candidates, bounded anomaly evidence, experimental lag-correlation causal hints, and deterministic investigator summaries.
 8. The AI engine applies confidence gates:
    - high enough signal: `DIAGNOSED`
    - weak or conflicting signal: `INVESTIGATE`
    - missing supporting context: `INSUFFICIENT_CONTEXT`
 9. If enabled, the AI engine calls Bedrock only to synthesize grounded human-readable diagnosis, recommendations, Jira description, and Slack text.
-10. The AIOps integration layer uses the response to create Jira/Slack artifacts and persists or links the audit ID.
+10. The AIOps integration layer writes `reports/{incident_id}.json`, uses Slack for a concise notification with report link, and keeps Jira payload generation available for workflow integration.
+11. Grafana remains the raw observability dashboard. The React report UI is the AI RCA explanation and audit surface.
+
+For the local demo, `engine-skeleton/app/simulator.py` replays sanitized scenario files into the Compose observability stack, and `engine-skeleton/app/aiops_worker.py` queries Prometheus/Loki/Jaeger before building the `telemetry-contract.md` request. The triage service receives bounded normalized context, enriches the response with optional RCA/report fields, and exposes local report APIs for the React viewer.
 
 ## 4. Key Design Decisions
 
@@ -92,7 +99,7 @@ Chosen: Option B. Platform owns observability plumbing and bounded access. AIOps
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Context bundle misses important telemetry | Medium | High | Return `INSUFFICIENT_CONTEXT`, document missing fields, and add datapack mapping checks. |
-| Detection layer sends noisy incident candidates | Medium | Medium | Confidence gate returns `INVESTIGATE` for weak/conflicting signals and tune detector thresholds. |
+| Detection layer sends noisy incident candidates | Medium | Medium | Confidence gate returns `INVESTIGATE` for weak/conflicting signals and tune detector thresholds/statistical evidence weights. |
 | LLM hallucinates root cause | Medium | High | Compute-first evidence, schema validation, grounding checks, and no direct auto-remediation. |
 | Bedrock throttling or outage | Medium | Medium | Keep rule-based path available; fallback to deterministic response without LLM. |
 | Tenant data leak | Low | High | Enforce header/body tenant match and avoid cross-request context persistence. |
@@ -101,8 +108,9 @@ Chosen: Option B. Platform owns observability plumbing and bounded access. AIOps
 ## 6. Open Design Questions
 
 - [ ] Final auth mechanism if detector and triage are deployed as separate services.
-- [ ] Persistent audit store implementation for demo.
-- [ ] Exact telemetry sources for the capstone demo: simulator, Prometheus, CloudWatch, or mentor datapack replay.
+- [x] Persistent audit store implementation for demo.
+- [x] Local demo path for simulator -> OTel Collector -> Prometheus/Loki/Jaeger -> Grafana -> AIOps worker -> triage.
+- [ ] Final production telemetry source mix: simulator, Prometheus, CloudWatch, or mentor datapack replay.
 - [ ] Mentor datapack schema and whether it includes runbooks/docs.
 
 ## Related Documents

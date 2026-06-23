@@ -5,10 +5,22 @@ import os
 from typing import Any, Literal
 
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+from app.rca import analyze_request
+from app.report_store import list_reports, read_report
 
 
 app = FastAPI(title="TF1 AI Triage Engine", version="v1")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 
 Severity = Literal["critical", "high", "medium", "low", "unknown"]
@@ -84,6 +96,11 @@ class TriageRequest(BaseModel):
     logs: list[LogEntry] = Field(default_factory=list)
     recent_deploys: list[RecentDeploy] = Field(default_factory=list)
     ownership: Ownership | None = None
+    anomaly_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    service_topology: dict[str, Any] | None = None
+    rca_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    causal_hints: list[dict[str, Any]] = Field(default_factory=list)
+    investigation_summary: str | None = None
 
 
 class RootCause(BaseModel):
@@ -122,11 +139,40 @@ class TriageResponse(BaseModel):
     ticket_payload: TicketPayload
     slack_payload: SlackPayload
     audit_id: str
+    anomaly_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    service_topology: dict[str, Any] | None = None
+    rca_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    causal_hints: list[dict[str, Any]] = Field(default_factory=list)
+    investigation_summary: str | None = None
 
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok", "service": "tf1-ai-triage-engine", "version": "v1"}
+
+
+@app.get("/v1/reports")
+def get_reports() -> dict[str, Any]:
+    return {"reports": list_reports()}
+
+
+@app.get("/v1/reports/{incident_id}")
+def get_report(incident_id: str) -> dict[str, Any]:
+    report = read_report(incident_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@app.get("/v1/reports/{incident_id}/raw")
+def get_raw_report(incident_id: str) -> JSONResponse:
+    report = read_report(incident_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return JSONResponse(
+        content=report,
+        headers={"Content-Disposition": f'attachment; filename="{incident_id}.json"'},
+    )
 
 
 @app.post("/v1/triage", response_model=TriageResponse)
@@ -138,7 +184,8 @@ def triage(
 ) -> TriageResponse:
     validate_headers(request, x_tenant_id, x_correlation_id, authorization)
     audit_id = build_audit_id(request)
-    decision = classify(request)
+    rca = analyze_request(request)
+    decision = classify(request, rca)
     return build_response(request, audit_id, decision)
 
 
@@ -163,7 +210,8 @@ def build_audit_id(request: TriageRequest) -> str:
     return "audit-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12]
 
 
-def classify(request: TriageRequest) -> dict[str, Any]:
+def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[str, Any]:
+    rca = rca or analyze_request(request)
     text = " ".join(
         [
             request.alert.title,
@@ -185,6 +233,7 @@ def classify(request: TriageRequest) -> dict[str, Any]:
             "actions": [
                 ("ESCALATE_OWNER", "Ask the AIOps context layer to attach metrics, logs, recent deploys, and ownership context before diagnosis."),
             ],
+            "rca": rca,
         }
 
     if any(token in text for token in ["noisy", "flapping", "false alarm", "ambiguous"]) or request.alert.severity in {
@@ -201,6 +250,7 @@ def classify(request: TriageRequest) -> dict[str, Any]:
                 ("OBSERVE", "Check whether the alert repeats and compare it against user-impacting metrics."),
                 ("HUMAN_REVIEW", "Have the service owner confirm whether this is actionable before creating remediation work."),
             ],
+            "rca": rca,
         }
 
     if request.alert.severity == "critical" or any(token in text for token in ["down", "unavailable", "connection refused"]):
@@ -214,9 +264,11 @@ def classify(request: TriageRequest) -> dict[str, Any]:
                 ("RUNBOOK_CHECK", "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status."),
                 ("ESCALATE_OWNER", "Page or notify the owning team for immediate human review."),
             ],
+            "rca": rca,
         }
 
-    if "latency" in text or "p95" in text or "timeout" in text:
+    anomaly_text = " ".join(item.get("reason", "") for item in rca.get("anomaly_evidence", []))
+    if "latency" in text or "p95" in text or "timeout" in text or "latency" in anomaly_text.lower():
         return {
             "status": "DIAGNOSED",
             "classification": "latency_degradation",
@@ -227,6 +279,7 @@ def classify(request: TriageRequest) -> dict[str, Any]:
                 ("HUMAN_REVIEW", "Check saturation metrics, dependency latency, and slow query or timeout logs."),
                 ("ROLLBACK_CONSIDER", "If recent deploy correlation is confirmed, consider rollback through the approved runbook."),
             ],
+            "rca": rca,
         }
 
     return {
@@ -238,6 +291,7 @@ def classify(request: TriageRequest) -> dict[str, Any]:
         "actions": [
             ("HUMAN_REVIEW", "Review supplied logs, metrics, and deploys before assigning a root cause."),
         ],
+        "rca": rca,
     }
 
 
@@ -267,6 +321,13 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
     channel = owner.slack_channel or "#oncall"
     runbook_ref = owner.runbooks[0].url if owner.runbooks else None
     labels = ["ai-triage", request.tenant_id, request.alert.service, decision["classification"]]
+    rca = decision.get("rca", {})
+    anomaly_evidence = request.anomaly_evidence or rca.get("anomaly_evidence", [])
+    service_topology = request.service_topology or rca.get("service_topology")
+    rca_candidates = request.rca_candidates or rca.get("rca_candidates", [])
+    causal_hints = request.causal_hints or rca.get("causal_hints", [])
+    investigation_summary = request.investigation_summary or rca.get("investigation_summary")
+    evidence_preview = "; ".join(item.get("reason", "") for item in anomaly_evidence[:2])
 
     actions = [
         RecommendedAction(type=action_type, priority=index + 1, summary=summary, runbook_ref=runbook_ref)
@@ -298,8 +359,14 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
             channel=channel,
             text=(
                 f"{request.alert.service}: {decision['classification']} "
-                f"({decision['status']}, confidence {decision['confidence']:.2f}). Audit: {audit_id}."
+                f"({decision['status']}, confidence {decision['confidence']:.2f}). "
+                f"Evidence: {evidence_preview or decision['evidence'][0]}. Audit: {audit_id}."
             ),
         ),
         audit_id=audit_id,
+        anomaly_evidence=anomaly_evidence,
+        service_topology=service_topology,
+        rca_candidates=rca_candidates,
+        causal_hints=causal_hints,
+        investigation_summary=investigation_summary,
     )
