@@ -203,8 +203,8 @@ Jira hiện tại:
 Assignment decision W11:
 
 - Route theo owner team/project/channel nếu có mapping.
-- Unknown/noisy/low-confidence route vào triage queue.
-- Critical/high-confidence route vào owner queue.
+- Unknown/noisy/low-confidence route vào triage backlog/lane.
+- Critical/high-confidence route vào owner backlog/lane.
 - Không auto assign cá nhân nếu chưa có Jira accountId mapping.
 
 9. Deployment expectation
