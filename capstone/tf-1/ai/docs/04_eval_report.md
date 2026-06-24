@@ -1,8 +1,8 @@
 # Eval Report - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Skeleton + synthetic fixture results, RCAEval selected for external validation  
-Last updated: 2026-06-23
+Owner: AI team TF1
+Status: Skeleton verified + RCAEval subset evidence bundles prepared
+Last updated: 2026-06-24
 
 ## 1. Test Scenarios
 
@@ -17,7 +17,8 @@ The current eval set validates the deterministic skeleton contract. It is not th
 
 Fixtures live in `../engine-skeleton/samples/`.
 
-Synthetic fixture scenarios live in `../engine-skeleton/datapack/scenarios/`.
+RCAEval-derived evidence bundles live in `../engine-skeleton/datapack/external/evidence-bundles/` and are the primary W11 handoff datapacks.
+Synthetic fixture scenarios live in `../engine-skeleton/datapack/scenarios/` and are retained for smoke tests, observability demos, and supplemental examples.
 External dataset direction is documented in `public-dataset-review.md`.
 
 ## 2. Methodology
@@ -92,6 +93,24 @@ Synthetic fixture verification command:
 python scripts/validate_datapack.py
 ```
 
+### 3.2 RCAEval Subset Evidence Bundle Readiness
+
+The W11 handoff includes 9 RCAEval-derived evidence bundles across the three required scenario categories.
+
+| Scenario category | Bundle count | Source |
+|---|---:|---|
+| `critical-service-down` | 3 | RCAEval subset metrics as primary evidence |
+| `latency-degradation` | 3 | RCAEval subset metrics as primary evidence |
+| `noisy-false-alert` | 3 | RCAEval subset metrics as primary evidence |
+
+Because the local RCAEval subset currently contains `metrics.json` and `inject_time.txt`, each bundle includes `data_lineage` that marks logs, traces, deploy events, ownership, and runbooks as TF1 supplemental sample-derived records. These supplemental records are included so CDO can host a complete evidence contract while the primary scenario signal remains RCAEval-derived.
+
+Regeneration command:
+
+```powershell
+python scripts/build_rcaeval_evidence_bundles.py
+```
+
 ## 4. Current Rule Logic
 
 | Input pattern | Output behavior |
@@ -104,8 +123,8 @@ python scripts/validate_datapack.py
 
 ## 5. Gaps Before Final Eval
 
-- Synthetic fixtures cover 3 required demo scenarios, but they are not enough for credible RCA quality claims.
-- RCAEval is selected as the primary external/public dataset direction for RCA validation.
+- RCAEval subset evidence bundles now cover the 3 required demo scenario categories, but final quality claims still need a larger labeled set.
+- The checked-in RCAEval subset currently provides metrics and injection time only; logs/traces/deploy/runbook details remain supplemental unless a richer RCAEval export is added.
 - Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until RCAEval mapping and final AI logic exist.
 - Current logic is deterministic scenario routing, not LLM reasoning.
 - Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
@@ -121,4 +140,4 @@ python scripts/validate_datapack.py
 | Scenario coverage | 3 E2E scenarios plus 5-10 additional test cases |
 | Confidence behavior | Low confidence maps to `INVESTIGATE` or `INSUFFICIENT_CONTEXT` |
 
-Final eval will map RCAEval cases into the observability/triage contracts and use synthetic fixtures only for stable demo wiring.
+Final eval will extend the RCAEval mapping into the observability/triage contracts and use synthetic fixtures only for stable demo wiring.

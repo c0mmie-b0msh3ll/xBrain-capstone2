@@ -1,7 +1,7 @@
 # Triage Context Contract - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO review  
+Owner: AI team TF1
+Status: Final candidate for W11 CDO sign-off
 Freeze target: 2026-06-25
 
 ## Purpose
@@ -184,8 +184,25 @@ Mapping type must be one of:
 - Malformed data behavior: AI returns `400` with validation errors.
 - Safety behavior: AI must never return an executable auto-remediation action.
 
-## Open Questions
+## W11 Decisions And Deferred Items
 
-- [ ] Exact data pack format from mentor.
-- [ ] Whether runbook/docs are provided or AI-authored.
-- [ ] Target alert burst volume for load test.
+| Item | W11 decision |
+|---|---|
+| Primary datapack format | Use the RCAEval subset under `../engine-skeleton/datapack/external/` as the primary scenario data. The CDO-hostable artifacts are normalized evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/`. |
+| Triage request format | `POST /v1/triage` remains the normalized incident context contract. Raw dataset fields are adapted before calling the triage endpoint. |
+| Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
+| Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. Higher platform load testing is deferred until CDO infrastructure is finalized. |
+| Deferred mentor item | If the mentor provides a different official datapack shape, create an adapter and mapping table instead of changing the triage contract unless a required concept is missing. |
+
+## W11 Sign-Off
+
+This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
+
+| Role | Name | Status | Notes |
+|---|---|---|---|
+| AI lead | TBD | Ready for signature | Owns triage context schema and adapter behavior. |
+| CDO lead 1 | TBD | Ready for signature | Confirms platform can provide bounded evidence required by this contract. |
+| CDO lead 2 | TBD | Ready for signature | Confirms platform can integrate with the same normalized context boundary. |
+| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+
+After sign-off, changes to required fields or response-breaking semantics require a formal ADR or curveball response.

@@ -1,0 +1,272 @@
+TF1 AI Ops - CDO handoff chung
+Ngày cập nhật: 2026-06-24
+Mục tiêu: gửi cho cả hai team CDO, giữ transport-neutral, chỉ chốt input/output contract và data CDO cần host/expose.
+
+1. Tóm tắt ngắn
+
+TF1 AI Ops không gọi trực tiếp vào application của khách hàng để tự lấy log/metrics.
+
+Luồng đúng là:
+
+Customer app / simulator
+-> CDO observability stack hoặc CDO-hosted evidence store
+-> bounded evidence theo tenant/service/environment/time window
+-> TF1 AIOps context layer
+-> POST /v1/triage
+-> report + Slack payload + Jira ticket_payload
+
+Nói cách khác:
+
+- CDO/platform host hoặc expose metrics/logs/traces/deploy/ownership/runbook evidence theo contract.
+- TF1 AI Ops query/consume evidence qua đường read-only, bounded, có scope rõ.
+- AI triage engine chỉ nhận normalized incident context, không nhận raw telemetry dump vô hạn.
+- LLM/AgentCore nếu dùng thì chỉ nhận bounded report/evidence context, không có credential trực tiếp vào observability backend.
+- Không có auto-remediation. AI chỉ đưa recommended actions cho người review.
+
+2. Data chính đang dùng
+
+Data chính cho scenario W11 là RCAEval subset, không phải dữ liệu tự dựng làm nguồn chính.
+
+Đường dẫn trong repo:
+
+- RCAEval raw subset:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/
+
+- RCAEval adapted triage requests:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/adapted/
+
+- RCAEval-derived evidence bundles để CDO host:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles/
+
+Hiện có 9 evidence bundles cho 3 nhóm scenario:
+
+- critical-service-down: 3 bundles
+- latency-degradation: 3 bundles
+- noisy-false-alert: 3 bundles
+
+Lưu ý quan trọng:
+
+- Local RCAEval subset hiện có metrics và inject_time là primary evidence.
+- Logs/traces/deploy/ownership/runbook trong bundle là TF1 supplemental sample-derived records vì local RCAEval subset chưa có đủ các field đó.
+- Các supplemental records đều được đánh dấu trong `data_lineage`.
+- Synthetic scenario datapack vẫn còn trong repo nhưng chỉ dùng cho smoke test, observability demo, dashboard wiring, và supplemental examples.
+
+3. CDO cần host extra data ở đâu?
+
+W11 MVP nên dùng precomputed evidence bundle trước.
+
+Mô hình đề xuất:
+
+RCAEval subset metrics
++ TF1 supplemental logs/traces/deploy/ownership/runbook records
+-> evidence-bundle.json
+-> CDO-hosted object storage hoặc metadata store
+-> AIOps context layer
+-> /v1/triage
+
+CDO có thể host bundle ở một trong các nơi sau:
+
+- S3/object storage: lưu JSON bundle theo tenant_id/incident_id/scenario.
+- Postgres/DynamoDB: lưu incident metadata, evidence index, report metadata.
+- Internal static file service: đủ cho demo nếu có auth/network boundary.
+- Existing platform storage: được, miễn là AIOps đọc được theo contract.
+
+Raw observability backend như Prometheus/Loki/Jaeger/CloudWatch vẫn là source of truth. Evidence bundle chỉ là bounded export/artifact để AI query hoặc replay an toàn.
+
+4. Evidence bundle shape CDO cần expose
+
+Mỗi bundle nên có shape như sau:
+
+{
+  "schema_version": "tf1.evidence_bundle.v1",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-123",
+  "service": "checkout-api",
+  "environment": "prod",
+  "time_window": {
+    "start": "2026-06-22T07:45:00Z",
+    "end": "2026-06-22T08:10:00Z"
+  },
+  "metrics": [],
+  "logs": [],
+  "traces": [],
+  "deploy_events": [],
+  "ownership": {},
+  "runbooks": [],
+  "data_lineage": {}
+}
+
+Access/query scope bắt buộc:
+
+- tenant_id
+- incident_id hoặc report link
+- service
+- environment
+- start_time/end_time
+- optional trace_id/correlation_id
+
+Không expose unbounded logs/metrics. Không cho LLM tự bắn arbitrary PromQL/LogQL.
+
+5. Nếu CDO muốn live query thay vì bundle
+
+Sau khi bundle path chạy ổn, CDO có thể thêm read-only evidence proxy.
+
+Proxy này đứng trước Prometheus/Loki/Jaeger/CloudWatch hoặc equivalent backend. TF1 chỉ gọi approved operations:
+
+- get_metric_window
+- get_log_snippets
+- get_trace_summary
+- get_deploy_events
+- get_ownership
+- get_runbook_excerpt
+
+Proxy chịu trách nhiệm:
+
+- backend-specific query syntax
+- auth/secret masking
+- tenant isolation
+- timeout/retry/rate limit
+- log redaction
+- audit logging
+
+TF1 không cần direct credential vào Prometheus/Loki/Jaeger nếu CDO đã có proxy.
+
+6. Incident seed/event input
+
+CDO gửi incident seed/event cho TF1 để định danh incident và scope context. Event này không cần chứa full metrics/logs.
+
+Example:
+
+{
+  "schema_version": "tf1.incident_seed.v1",
+  "tenant_id": "tenant-a",
+  "correlation_id": "corr-001",
+  "incident_id": "inc-001",
+  "environment": "prod",
+  "service": "checkout-api",
+  "severity": "high",
+  "title": "High p95 latency on checkout-api",
+  "description": "p95 latency above threshold for 5 minutes",
+  "started_at": "2026-06-24T09:00:00Z",
+  "received_at": "2026-06-24T09:05:00Z",
+  "labels": {
+    "region": "us-east-1",
+    "alert_id": "alert-001",
+    "source": "cdo-detector"
+  },
+  "evidence_uri": "s3://tf1-aiops-evidence/tenant-a/inc-001/evidence-bundle.json"
+}
+
+Nếu CDO chưa host evidence bundle bằng URI, có thể gửi bundle inline hoặc cung cấp một API lookup theo incident_id.
+
+7. TF1 triage API output
+
+TF1 trả về:
+
+- incident_id
+- classification
+- severity
+- confidence
+- status: DIAGNOSED, INVESTIGATE, INSUFFICIENT_CONTEXT, hoặc UNSAFE_SUGGESTION_BLOCKED
+- suspected_root_cause
+- evidence/anomaly_evidence
+- recommended_actions
+- investigation_summary
+- audit_id
+- report metadata/report URL nếu có
+- Slack notification payload
+- Jira ticket_payload
+
+Jira/Slack payload là integration-ready payload. Integration layer hoặc CDO automation quyết định có gửi/create thật hay không.
+
+8. Current Slack/Jira state
+
+Slack hiện tại:
+
+- One-way notification/dry-run payload.
+- Incoming Webhook nếu muốn gửi thật.
+- Chưa có slash command, button, thread Q&A, hoặc approval flow.
+
+Jira hiện tại:
+
+- TF1 tạo `ticket_payload` trong response/report.
+- Chưa bắt buộc create Jira issue trực tiếp trong W11.
+- Nếu create Jira ở phase sau, cần config:
+  - JIRA_BASE_URL
+  - JIRA_EMAIL
+  - JIRA_API_TOKEN
+  - JIRA_DEFAULT_PROJECT
+  - JIRA_ISSUE_TYPE
+  - service -> Jira project/component mapping
+  - owner -> Jira accountId nếu muốn auto assign cá nhân
+
+Assignment decision W11:
+
+- Route theo owner team/project/channel nếu có mapping.
+- Unknown/noisy/low-confidence route vào triage queue.
+- Critical/high-confidence route vào owner queue.
+- Không auto assign cá nhân nếu chưa có Jira accountId mapping.
+
+9. Deployment expectation
+
+Production target trong contract:
+
+- Dockerized FastAPI API.
+- ECS Fargate/internal ALB hoặc equivalent container platform.
+- Health endpoint: GET /healthz.
+- Triage endpoint: POST /v1/triage.
+- Scoped service auth/private network/protected gateway.
+
+W11 demo endpoint:
+
+- Demo endpoint đã deploy bằng AWS App Runner.
+- Endpoint URL: https://snpmtcwpys.us-east-1.awsapprunner.com
+- ECR image: 589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest
+- Image digest: sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909
+- /healthz smoke test: passed.
+- /v1/triage latency sample smoke test: passed, returned DIAGNOSED / latency_degradation.
+
+Lưu ý: App Runner endpoint này là demo endpoint để CDO/mentor test API thật. Production target trong deployment contract vẫn là ECS Fargate/internal ALB hoặc equivalent container platform do CDO chốt.
+
+10. Files CDO nên đọc
+
+Repo:
+https://github.com/c0mmie-b0msh3ll/xBrain-capstone2
+
+Docs/contracts chính:
+
+3 contracts ký/freeze theo đề bài:
+
+- capstone/tf-1/ai/docs/01_requirements.md
+- capstone/tf-1/ai/docs/02_solution_design.md
+- capstone/tf-1/ai/docs/03_ai_engine_spec.md
+- capstone/tf-1/ai/docs/04_eval_report.md
+- capstone/tf-1/ai/docs/05_adrs.md
+- capstone/tf-1/ai/docs/06_cdo_evidence_handoff.md
+- capstone/tf-1/ai/docs/07_w11_readiness_checklist.md
+- capstone/tf-1/ai/contracts/telemetry-contract.md
+- capstone/tf-1/ai/contracts/ai-api-contract.md
+- capstone/tf-1/ai/contracts/deployment-contract.md
+
+Supporting data/evidence handoff, không tính là contract thứ 4 để ký:
+
+- capstone/tf-1/ai/contracts/observability-data-contract.md
+
+Code/data:
+
+- capstone/tf-1/ai/engine-skeleton/app
+- capstone/tf-1/ai/engine-skeleton/samples
+- capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles
+- capstone/tf-1/ai/engine-skeleton/datapack/scenarios
+
+11. Acceptance checklist cho CDO
+
+- Host hoặc expose được 9 RCAEval-derived evidence bundles.
+- Gửi latency incident seed -> TF1 produce latency report.
+- Gửi critical service-down seed -> TF1 return service-down actions.
+- Gửi noisy incident seed -> TF1 chỉ trả observe/human-review/investigate actions.
+- Gửi unknown/insufficient context -> TF1 không đoán mạnh, trả INVESTIGATE hoặc INSUFFICIENT_CONTEXT.
+- Confirm TF1 chỉ lấy context trong scope tenant/service/environment/time-window.
+- Confirm không có direct customer app access từ AI.
+- Confirm không có unbounded raw telemetry dump vào LLM.
+- Confirm /v1/triage direct sample requests vẫn chạy.

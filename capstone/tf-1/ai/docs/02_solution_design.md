@@ -1,8 +1,8 @@
 # Solution Design - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO review  
-Last updated: 2026-06-22
+Owner: AI team TF1
+Status: Final candidate for W11 CDO sign-off
+Last updated: 2026-06-24
 
 ## 1. High-Level Architecture
 
@@ -59,6 +59,8 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
 
 For the local demo, `engine-skeleton/app/simulator.py` replays sanitized scenario files into the Compose observability stack, and `engine-skeleton/app/aiops_worker.py` queries Prometheus/Loki/Jaeger before building the `telemetry-contract.md` request. The triage service receives bounded normalized context, enriches the response with optional RCA/report fields, and exposes local report APIs for the React viewer.
 
+For the W11 handoff, the primary scenario datapacks are RCAEval-derived evidence bundles under `engine-skeleton/datapack/external/evidence-bundles/`. These bundles give CDO a concrete artifact to host and expose while preserving the production boundary: CDO owns evidence storage/access, and AIOps owns RCA interpretation. Synthetic scenario fixtures remain useful for smoke tests and dashboard demos, but they are not the primary evaluation source.
+
 ## 4. Key Design Decisions
 
 ### 4.1 Continuous Triage vs Event-Driven Triage
@@ -105,18 +107,21 @@ Chosen: Option B. Platform owns observability plumbing and bounded access. AIOps
 | Tenant data leak | Low | High | Enforce header/body tenant match and avoid cross-request context persistence. |
 | Team conflates continuous detection with full continuous LLM triage | Medium | Medium | Document two-stage design: continuous detector, event-driven triage/RCA. |
 
-## 6. Open Design Questions
+## 6. W11 Decisions And Deferred Items
 
-- [ ] Final auth mechanism if detector and triage are deployed as separate services.
-- [x] Persistent audit store implementation for demo.
-- [x] Local demo path for simulator -> OTel Collector -> Prometheus/Loki/Jaeger -> Grafana -> AIOps worker -> triage.
-- [ ] Final production telemetry source mix: simulator, Prometheus, CloudWatch, or mentor datapack replay.
-- [ ] Mentor datapack schema and whether it includes runbooks/docs.
+| Item | W11 decision |
+|---|---|
+| Auth | Private network or protected gateway with scoped bearer token fallback for capstone. IAM SigV4 or service-to-service JWT remains production-preferred. |
+| Persistent audit store | JSON/report store is accepted for W11 skeleton/demo; object storage or database-backed metadata is the production target. |
+| Local demo path | Simulator/evidence bundles -> bounded observability/context -> `/v1/triage` -> report JSON/API -> React report UI. |
+| Production telemetry mix | Any CDO-approved Prometheus/Loki/Jaeger/CloudWatch/OpenTelemetry mix is acceptable if it satisfies the supporting `observability-data-contract.md`. |
+| Dataset schema | RCAEval metrics are primary. Supplemental logs/traces/deploy/ownership/runbook records are used only where the RCAEval subset lacks those fields. |
+| Deferred | Final AWS endpoint URL and live CDO observability backend are recorded after deployment smoke tests pass. |
 
 ## Related Documents
 
 - [`03_ai_engine_spec.md`](03_ai_engine_spec.md) - AI engine architecture detail, governance, and security.
-- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md) - platform observability handoff.
+- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md) - supporting platform observability/evidence handoff; not one of the 3 signed W11 contracts.
 - [`../contracts/telemetry-contract.md`](../contracts/telemetry-contract.md) - normalized context bundle contract.
 - [`../contracts/ai-api-contract.md`](../contracts/ai-api-contract.md) - API consumed by the detector/context layer.
 - [`../contracts/deployment-contract.md`](../contracts/deployment-contract.md) - deployment topology.

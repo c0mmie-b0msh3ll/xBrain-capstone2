@@ -1,8 +1,8 @@
 # Deployment Contract - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO review  
-Freeze target: 2026-06-25  
+Owner: AI team TF1
+Status: Final candidate for W11 CDO sign-off
+Freeze target: 2026-06-25
 Reviewers: AI Lead, CDO Leads, reviewer panel
 
 ## Purpose
@@ -47,7 +47,7 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 | Autoscale trigger 2 | Target request count 100 per task |
 | Scale-up cooldown | 60 seconds |
 | Scale-down cooldown | 300 seconds |
-| Load test input | Team defines target alert burst volume before freeze |
+| Load test input | W11 skeleton target: 30 triage requests/minute, p99 < 2 seconds |
 
 ## Configuration And Secrets
 
@@ -169,8 +169,24 @@ Abort and roll back if any of these occur during canary:
 | Tenant mismatch | API validation | Return `400`; caller must fix request |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 
-## Open Questions
+## W11 Decisions And Deferred Items
 
-- [ ] Final auth mechanism for demo: IAM SigV4, service-to-service JWT, or scoped bearer token.
-- [ ] Target alert burst volume for load test.
-- [ ] Whether persistent audit storage is implemented inside triage service or shared AIOps platform for capstone.
+| Item | W11 decision |
+|---|---|
+| Demo auth | Use private networking or protected gateway. Scoped bearer token is allowed as a capstone fallback; IAM SigV4 or service-to-service JWT is preferred when CDO infra supports it. |
+| Load target | 30 triage requests/minute for skeleton validation, p99 < 2 seconds on bounded payloads. |
+| Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. Production design target is object storage or DynamoDB/Postgres with report metadata. |
+| AWS endpoint evidence | A real deployed endpoint must be recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
+
+## W11 Sign-Off
+
+This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
+
+| Role | Name | Status | Notes |
+|---|---|---|---|
+| AI lead | TBD | Ready for signature | Owns engine image, runtime behavior, health checks, and release notes. |
+| CDO lead 1 | TBD | Ready for signature | Confirms hosting/network/secrets approach for one CDO platform. |
+| CDO lead 2 | TBD | Ready for signature | Confirms hosting/network/secrets approach for the second CDO platform. |
+| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+
+After sign-off, changes to endpoint hosting, network boundary, auth mechanism, or rollout/rollback behavior require a formal ADR or curveball response.

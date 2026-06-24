@@ -1,7 +1,7 @@
 # AI API Contract - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO review  
+Owner: AI team TF1
+Status: Final candidate for W11 CDO sign-off
 Freeze target: 2026-06-25
 
 ## Purpose
@@ -20,11 +20,12 @@ The AIOps detector/context layer invokes this API after bounded observability da
 
 ## Authentication
 
-Draft assumption:
+W11 contract assumption:
 
 - The detector/context layer calls AI over private network or protected API Gateway.
 - Each request includes `X-Tenant-Id` and `X-Correlation-Id`.
-- Production design should use IAM SigV4 or service-to-service JWT. Capstone demo may use a scoped bearer token if agreed in Deployment Contract.
+- Production design should use IAM SigV4 or service-to-service JWT.
+- Capstone demo may use a scoped bearer token stored in platform secret management if IAM/JWT is not ready by deployment freeze.
 
 ## Endpoint: `GET /healthz`
 
@@ -215,8 +216,24 @@ This behavior exists so the detector/context and Jira/Slack integration layers c
 - AI should not recommend destructive actions on databases or production infrastructure unless phrased as human-reviewed escalation and backed by runbook/docs.
 - Low confidence must return `INVESTIGATE` or `INSUFFICIENT_CONTEXT`, not a strong root cause.
 
-## Open Questions
+## W11 Decisions And Deferred Items
 
-- [ ] Final auth mechanism if detector/context and triage are deployed as separate services.
-- [ ] Whether Slack/Jira payload generation belongs in AI response or integration transforms from AI summary.
-- [ ] Exact payload size limit after mentor data pack is reviewed.
+| Item | W11 decision |
+|---|---|
+| Auth for W11 demo | Private network or protected gateway plus scoped bearer token fallback. IAM SigV4 or service-to-service JWT remains the production-preferred mechanism. |
+| Slack/Jira ownership | AI response includes `ticket_payload` and `slack_payload` as integration-ready payloads. The integration layer owns actually creating Jira issues or sending Slack messages. |
+| Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
+| Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract. |
+
+## W11 Sign-Off
+
+This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
+
+| Role | Name | Status | Notes |
+|---|---|---|---|
+| AI lead | TBD | Ready for signature | Owns API schema, validation, response behavior, and safety boundary. |
+| CDO lead 1 | TBD | Ready for signature | Confirms platform can call `/healthz` and `/v1/triage` with required headers. |
+| CDO lead 2 | TBD | Ready for signature | Confirms platform can handle response statuses, retries, and payload limits. |
+| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+
+After sign-off, changes to paths, required fields, status semantics, or error handling require a formal ADR or curveball response.

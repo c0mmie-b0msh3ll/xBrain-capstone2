@@ -1,0 +1,39 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "search-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T11:05:03Z",
+    "source": "jaeger",
+    "trace_id": "trace-noisy-001",
+    "root_span": "GET /search",
+    "duration_ms": 210,
+    "status": "ok",
+    "spans": [
+      {
+        "span_id": "span-search-001",
+        "parent_span_id": null,
+        "service": "search-api",
+        "operation": "GET /search",
+        "duration_ms": 210,
+        "status": "ok"
+      },
+      {
+        "span_id": "span-index-001",
+        "parent_span_id": "span-search-001",
+        "service": "search-index",
+        "operation": "QUERY /index",
+        "duration_ms": 95,
+        "status": "ok"
+      }
+    ],
+    "labels": {
+      "endpoint": "/search",
+      "dependency": "search-index",
+      "version": "sha-search",
+      "window": "incident",
+      "note": "probe recovered on retry; no user-impacting trace failure"
+    }
+  }
+]

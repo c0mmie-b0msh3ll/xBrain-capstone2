@@ -1,0 +1,345 @@
+TF1 AI Ops - internal handoff và next steps
+Ngày cập nhật: 2026-06-24
+Audience: AI Ops team, mentor review, implementation follow-up.
+
+1. Current state
+
+TF1 AI Ops hiện là event-driven, compute-first triage service.
+
+High-level flow:
+
+Incident seed/event
+-> bounded evidence lookup
+-> normalized triage context
+-> deterministic RCA/scoring
+-> optional AgentCore grounded investigation
+-> catalog-gated recommended actions
+-> report JSON/API
+-> Slack payload + Jira ticket_payload
+
+Quan trọng:
+
+- Shared handoff cho CDO phải transport-neutral.
+- Không đưa implementation detail riêng của bất kỳ CDO team nào vào docs/contracts chung.
+- AI không gọi trực tiếp vào customer application để lấy log/metrics.
+- Extra data phải đến từ CDO-hosted observability/evidence path.
+- AI/LLM không có quyền write/remediate/restart/rollback/scale.
+
+2. Important code paths
+
+TF1 app root:
+capstone/tf-1/ai/engine-skeleton
+
+Main API:
+capstone/tf-1/ai/engine-skeleton/app/main.py
+
+Worker/context flow:
+capstone/tf-1/ai/engine-skeleton/app/aiops_worker.py
+
+Incident seed conversion:
+capstone/tf-1/ai/engine-skeleton/app/incident_seed.py
+
+Bounded read-only context/tool registry:
+capstone/tf-1/ai/engine-skeleton/app/context_tools.py
+
+AgentCore LLM integration:
+capstone/tf-1/ai/engine-skeleton/app/llm.py
+
+Deterministic RCA:
+capstone/tf-1/ai/engine-skeleton/app/rca.py
+
+Catalog-gated recommended actions:
+capstone/tf-1/ai/engine-skeleton/app/action_catalog.py
+
+Tests:
+capstone/tf-1/ai/engine-skeleton/tests/test_aiops_pipeline.py
+
+Report UI:
+capstone/tf-1/ai/engine-skeleton/report-ui
+
+3. Data assets
+
+Primary data:
+
+- RCAEval raw subset:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/
+
+- RCAEval adapted requests:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/adapted/
+
+- RCAEval-derived evidence bundles:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles/
+
+Current bundle coverage:
+
+- critical-service-down: 3
+- latency-degradation: 3
+- noisy-false-alert: 3
+- total: 9
+
+Supplemental data:
+
+- capstone/tf-1/ai/engine-skeleton/datapack/scenarios/
+
+Use supplemental scenario data for smoke tests and demo wiring only. Do not present it as the main eval dataset.
+
+4. Safety boundaries
+
+AgentCore is not allowed to execute remediation directly.
+
+AgentCore can only ask TF1 for extra evidence through allowlisted read-only tool calls:
+
+- get_metrics
+- get_logs
+- get_recent_deploys
+- get_ownership
+- detect_metric_anomalies
+- detect_log_anomalies
+- infer_topology
+- infer_causal_hints
+- rank_rca_candidates
+
+TF1 validates:
+
+- tenant_id
+- environment
+- service
+- bounded time window
+- max tool calls
+- log limit
+- max window minutes
+
+Final recommended actions come from `action_catalog.py`. LLM/AgentCore cannot invent action IDs or executable remediation types.
+
+5. Config/env currently expected
+
+AWS/AgentCore:
+
+- AWS_REGION=us-east-1
+- AGENTCORE_RUNTIME_ARN=...
+- ENABLE_AGENTCORE_LLM=true
+- ENABLE_AGENTCORE_LLM_TOOLS=true
+
+Tool limits:
+
+- LLM_TOOL_MAX_CALLS=3
+- LLM_TOOL_MAX_WINDOW_MINUTES=60
+- LLM_TOOL_LOG_LIMIT=50
+- LLM_TOOL_TIMEOUT_SECONDS=10
+
+Observability/evidence:
+
+- PROMETHEUS_URL=...
+- LOKI_URL=...
+- DEPLOY_METADATA_PATH=...
+- OWNERSHIP_PATH=...
+- EVIDENCE_BUNDLE_BASE_URI=... nếu CDO host bundles
+
+Slack:
+
+- SLACK_WEBHOOK_URL=... for one-way notification
+
+Auth:
+
+- SERVICE_AUTH_TOKEN=... optional for `/v1/triage`
+
+Transport-specific env vars should stay in private implementation notes, not in shared CDO handoff docs.
+
+6. Verification status
+
+Commands to run from `capstone/tf-1/ai/engine-skeleton`:
+
+python -m compileall app scripts
+python -m pytest tests -q
+python scripts/validate_datapack.py
+docker compose -f docker-compose.observability.yml config --quiet
+
+Commands to run from `capstone/tf-1/ai/engine-skeleton/report-ui`:
+
+npm run build
+
+Latest local verification on 2026-06-24:
+
+- compileall: passed
+- pytest: 20 passed
+- datapack validation: passed
+- docker compose config: passed
+- report-ui build: passed
+
+7. AWS deployment status
+
+AWS account access confirmed:
+
+- Account: 589077667575
+- Region: us-east-1
+- Caller: arn:aws:iam::589077667575:user/dinhdanhnam-admin
+
+Created/deployed:
+
+- ECR repo created: tf1-ai-triage-engine
+- ECR image pushed:
+  589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest
+- Image digest:
+  sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909
+- App Runner service ARN:
+  arn:aws:apprunner:us-east-1:589077667575:service/tf1-ai-triage-engine/540fcd194a144db09c63786d3d28c8f9
+- Demo endpoint:
+  https://snpmtcwpys.us-east-1.awsapprunner.com
+
+Smoke tests:
+
+- GET /healthz: passed, returned status ok.
+- POST /v1/triage with `samples/latency-degradation.request.json`: passed, returned DIAGNOSED / latency_degradation.
+
+Note: This is a public App Runner demo endpoint for W11 smoke testing. Production/internal deployment target remains the deployment contract path decided with CDO.
+
+8. Current Slack/Jira state
+
+Slack:
+
+- One-way notification/dry-run through Incoming Webhook.
+- No two-way Slack bot yet.
+- No slash commands, buttons, thread Q&A, or approval flow yet.
+
+Jira:
+
+- TF1 generates `ticket_payload`.
+- TF1 does not create Jira issues directly yet.
+- Current demo flow: TF1 Slack notify/report -> owner reviews -> Jira manually or integration consumes `ticket_payload`.
+
+Assignment policy:
+
+- Known service routes to owner team/project/channel.
+- Unknown service routes to default triage queue.
+- Noisy/low-confidence routes to triage queue.
+- Critical/high-confidence routes to owner queue.
+- No direct personal assignment unless Jira accountId mapping exists.
+
+9. Next AI Ops development tasks already created in Jira
+
+Project: A0X
+Issue type: Task
+
+Created tasks:
+
+- Explore Current TF1 AI Ops Source Code
+- Define AI Assignment Policy For Jira Routing
+- Extend Ownership Mapping For Routing Metadata
+- Implement Jira Publisher From TF1 Ticket Payload
+- Add Jira Configuration And Documentation
+- Implement Slack Request Verification
+- Add Slack Two-Way Read-Only Endpoints
+- Implement Slack AgentCore Q&A Over Bounded Report Context
+- Add Slack Interactive Buttons To Incident Notification
+- Add Incident Lifecycle And MTTA Audit Metadata
+- Add Integration Tests For Assignment, Jira, And Slack
+- Update AI Ops Handoff And Demo Docs
+
+Jira hygiene for W11:
+
+- Team members must pick issues.
+- Move To Do -> In Progress before coding.
+- Comment commit/PR links daily.
+- Move Done only after verification evidence exists.
+
+10. Slack AI two-way MVP
+
+Recommended scope: read-only Q&A only.
+
+Supported interactions:
+
+- Explain RCA.
+- Show evidence.
+- Show recommended actions.
+- Show Jira payload/report link.
+- Answer in Slack thread using bounded report context.
+
+Not in MVP:
+
+- rollback
+- restart
+- scale
+- database action
+- approval-based remediation
+- auto assign Jira without accountId mapping
+
+Suggested API additions:
+
+- POST /v1/slack/commands
+- POST /v1/slack/actions
+- POST /v1/slack/events
+
+Suggested module:
+
+capstone/tf-1/ai/engine-skeleton/app/slack_interactions.py
+
+Needed env:
+
+- SLACK_BOT_TOKEN=...
+- SLACK_SIGNING_SECRET=...
+- SLACK_ALLOWED_CHANNELS=...
+- SLACK_ALLOWED_USER_GROUPS=...
+- PUBLIC_TF1_CALLBACK_URL=...
+
+11. Jira publisher future work
+
+Preferred approach:
+
+Backend or integration layer creates Jira from `ticket_payload`. Slack should not be the source of record for ticket creation.
+
+Reason:
+
+- Backend has audit trail.
+- Backend has RCA evidence.
+- Backend has confidence/status/classification.
+- Backend can enforce idempotency by incident_id/audit_id.
+- Backend can attach report URL.
+
+Suggested module:
+
+capstone/tf-1/ai/engine-skeleton/app/jira_publisher.py
+
+Needed env:
+
+- JIRA_BASE_URL=...
+- JIRA_EMAIL=...
+- JIRA_API_TOKEN=...
+- JIRA_DEFAULT_PROJECT=...
+- JIRA_ISSUE_TYPE=Incident
+
+Needed mapping:
+
+- service -> jira_project
+- service/team -> Jira component
+- service owner -> Jira accountId only if auto assignment is required
+
+12. Review package for 2026-06-25
+
+Bring these files:
+
+- capstone/tf-1/ai/docs/01_requirements.md
+- capstone/tf-1/ai/docs/02_solution_design.md
+- capstone/tf-1/ai/docs/03_ai_engine_spec.md
+- capstone/tf-1/ai/docs/04_eval_report.md
+- capstone/tf-1/ai/docs/05_adrs.md
+- capstone/tf-1/ai/docs/06_cdo_evidence_handoff.md
+- capstone/tf-1/ai/docs/07_w11_readiness_checklist.md
+- capstone/tf-1/ai/contracts/telemetry-contract.md
+- capstone/tf-1/ai/contracts/ai-api-contract.md
+- capstone/tf-1/ai/contracts/deployment-contract.md
+- capstone/tf-1/standup-notes.md
+
+Supporting data/evidence handoff, not one of the 3 signed contracts:
+
+- capstone/tf-1/ai/contracts/observability-data-contract.md
+
+Talk track:
+
+- AIOps does not directly query customer applications.
+- CDO hosts/exposes bounded evidence.
+- RCAEval subset is the primary data source.
+- Evidence bundle is the W11 MVP for extra data.
+- Read-only evidence proxy is optional after bundle hosting works.
+- Triage is event-driven and compute-first.
+- AgentCore is optional grounded investigation/synthesis only.
+- No auto-remediation and no personal Jira assignment without accountId mapping.

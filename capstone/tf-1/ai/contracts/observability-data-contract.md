@@ -1,8 +1,18 @@
-# Observability Data Contract - TF1 Triage Hub
+# Supporting Observability Data Contract - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO/platform review  
+Owner: AI team TF1
+Status: Supporting CDO/platform data handoff; not one of the 3 W11 signed/frozen contracts
 Freeze target: 2026-06-25
+
+## Contract Classification
+
+The W11 announcement requires exactly three AI-CDO contracts to be signed and frozen:
+
+1. `telemetry-contract.md`
+2. `ai-api-contract.md`
+3. `deployment-contract.md`
+
+This file is an additional supporting data-availability contract/handoff. It exists to make the CDO evidence boundary concrete: where metrics/logs/traces/deploy/ownership data comes from, how it is bounded, and how AIOps can consume it safely. It informs the three signed contracts, but it is not counted as a fourth signed contract.
 
 ## Purpose
 
@@ -84,6 +94,96 @@ AIOps needs bounded query/export capability:
 | Auth | IAM/SigV4, service token, or platform-approved service auth. |
 | Isolation | A tenant-scoped query must not return other tenants' data. |
 
+## Extra Evidence Hosting Model
+
+When the initial incident package is not enough for confident RCA, AIOps may request additional evidence. That evidence must come from a controlled platform-owned data path, not from direct AI access to customer applications.
+
+### Source Of Extra Evidence
+
+CDO/platform should treat the existing observability stack as the source of truth:
+
+| Data type | Preferred source systems | Notes |
+|---|---|---|
+| Metrics | Prometheus, Thanos, Mimir, CloudWatch metrics | Query by tenant, service, environment, and bounded time window. |
+| Logs | Loki, Elasticsearch, OpenSearch, CloudWatch Logs | Return redacted snippets, not unbounded raw dumps. |
+| Traces | Jaeger, Tempo, X-Ray, OpenTelemetry backend | Query by `trace_id`, `correlation_id`, service, or time window where supported. |
+| Alerts/incidents | Alertmanager, EventBridge, event pipeline, webhook/API integration, monitoring system | Provides incident id, severity, labels, and start time. |
+| Deploy metadata | CI/CD system, deployment event table, GitOps controller, CloudTrail/EventBridge | Used for deploy correlation and rollback references. |
+| Ownership/runbooks | Repo config, service catalog, Jira/Confluence, static config | Used for routing, recommendations, and Slack/Jira payloads. |
+
+### Hosting Options For CDO
+
+CDO can implement either of these patterns, as long as the same query bounds and redaction rules are enforced.
+
+**Option A - Read-only evidence proxy**
+
+CDO hosts an internal read-only API in front of Prometheus/Loki/Jaeger or equivalent backends. AIOps calls this proxy with incident-scoped inputs such as:
+
+- `tenant_id`
+- `incident_id`
+- `service`
+- `environment`
+- `start_time` / `end_time`
+- `trace_id` / `correlation_id`
+- alert labels or metric/log filter keys
+
+The proxy owns backend-specific details such as PromQL, LogQL, index names, auth, timeouts, retries, rate limits, secret masking, and audit logging. AIOps receives normalized evidence responses and should not need direct Prometheus/Loki/Jaeger credentials.
+
+Example proxy operations:
+
+| Operation | Input | Output |
+|---|---|---|
+| `get_metric_window` | tenant, service, environment, time window, metric names | bounded metric series or summary |
+| `get_log_snippets` | tenant, service, environment, time window, filters, limit | redacted relevant log lines |
+| `get_trace_summary` | tenant, trace id or correlation id | span summary and error/latency highlights |
+| `get_deploy_events` | tenant, service, environment, time window | bounded deploy/change records |
+
+**Option B - Precomputed evidence bundle**
+
+CDO or an upstream job queries the observability stack, redacts and normalizes relevant evidence, then stores a bounded evidence bundle. AIOps receives either the bundle inline or an `evidence_uri` in the incident package.
+
+Suitable storage:
+
+- S3/MinIO/object storage for JSON evidence bundles by `tenant_id/incident_id`.
+- Postgres/DynamoDB for incident metadata, evidence indexes, and report metadata.
+- Existing Prometheus/Loki/Jaeger backends remain the source of truth for raw observability data.
+- Vector DB is optional for runbooks/docs search only; it should not be the primary store for raw logs or metrics.
+
+Expected bundle shape:
+
+```json
+{
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-123",
+  "service": "checkout-api",
+  "environment": "prod",
+  "time_window": {
+    "start": "2026-06-22T07:45:00Z",
+    "end": "2026-06-22T08:10:00Z"
+  },
+  "metrics": [],
+  "logs": [],
+  "traces": [],
+  "deploy_events": [],
+  "ownership": {}
+}
+```
+
+### MVP Recommendation
+
+For the capstone MVP, prefer **Option B: precomputed evidence bundle** first. It gives CDO a clear artifact to host, makes schema validation easier, avoids giving AIOps live backend credentials, and keeps demo behavior repeatable.
+
+If live follow-up queries are needed, add **Option A: read-only evidence proxy** behind the same bounds. The proxy should expose only approved operations, not arbitrary PromQL/LogQL from the LLM.
+
+Implementation handoff for CDO teams is documented in `../docs/06_cdo_evidence_handoff.md`.
+
+### Non-Goals
+
+- AIOps does not call customer applications directly for logs or metrics.
+- AIOps does not receive unbounded raw telemetry dumps.
+- The LLM does not receive direct credentials or arbitrary query access.
+- The evidence path must not expose remediation, write, restart, rollback, or scale permissions.
+
 ## Quality SLA Targets
 
 Draft targets for capstone review:
@@ -107,9 +207,13 @@ observability data contract
   -> POST /v1/triage
 ```
 
-## Open Questions
+## W11 Decisions And Deferred Items
 
-- [ ] Final observability stack: Prometheus/Grafana/Loki/CloudWatch/OpenTelemetry mix.
-- [ ] Exact source of deploy events.
-- [ ] Whether runbooks/ownership come from config, Jira, repo files, or synthetic fixtures.
-- [ ] Final freshness and retention targets for demo.
+| Item | W11 decision |
+|---|---|
+| Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. |
+| Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
+| Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
+| Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
+| Ownership/runbooks | RCAEval metrics are primary; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
+| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, and evidence retention long enough to replay all approved scenarios. |

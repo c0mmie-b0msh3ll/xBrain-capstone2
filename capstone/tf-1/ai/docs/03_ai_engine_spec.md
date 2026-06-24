@@ -1,8 +1,8 @@
 # AI Engine Spec - TF1 Triage Hub
 
-Owner: AI team TF1  
-Status: Draft for CDO review  
-Last updated: 2026-06-22
+Owner: AI team TF1
+Status: Final candidate for W11 CDO sign-off
+Last updated: 2026-06-24
 
 ## 1. Model Architecture
 
@@ -71,7 +71,7 @@ Platform/DevOps may operate CloudWatch, Prometheus, Grafana, Loki, OpenTelemetry
 
 ## 4. Input And Feature Extraction
 
-Triage input is defined in `../contracts/telemetry-contract.md`. Upstream observability access is defined in `../contracts/observability-data-contract.md`.
+Triage input is defined in `../contracts/telemetry-contract.md`. Upstream observability access is defined in the supporting handoff `../contracts/observability-data-contract.md`.
 
 Feature extraction should produce at least:
 
@@ -168,12 +168,14 @@ Disallowed LLM outputs:
 Skeleton evaluation validates contract behavior. Final evaluation should include:
 
 - at least 3 E2E scenarios: critical service down, latency degradation, noisy alert,
-- 5-10 additional test cases from mentor datapack or synthetic variants,
+- 5-10 additional test cases from the RCAEval subset or approved mentor datapack,
 - precision, recall, F1,
 - P50/P99 latency,
 - cost per call,
 - confidence calibration checks,
 - missing-context behavior checks.
+
+For W11, RCAEval-derived evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/` are the primary handoff/evaluation data. Synthetic fixtures remain smoke-test scaffolding only.
 
 ## 11. Cost Model
 
@@ -207,6 +209,6 @@ Deployment details are defined in `../contracts/deployment-contract.md`.
 - [`04_eval_report.md`](04_eval_report.md)
 - [`05_adrs.md`](05_adrs.md)
 - [`../contracts/ai-api-contract.md`](../contracts/ai-api-contract.md)
-- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md)
+- [`../contracts/observability-data-contract.md`](../contracts/observability-data-contract.md) - supporting evidence handoff, not one of the 3 signed W11 contracts
 - [`../contracts/telemetry-contract.md`](../contracts/telemetry-contract.md)
 - [`../contracts/deployment-contract.md`](../contracts/deployment-contract.md)

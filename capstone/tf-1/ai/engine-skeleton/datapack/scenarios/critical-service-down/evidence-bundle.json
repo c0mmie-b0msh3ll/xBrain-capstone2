@@ -1,0 +1,123 @@
+{
+  "schema_version": "tf1.evidence_bundle.v1",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-checkout-critical-001",
+  "correlation_id": "corr-checkout-critical-001",
+  "scenario": "critical-service-down",
+  "service": "checkout-api",
+  "environment": "sandbox",
+  "region": "us-east-1",
+  "time_window": {
+    "baseline_start": "2026-06-22T07:45:00Z",
+    "incident_start": "2026-06-22T08:00:00Z",
+    "incident_end": "2026-06-22T08:05:00Z",
+    "post_end": "2026-06-22T08:20:00Z"
+  },
+  "query_hints": {
+    "metrics": [
+      "availability_success_rate",
+      "http_5xx_rate",
+      "health_check_success",
+      "dependency_connection_errors",
+      "request_rate"
+    ],
+    "log_filters": [
+      "health check failed",
+      "readiness probe failed",
+      "connection refused",
+      "deadline exceeded"
+    ],
+    "trace_ids": [
+      "trace-critical-001",
+      "trace-critical-002"
+    ],
+    "dependencies": [
+      "inventory-api",
+      "payment-api"
+    ]
+  },
+  "metrics": [
+    {
+      "metric_name": "availability_success_rate",
+      "service": "checkout-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T07:59:00Z", "value": 99.9},
+        {"ts": "2026-06-22T08:01:00Z", "value": 42.0}
+      ],
+      "labels": {"endpoint": "/healthz", "source": "prometheus"}
+    },
+    {
+      "metric_name": "http_5xx_rate",
+      "service": "checkout-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T07:59:00Z", "value": 0.2},
+        {"ts": "2026-06-22T08:01:00Z", "value": 38.0}
+      ],
+      "labels": {"endpoint": "/v1/orders", "source": "prometheus"}
+    }
+  ],
+  "logs": [
+    {
+      "service": "checkout-api",
+      "ts": "2026-06-22T08:01:30Z",
+      "level": "error",
+      "message": "health check failed: dependency connection refused",
+      "trace_id": "trace-critical-001",
+      "labels": {"pod": "checkout-api-7d9f", "version": "sha-critical", "source": "loki"}
+    },
+    {
+      "service": "checkout-api",
+      "ts": "2026-06-22T08:02:10Z",
+      "level": "error",
+      "message": "readiness probe failed for checkout-api",
+      "trace_id": "trace-critical-002",
+      "labels": {"pod": "checkout-api-7d9f", "version": "sha-critical", "source": "loki"}
+    }
+  ],
+  "traces": [
+    {
+      "trace_id": "trace-critical-001",
+      "service": "checkout-api",
+      "root_span": "GET /healthz",
+      "duration_ms": 5000,
+      "status": "error",
+      "bottleneck_service": "inventory-api",
+      "bottleneck_reason": "dependency readiness check returned connection refused"
+    },
+    {
+      "trace_id": "trace-critical-002",
+      "service": "checkout-api",
+      "root_span": "POST /v1/orders",
+      "duration_ms": 5000,
+      "status": "error",
+      "bottleneck_service": "payment-api",
+      "bottleneck_reason": "downstream payment authorization hit deadline"
+    }
+  ],
+  "deploy_events": [
+    {
+      "service": "checkout-api",
+      "version": "sha-critical",
+      "deployed_at": "2026-06-22T07:52:00Z",
+      "deployed_by": "ci",
+      "change_summary": "updated dependency client configuration",
+      "rollback_ref": "sha-prev-critical"
+    }
+  ],
+  "ownership": {
+    "service": "checkout-api",
+    "owner_team": "payments-platform",
+    "slack_channel": "#oncall-payments",
+    "jira_project": "PAY",
+    "triage_queue": "payments-triage"
+  },
+  "runbooks": [
+    {
+      "title": "Service down triage",
+      "url": "runbook://service-down",
+      "excerpt": "Check service health, dependency availability, and recent deploys before rollback."
+    }
+  ]
+}

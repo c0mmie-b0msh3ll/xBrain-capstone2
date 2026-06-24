@@ -1,0 +1,74 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:01:30Z",
+    "source": "jaeger",
+    "trace_id": "trace-critical-001",
+    "root_span": "GET /healthz",
+    "duration_ms": 5000,
+    "status": "error",
+    "spans": [
+      {
+        "span_id": "span-checkout-health-001",
+        "parent_span_id": null,
+        "service": "checkout-api",
+        "operation": "GET /healthz",
+        "duration_ms": 5000,
+        "status": "error"
+      },
+      {
+        "span_id": "span-inventory-001",
+        "parent_span_id": "span-checkout-health-001",
+        "service": "inventory-api",
+        "operation": "GET /internal/ready",
+        "duration_ms": 4800,
+        "status": "connection_refused"
+      }
+    ],
+    "labels": {
+      "endpoint": "/healthz",
+      "dependency": "inventory-api",
+      "version": "sha-critical",
+      "window": "incident"
+    }
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "checkout-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T08:02:10Z",
+    "source": "jaeger",
+    "trace_id": "trace-critical-002",
+    "root_span": "POST /v1/orders",
+    "duration_ms": 5000,
+    "status": "error",
+    "spans": [
+      {
+        "span_id": "span-checkout-order-001",
+        "parent_span_id": null,
+        "service": "checkout-api",
+        "operation": "POST /v1/orders",
+        "duration_ms": 5000,
+        "status": "error"
+      },
+      {
+        "span_id": "span-payment-downstream-001",
+        "parent_span_id": "span-checkout-order-001",
+        "service": "payment-api",
+        "operation": "POST /payments/authorize",
+        "duration_ms": 4900,
+        "status": "deadline_exceeded"
+      }
+    ],
+    "labels": {
+      "endpoint": "/v1/orders",
+      "dependency": "payment-api",
+      "version": "sha-critical",
+      "window": "incident"
+    }
+  }
+]

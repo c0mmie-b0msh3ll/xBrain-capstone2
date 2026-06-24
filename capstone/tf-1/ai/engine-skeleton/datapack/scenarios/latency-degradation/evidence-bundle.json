@@ -1,0 +1,133 @@
+{
+  "schema_version": "tf1.evidence_bundle.v1",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-payment-latency-001",
+  "correlation_id": "corr-payment-latency-001",
+  "scenario": "latency-degradation",
+  "service": "payment-api",
+  "environment": "sandbox",
+  "region": "us-east-1",
+  "time_window": {
+    "baseline_start": "2026-06-22T09:00:00Z",
+    "incident_start": "2026-06-22T10:05:00Z",
+    "incident_end": "2026-06-22T10:07:00Z",
+    "post_end": "2026-06-22T10:20:00Z"
+  },
+  "query_hints": {
+    "metrics": [
+      "http_latency_p95_ms",
+      "http_error_rate_percent",
+      "redis_timeout_count",
+      "redis_connection_pool_in_use",
+      "request_rate"
+    ],
+    "log_filters": [
+      "timeout",
+      "pool exhausted",
+      "deadline exceeded",
+      "redis"
+    ],
+    "trace_ids": [
+      "trace-latency-001",
+      "trace-latency-002",
+      "trace-latency-003"
+    ],
+    "dependencies": [
+      "redis"
+    ]
+  },
+  "metrics": [
+    {
+      "metric_name": "http_latency_p95_ms",
+      "service": "payment-api",
+      "unit": "ms",
+      "points": [
+        {"ts": "2026-06-22T09:00:00Z", "value": 220},
+        {"ts": "2026-06-22T10:06:00Z", "value": 2800}
+      ],
+      "labels": {"endpoint": "/checkout", "source": "prometheus"}
+    },
+    {
+      "metric_name": "http_error_rate_percent",
+      "service": "payment-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T09:00:00Z", "value": 0.2},
+        {"ts": "2026-06-22T10:06:00Z", "value": 12.0}
+      ],
+      "labels": {"endpoint": "/checkout", "source": "prometheus"}
+    },
+    {
+      "metric_name": "redis_timeout_count",
+      "service": "payment-api",
+      "unit": "count",
+      "points": [
+        {"ts": "2026-06-22T09:00:00Z", "value": 0},
+        {"ts": "2026-06-22T10:06:00Z", "value": 340}
+      ],
+      "labels": {"dependency": "redis", "source": "prometheus"}
+    }
+  ],
+  "logs": [
+    {
+      "service": "payment-api",
+      "ts": "2026-06-22T10:05:22Z",
+      "level": "error",
+      "message": "redis: i/o timeout while processing /checkout",
+      "trace_id": "trace-latency-001",
+      "labels": {"pod": "payment-api-844c", "version": "v1.2.3", "source": "loki"}
+    },
+    {
+      "service": "payment-api",
+      "ts": "2026-06-22T10:05:41Z",
+      "level": "error",
+      "message": "connection pool exhausted for redis client",
+      "trace_id": "trace-latency-002",
+      "labels": {"pod": "payment-api-844c", "version": "v1.2.3", "source": "loki"}
+    }
+  ],
+  "traces": [
+    {
+      "trace_id": "trace-latency-001",
+      "service": "payment-api",
+      "root_span": "POST /checkout",
+      "duration_ms": 3120,
+      "status": "error",
+      "bottleneck_service": "redis",
+      "bottleneck_reason": "redis span consumed 3000ms and timed out"
+    },
+    {
+      "trace_id": "trace-latency-002",
+      "service": "payment-api",
+      "root_span": "POST /checkout",
+      "duration_ms": 2875,
+      "status": "error",
+      "bottleneck_service": "redis",
+      "bottleneck_reason": "redis connection pool exhausted"
+    }
+  ],
+  "deploy_events": [
+    {
+      "service": "payment-api",
+      "version": "v1.2.3",
+      "deployed_at": "2026-06-22T09:58:00Z",
+      "deployed_by": "ci",
+      "change_summary": "changed redis connection pool config",
+      "rollback_ref": "v1.2.2"
+    }
+  ],
+  "ownership": {
+    "service": "payment-api",
+    "owner_team": "payments-platform",
+    "slack_channel": "#oncall-payments",
+    "jira_project": "PAY",
+    "triage_queue": "payments-triage"
+  },
+  "runbooks": [
+    {
+      "title": "Redis timeout triage",
+      "url": "runbook://redis-timeout",
+      "excerpt": "Check Redis latency, connection limits, pool configuration, and deploy correlation before rollback."
+    }
+  ]
+}

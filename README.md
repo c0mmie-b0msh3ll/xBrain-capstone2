@@ -53,7 +53,9 @@ sanitized RCAEval-style scenarios
 |           |   |-- 02_solution_design.md
 |           |   |-- 03_ai_engine_spec.md
 |           |   |-- 04_eval_report.md
-|           |   `-- 05_adrs.md
+|           |   |-- 05_adrs.md
+|           |   |-- 06_cdo_evidence_handoff.md
+|           |   `-- 07_w11_readiness_checklist.md
 |           `-- engine-skeleton/
 |               |-- app/
 |               |   |-- aiops_worker.py
@@ -99,15 +101,21 @@ The AI service does **not** auto-remediate. It only produces human-reviewed reco
 
 ## Contracts
 
-The contract set is under `capstone/tf-1/ai/contracts/`.
+The three W11 signed/frozen AI-CDO contracts are under `capstone/tf-1/ai/contracts/`:
 
-- `observability-data-contract.md`: platform observability handoff into the AIOps app.
 - `telemetry-contract.md`: normalized incident context that the AIOps detector/context layer sends to triage after detection.
 - `ai-api-contract.md`: HTTP API shape for `/healthz` and `/v1/triage`.
 - `deployment-contract.md`: TF1-specific deployment handoff for platform owners.
+
+There is one additional supporting data-availability contract/handoff in the same folder:
+
+- `observability-data-contract.md`: CDO/platform handoff for bounded metrics/logs/traces/deploy/ownership evidence. It explains extra evidence hosting and access, but it is not counted as a fourth W11 signed/frozen contract.
+
+- `docs/06_cdo_evidence_handoff.md`: CDO-facing guide for hosting/exposing extra evidence based on current app state.
+- `docs/07_w11_readiness_checklist.md`: W11 onsite review checklist, verification commands, and AWS endpoint evidence placeholder.
 - `docs/public-dataset-review.md`: why RCAEval is selected as the primary external RCA dataset.
 
-Mentor datapack files are treated as raw input and mapped into the telemetry contract through an adapter.
+RCAEval subset files under `capstone/tf-1/ai/engine-skeleton/datapack/external/` are treated as the primary scenario input. They are mapped into the telemetry contract through adapters and CDO-hostable evidence bundles.
 
 ## Engine Skeleton
 
@@ -289,8 +297,12 @@ Completed:
 - Report APIs and React/Vite triage report UI added.
 - Topology-aware RCA candidates, causal hints, and deterministic investigator summaries added.
 - Optional Bedrock investigator synthesis added with fallback order: Claude Opus 4.8, Claude Opus 4.6, then Amazon Nova 2 Lite.
+- CDO-facing evidence handoff added for bounded extra data hosting/querying.
+- RCAEval-derived evidence bundles generated for 3 scenario categories, 9 bundles total.
+- W11 readiness checklist and standup notes added.
 
 Pending:
 
-- Download/map RCAEval cases for external RCA validation.
+- Record real AWS endpoint evidence after deployment smoke tests pass.
+- Have CDO choose the hosted evidence bundle location.
 - Final eval report with precision, recall, F1, latency, and cost.

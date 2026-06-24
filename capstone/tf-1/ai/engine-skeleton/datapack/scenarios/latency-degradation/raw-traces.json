@@ -1,0 +1,74 @@
+[
+  {
+    "tenant_id": "tenant-a",
+    "service": "payment-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T10:05:22Z",
+    "source": "jaeger",
+    "trace_id": "trace-latency-001",
+    "root_span": "POST /checkout",
+    "duration_ms": 3120,
+    "status": "error",
+    "spans": [
+      {
+        "span_id": "span-payment-001",
+        "parent_span_id": null,
+        "service": "payment-api",
+        "operation": "POST /checkout",
+        "duration_ms": 3120,
+        "status": "error"
+      },
+      {
+        "span_id": "span-redis-001",
+        "parent_span_id": "span-payment-001",
+        "service": "redis",
+        "operation": "GET payment-session",
+        "duration_ms": 3000,
+        "status": "timeout"
+      }
+    ],
+    "labels": {
+      "endpoint": "/checkout",
+      "dependency": "redis",
+      "version": "v1.2.3",
+      "window": "incident"
+    }
+  },
+  {
+    "tenant_id": "tenant-a",
+    "service": "payment-api",
+    "environment": "sandbox",
+    "region": "us-east-1",
+    "timestamp": "2026-06-22T10:05:41Z",
+    "source": "jaeger",
+    "trace_id": "trace-latency-002",
+    "root_span": "POST /checkout",
+    "duration_ms": 2875,
+    "status": "error",
+    "spans": [
+      {
+        "span_id": "span-payment-002",
+        "parent_span_id": null,
+        "service": "payment-api",
+        "operation": "POST /checkout",
+        "duration_ms": 2875,
+        "status": "error"
+      },
+      {
+        "span_id": "span-redis-002",
+        "parent_span_id": "span-payment-002",
+        "service": "redis",
+        "operation": "SET payment-lock",
+        "duration_ms": 2750,
+        "status": "pool_exhausted"
+      }
+    ],
+    "labels": {
+      "endpoint": "/checkout",
+      "dependency": "redis",
+      "version": "v1.2.3",
+      "window": "incident"
+    }
+  }
+]

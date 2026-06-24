@@ -1,0 +1,93 @@
+{
+  "schema_version": "tf1.evidence_bundle.v1",
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-noisy-001",
+  "correlation_id": "corr-noisy-001",
+  "scenario": "noisy-false-alert",
+  "service": "search-api",
+  "environment": "sandbox",
+  "region": "us-east-1",
+  "time_window": {
+    "baseline_start": "2026-06-22T10:45:00Z",
+    "incident_start": "2026-06-22T11:05:00Z",
+    "incident_end": "2026-06-22T11:07:00Z",
+    "post_end": "2026-06-22T11:20:00Z"
+  },
+  "query_hints": {
+    "metrics": [
+      "http_5xx_rate",
+      "http_latency_p95_ms",
+      "request_rate",
+      "synthetic_probe_success"
+    ],
+    "log_filters": [
+      "probe timeout",
+      "recovered",
+      "retry"
+    ],
+    "trace_ids": [
+      "trace-noisy-001"
+    ],
+    "dependencies": [
+      "search-index"
+    ]
+  },
+  "metrics": [
+    {
+      "metric_name": "http_5xx_rate",
+      "service": "search-api",
+      "unit": "percent",
+      "points": [
+        {"ts": "2026-06-22T11:00:00Z", "value": 0.1},
+        {"ts": "2026-06-22T11:06:00Z", "value": 0.1}
+      ],
+      "labels": {"endpoint": "/search", "source": "prometheus"}
+    },
+    {
+      "metric_name": "http_latency_p95_ms",
+      "service": "search-api",
+      "unit": "ms",
+      "points": [
+        {"ts": "2026-06-22T11:00:00Z", "value": 170},
+        {"ts": "2026-06-22T11:06:00Z", "value": 180}
+      ],
+      "labels": {"endpoint": "/search", "source": "prometheus"}
+    }
+  ],
+  "logs": [
+    {
+      "service": "search-api",
+      "ts": "2026-06-22T11:05:03Z",
+      "level": "warning",
+      "message": "synthetic probe timeout recovered on retry",
+      "trace_id": "trace-noisy-001",
+      "labels": {"pod": "search-api-55bf", "version": "sha-search", "source": "loki"}
+    }
+  ],
+  "traces": [
+    {
+      "trace_id": "trace-noisy-001",
+      "service": "search-api",
+      "root_span": "GET /search",
+      "duration_ms": 210,
+      "status": "ok",
+      "bottleneck_service": null,
+      "bottleneck_reason": "probe recovered on retry and no user-impacting trace failure was observed"
+    }
+  ],
+  "deploy_events": [],
+  "ownership": {
+    "service": "search-api",
+    "owner_team": "search-platform",
+    "slack_channel": "#oncall-search",
+    "jira_project": "SRCH",
+    "triage_queue": "search-triage"
+  },
+  "runbooks": [
+    {
+      "title": "Noisy alert triage",
+      "url": "runbook://noisy-alert",
+      "excerpt": "Check alert repetition and user impact before escalating."
+    }
+  ]
+}

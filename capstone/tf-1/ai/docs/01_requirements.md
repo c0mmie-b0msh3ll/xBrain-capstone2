@@ -36,7 +36,7 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 - Input schema for alert, logs, metrics, recent deploys, service ownership, and runbook/docs snippets.
 - Output schema for diagnosis, severity, confidence, recommendation, ticket payload, Slack summary, and audit reference.
 - Runbook/doc-aware suggestion logic.
-- Evaluation set using the mentor-provided data pack plus derived test cases.
+- Evaluation set using the RCAEval subset as the primary scenario dataset plus clearly marked supplemental records where RCAEval lacks logs/traces/deploys/runbooks.
 - Engine skeleton endpoint with dummy response before full AI logic.
 
 ## 6. Out of Scope
@@ -59,10 +59,14 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 - Audit retention target: >= 90 days in design.
 - Failure fallback: if AI cannot diagnose safely, return `INSUFFICIENT_CONTEXT` or `INVESTIGATE`, not a confident guess.
 
-## 8. Open Questions
+## 8. W11 Decisions And Remaining External Dependencies
 
-- [ ] What exact format will the mentor-provided data pack use: JSON events, CSV, log files, traces, or mixed files?
-- [ ] Does the data pack include runbooks/docs, or should the AI team author minimal runbook snippets for the 3 scenarios?
-- [ ] Which AIOps component owns each context source: metrics, logs, deploys, ownership, and runbooks?
-- [ ] What Jira and Slack integrations are expected to be live vs mocked?
-- [ ] What manual baseline should be used for MTTA/MTTR comparison?
+| Item | W11 decision |
+|---|---|
+| Primary dataset | Use the checked-in RCAEval subset under `../engine-skeleton/datapack/external/` as the main scenario source. |
+| Extra evidence | CDO hosts precomputed evidence bundles first. A read-only evidence proxy can be added later for live bounded queries. |
+| Missing RCAEval fields | Logs, traces, deploy metadata, ownership, and runbooks may be supplied as TF1 supplemental records and must be marked in `data_lineage`. |
+| Context ownership | CDO/platform owns observability collection and bounded access. AIOps owns normalization, detection, context packaging, RCA, confidence, and output payloads. |
+| Jira/Slack for W11 | AI returns Jira/Slack payloads. Live publishing can be feature-gated; payload generation and report links must be demoable. |
+| MTTA/MTTR baseline | Use manual investigation steps on the same three scenarios as the comparison baseline for W11. |
+| External dependency | A real deployed endpoint URL must be added after AWS smoke tests pass. |
