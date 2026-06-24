@@ -1,0 +1,196 @@
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import Any
+
+
+RISK_ORDER = {"low": 1, "medium": 2, "high": 3}
+
+
+ACTION_CATALOG: dict[str, dict[str, Any]] = {
+    "attach_telemetry_context": {
+        "id": "attach_telemetry_context",
+        "type": "ESCALATE_OWNER",
+        "risk": "low",
+        "summary": "Ask the AIOps context layer to attach metrics, logs, recent deploys, ownership, and runbook context before diagnosis.",
+        "why": "The alert does not include enough bounded telemetry to support a safe root-cause recommendation.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["insufficient_context"],
+    },
+    "observe_user_impact": {
+        "id": "observe_user_impact",
+        "type": "OBSERVE",
+        "risk": "low",
+        "summary": "Watch for alert repetition and compare it with user-impacting metrics before opening remediation work.",
+        "why": "The alert signal is weak or ambiguous, so observation is safer than remediation.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["noisy_or_ambiguous_alert"],
+    },
+    "human_review_noisy_alert": {
+        "id": "human_review_noisy_alert",
+        "type": "HUMAN_REVIEW",
+        "risk": "low",
+        "summary": "Have the service owner confirm whether this alert is actionable before escalation.",
+        "why": "Human confirmation is required when deterministic evidence does not establish a clear impact.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["noisy_or_ambiguous_alert", "general_investigation"],
+    },
+    "service_down_runbook": {
+        "id": "service_down_runbook",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
+        "why": "Critical availability alerts need bounded investigation before any remediation is attempted.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["critical_service_down"],
+    },
+    "page_service_owner": {
+        "id": "page_service_owner",
+        "type": "ESCALATE_OWNER",
+        "risk": "low",
+        "summary": "Page or notify the owning team for immediate human review.",
+        "why": "Critical impact requires the accountable owner to validate and coordinate response.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["critical_service_down"],
+    },
+    "dependency_timeout_triage": {
+        "id": "dependency_timeout_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs.",
+        "why": "Timeout and dependency evidence can explain latency without requiring immediate rollback or restart.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["latency_degradation", "redis_database_timeout"],
+    },
+    "latency_saturation_review": {
+        "id": "latency_saturation_review",
+        "type": "HUMAN_REVIEW",
+        "risk": "low",
+        "summary": "Review saturation metrics, dependency latency, and trace samples before assigning remediation.",
+        "why": "Latency degradation has supporting evidence, but the exact bottleneck still needs operator validation.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["latency_degradation"],
+    },
+    "consider_recent_deploy_rollback": {
+        "id": "consider_recent_deploy_rollback",
+        "type": "ROLLBACK_CONSIDER",
+        "risk": "medium",
+        "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
+        "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation.",
+        "requires_human_approval": True,
+        "approval_reason": "Rollback changes production state and must be approved by the owning team.",
+        "scenario_tags": ["recent_deploy_correlation", "latency_degradation", "critical_service_down"],
+    },
+}
+
+
+def select_actions(request: Any, decision: dict[str, Any], rca: dict[str, Any], runbook_ref: str | None) -> list[dict[str, Any]]:
+    classification = decision["classification"]
+    evidence_refs = build_evidence_refs(request, decision, rca)
+    selected_ids = candidate_ids_for(request, decision, rca)
+    max_risk = allowed_risk(classification, float(decision["confidence"]))
+
+    actions: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for action_id in selected_ids:
+        if action_id in seen:
+            continue
+        catalog_action = ACTION_CATALOG[action_id]
+        if RISK_ORDER[catalog_action["risk"]] > RISK_ORDER[max_risk]:
+            continue
+        action = deepcopy(catalog_action)
+        action["priority"] = len(actions) + 1
+        action["runbook_ref"] = runbook_ref
+        action["evidence_refs"] = evidence_refs_for_action(action_id, evidence_refs)
+        action.pop("scenario_tags", None)
+        actions.append(action)
+        seen.add(action_id)
+
+    if actions:
+        return actions
+
+    fallback_id = "attach_telemetry_context" if classification == "insufficient_context" else "human_review_noisy_alert"
+    fallback = deepcopy(ACTION_CATALOG[fallback_id])
+    fallback["priority"] = 1
+    fallback["runbook_ref"] = runbook_ref
+    fallback["evidence_refs"] = evidence_refs_for_action(fallback_id, evidence_refs)
+    fallback.pop("scenario_tags", None)
+    return [fallback]
+
+
+def candidate_ids_for(request: Any, decision: dict[str, Any], rca: dict[str, Any]) -> list[str]:
+    classification = decision["classification"]
+    if classification == "insufficient_context":
+        return ["attach_telemetry_context"]
+    if classification == "noisy_or_ambiguous_alert":
+        return ["observe_user_impact", "human_review_noisy_alert"]
+    if classification == "critical_service_down":
+        ids = ["service_down_runbook", "page_service_owner"]
+        if request.recent_deploys:
+            ids.append("consider_recent_deploy_rollback")
+        return ids
+    if classification == "latency_degradation":
+        ids = []
+        if has_timeout_or_dependency_signal(request, rca):
+            ids.append("dependency_timeout_triage")
+        ids.append("latency_saturation_review")
+        if request.recent_deploys:
+            ids.append("consider_recent_deploy_rollback")
+        return ids
+    return ["human_review_noisy_alert"]
+
+
+def allowed_risk(classification: str, confidence: float) -> str:
+    if classification in {"insufficient_context", "noisy_or_ambiguous_alert"}:
+        return "low"
+    if confidence < 0.6:
+        return "low"
+    return "medium"
+
+
+def has_timeout_or_dependency_signal(request: Any, rca: dict[str, Any]) -> bool:
+    text_parts = [
+        request.alert.title,
+        request.alert.description or "",
+        " ".join(metric.metric_name for metric in request.metrics),
+        " ".join(log.message for log in request.logs),
+        " ".join(item.get("reason", "") for item in rca.get("anomaly_evidence", [])),
+    ]
+    text = " ".join(text_parts).lower()
+    return any(token in text for token in ["timeout", "redis", "database", "postgres", "mysql", "connection pool", "slow query"])
+
+
+def build_evidence_refs(request: Any, decision: dict[str, Any], rca: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    for index, _ in enumerate(decision.get("evidence", [])[:2]):
+        refs.append(f"suspected_root_cause.evidence[{index}]")
+    for index, _ in enumerate(rca.get("anomaly_evidence", [])[:2]):
+        refs.append(f"anomaly_evidence[{index}]")
+    if request.logs:
+        refs.append("logs[0]")
+    if request.recent_deploys:
+        refs.append("recent_deploys[0]")
+    if request.ownership and request.ownership.runbooks:
+        refs.append("ownership.runbooks[0]")
+    return refs or ["alert"]
+
+
+def evidence_refs_for_action(action_id: str, evidence_refs: list[str]) -> list[str]:
+    preferred: list[str] = []
+    if action_id == "consider_recent_deploy_rollback":
+        preferred = ["recent_deploys[0]", "ownership.runbooks[0]"]
+    elif action_id == "dependency_timeout_triage":
+        preferred = ["logs[0]", "anomaly_evidence[0]", "ownership.runbooks[0]"]
+    elif action_id == "attach_telemetry_context":
+        preferred = ["alert"]
+
+    ordered = [ref for ref in preferred if ref in evidence_refs]
+    ordered.extend(ref for ref in evidence_refs if ref not in ordered)
+    return ordered[:4] or ["alert"]

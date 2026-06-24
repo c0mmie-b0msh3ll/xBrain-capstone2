@@ -1,0 +1,97 @@
+{
+  "source": "figshare RCAEval-v2 stream https://doi.org/10.6084/m9.figshare.31048672.v1",
+  "selection_policy": "2-3 RCAEval cases per TF1 scenario; extracted only metrics.json and inject_time.txt to avoid full dataset usage.",
+  "stream_bytes_read": 4419829760,
+  "cases": [
+    {
+      "scenario": "latency-degradation",
+      "source_case": "data/re1ss_carts_delay_1",
+      "local_dir": "datapack/external/rcaeval-subsets/latency-degradation/re1ss_carts_delay_1",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "latency-degradation",
+      "source_case": "data/re2ss_catalogue_delay_2",
+      "local_dir": "datapack/external/rcaeval-subsets/latency-degradation/re2ss_catalogue_delay_2",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "latency-degradation",
+      "source_case": "data/re1ob_cartservice_delay_3",
+      "local_dir": "datapack/external/rcaeval-subsets/latency-degradation/re1ob_cartservice_delay_3",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "critical-service-down",
+      "source_case": "data/re2tt_ts-auth-service_loss_1",
+      "local_dir": "datapack/external/rcaeval-subsets/critical-service-down/re2tt_ts-auth-service_loss_1",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "critical-service-down",
+      "source_case": "data/re1ss_user_loss_2",
+      "local_dir": "datapack/external/rcaeval-subsets/critical-service-down/re1ss_user_loss_2",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "critical-service-down",
+      "source_case": "data/re2ss_orders_loss_1",
+      "local_dir": "datapack/external/rcaeval-subsets/critical-service-down/re2ss_orders_loss_1",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "noisy-false-alert",
+      "source_case": "data/re1ss_user_cpu_3",
+      "local_dir": "datapack/external/rcaeval-subsets/noisy-false-alert/re1ss_user_cpu_3",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "noisy-false-alert",
+      "source_case": "data/re1ob_cartservice_mem_1",
+      "local_dir": "datapack/external/rcaeval-subsets/noisy-false-alert/re1ob_cartservice_mem_1",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    },
+    {
+      "scenario": "noisy-false-alert",
+      "source_case": "data/re1tt_ts-route-service_disk_3",
+      "local_dir": "datapack/external/rcaeval-subsets/noisy-false-alert/re1tt_ts-route-service_disk_3",
+      "files": [
+        "inject_time.txt",
+        "metrics.json"
+      ],
+      "complete": true
+    }
+  ]
+}

@@ -121,6 +121,7 @@ function ReportDetail({ incidentId }) {
   const candidates = report?.rca_candidates || triage.rca_candidates || [];
   const evidence = report?.anomaly_evidence || triage.anomaly_evidence || [];
   const causalHints = report?.causal_hints || triage.causal_hints || [];
+  const actions = triage.recommended_actions || [];
 
   const rawUrl = useMemo(() => `${API_BASES[0]}/v1/reports/${encodeURIComponent(incidentId)}/raw`, [incidentId]);
 
@@ -150,6 +151,10 @@ function ReportDetail({ incidentId }) {
       <ReportSection title="Suspected Root Cause">
         <p className="lead">{rootCause.summary || "No suspected root cause available."}</p>
         <EvidenceList items={(rootCause.evidence || []).map((reason) => ({ reason }))} />
+      </ReportSection>
+
+      <ReportSection title="Recommended Actions">
+        <RecommendedActions actions={actions} />
       </ReportSection>
 
       <ReportSection title="Ranked RCA Candidates">
@@ -218,6 +223,33 @@ function Metric({ label, value, tone }) {
 function EvidenceList({ items }) {
   if (!items?.length) return <Empty text="Not available." />;
   return <ul className="evidenceList">{items.map((item, index) => <li key={index}>{item.reason || JSON.stringify(item)}</li>)}</ul>;
+}
+
+function RecommendedActions({ actions }) {
+  if (!actions?.length) return <Empty text="No recommended actions available." />;
+  return (
+    <div className="actionList">
+      {actions.map((action) => (
+        <article className="actionRow" key={action.id || `${action.type}-${action.priority}`}>
+          <div className="actionHeader">
+            <strong>#{action.priority} {action.summary}</strong>
+            <div className="actionTags">
+              <span className={`risk risk-${action.risk || "unknown"}`}>{action.risk || "unknown"} risk</span>
+              {action.requires_human_approval && <span className="approvalTag">approval required</span>}
+            </div>
+          </div>
+          {action.why && <p>{action.why}</p>}
+          {action.approval_reason && <p className="muted">{action.approval_reason}</p>}
+          <div className="actionMeta">
+            <span>{action.type}</span>
+            {action.id && <span>{action.id}</span>}
+            {action.evidence_refs?.length ? <span>Evidence: {action.evidence_refs.join(", ")}</span> : null}
+            {action.runbook_ref && <a className="inlineLink compactLink" href={action.runbook_ref}><ExternalLink size={14} /> Runbook</a>}
+          </div>
+        </article>
+      ))}
+    </div>
+  );
 }
 
 function Payload({ title, value }) {

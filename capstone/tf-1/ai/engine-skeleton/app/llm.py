@@ -78,6 +78,89 @@ def synthesize_investigation_summary(request: Any, decision: dict[str, Any], rca
     }
 
 
+def reword_catalog_actions(
+    request: Any,
+    decision: dict[str, Any],
+    rca: dict[str, Any],
+    actions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    model_ids = configured_model_ids()
+    enabled = os.getenv("ENABLE_BEDROCK_LLM", "").lower() in {"1", "true", "yes"} or bool(os.getenv("BEDROCK_MODEL_ID") or os.getenv("BEDROCK_MODEL_IDS"))
+    if not enabled:
+        return {"actions": actions, "metadata": {"enabled": False, "provider": "deterministic"}}
+
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+    try:
+        import boto3
+
+        client = boto3.client("bedrock-runtime", region_name=region)
+    except Exception as exc:  # pragma: no cover - exercised only with live AWS credentials
+        return {
+            "actions": actions,
+            "metadata": {
+                "enabled": True,
+                "provider": "bedrock",
+                "model_ids": model_ids,
+                "region": region,
+                "fallback": True,
+                "error": f"{type(exc).__name__}: {exc}",
+            },
+        }
+
+    prompt_payload = build_action_prompt_payload(request, decision, rca, actions)
+    errors: list[dict[str, str]] = []
+    for model_id in model_ids:
+        try:
+            response = client.converse(
+                modelId=model_id,
+                system=[
+                    {
+                        "text": (
+                            "You are an AIOps recommendation editor. You may choose and reword only the provided action IDs. "
+                            "Do not invent action IDs, tools, commands, remediation steps, services, evidence, or approvals. "
+                            "Return strict JSON with an actions array. Each item must include id, summary, and why only."
+                        )
+                    }
+                ],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [{"text": json.dumps(prompt_payload, ensure_ascii=True)}],
+                    }
+                ],
+                inferenceConfig={"maxTokens": 450, "temperature": 0.1},
+            )
+            raw_text = response["output"]["message"]["content"][0]["text"].strip()
+            reworded = apply_action_rewording(actions, raw_text)
+            return {
+                "actions": reworded,
+                "metadata": {
+                    "enabled": True,
+                    "provider": "bedrock",
+                    "model_id": model_id,
+                    "model_ids": model_ids,
+                    "region": region,
+                    "fallback": False,
+                    "fallback_errors": errors,
+                },
+            }
+        except Exception as exc:  # pragma: no cover - exercised only with live AWS credentials
+            errors.append({"model_id": model_id, "error": f"{type(exc).__name__}: {exc}"})
+
+    return {
+        "actions": actions,
+        "metadata": {
+            "enabled": True,
+            "provider": "bedrock",
+            "model_ids": model_ids,
+            "region": region,
+            "fallback": True,
+            "fallback_errors": errors,
+            "error": "All configured Bedrock models failed for action wording.",
+        },
+    }
+
+
 def configured_model_ids() -> list[str]:
     csv_value = os.getenv("BEDROCK_MODEL_IDS")
     single_value = os.getenv("BEDROCK_MODEL_ID")
@@ -86,6 +169,33 @@ def configured_model_ids() -> list[str]:
     if single_value:
         return [single_value.strip(), *[model_id for model_id in DEFAULT_MODEL_IDS if model_id != single_value.strip()]]
     return DEFAULT_MODEL_IDS
+
+
+def apply_action_rewording(actions: list[dict[str, Any]], raw_text: str) -> list[dict[str, Any]]:
+    payload = json.loads(raw_text)
+    proposed_actions = payload.get("actions") if isinstance(payload, dict) else None
+    if not isinstance(proposed_actions, list):
+        raise ValueError("Action wording response must contain an actions array.")
+
+    by_id = {action["id"]: action.copy() for action in actions}
+    ordered: list[dict[str, Any]] = []
+    for proposed in proposed_actions:
+        if not isinstance(proposed, dict):
+            continue
+        action_id = proposed.get("id")
+        if action_id not in by_id:
+            raise ValueError(f"Unknown action id from LLM: {action_id}")
+        action = by_id.pop(action_id)
+        for field in ("summary", "why"):
+            value = proposed.get(field)
+            if isinstance(value, str) and value.strip():
+                action[field] = value.strip()
+        ordered.append(action)
+
+    ordered.extend(by_id.values())
+    for index, action in enumerate(ordered):
+        action["priority"] = index + 1
+    return ordered
 
 
 def build_prompt_payload(request: Any, decision: dict[str, Any], rca: dict[str, Any]) -> dict[str, Any]:
@@ -134,4 +244,66 @@ def build_prompt_payload(request: Any, decision: dict[str, Any], rca: dict[str, 
             {"title": runbook.title, "url": runbook.url, "excerpt": runbook.excerpt}
             for runbook in ((request.ownership.runbooks if request.ownership else [])[:3])
         ],
+    }
+
+
+def build_action_prompt_payload(
+    request: Any,
+    decision: dict[str, Any],
+    rca: dict[str, Any],
+    actions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "instruction": "Choose/reword only these action IDs. Do not invent actions. Preserve approval requirements, risk, runbook, and evidence references.",
+        "incident": {
+            "incident_id": request.incident_id,
+            "service": request.alert.service,
+            "severity": request.alert.severity,
+            "title": request.alert.title,
+            "description": request.alert.description,
+        },
+        "classification": {
+            "status": decision["status"],
+            "classification": decision["classification"],
+            "confidence": decision["confidence"],
+            "deterministic_summary": decision["summary"],
+            "deterministic_evidence": decision["evidence"][:4],
+        },
+        "selected_catalog_actions": [
+            {
+                "id": action["id"],
+                "type": action["type"],
+                "risk": action["risk"],
+                "summary": action["summary"],
+                "why": action["why"],
+                "evidence_refs": action["evidence_refs"],
+                "requires_human_approval": action["requires_human_approval"],
+                "approval_reason": action["approval_reason"],
+                "runbook_ref": action["runbook_ref"],
+            }
+            for action in actions
+        ],
+        "bounded_evidence": {
+            "anomaly_evidence": rca.get("anomaly_evidence", [])[:5],
+            "rca_candidates": rca.get("rca_candidates", [])[:3],
+            "recent_deploys": [
+                {
+                    "service": deploy.service,
+                    "version": deploy.version,
+                    "deployed_at": deploy.deployed_at,
+                    "change_summary": deploy.change_summary,
+                    "rollback_ref": deploy.rollback_ref,
+                }
+                for deploy in request.recent_deploys[:2]
+            ],
+            "logs": [
+                {
+                    "service": log.service,
+                    "level": log.level,
+                    "message": log.message,
+                }
+                for log in request.logs[:3]
+            ],
+        },
+        "output_schema": {"actions": [{"id": "string", "summary": "string", "why": "string"}]},
     }

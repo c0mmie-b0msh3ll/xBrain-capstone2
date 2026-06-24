@@ -383,12 +383,14 @@ def publish_slack(response: dict[str, Any], dry_run: bool, report_url: str) -> N
     payload = response.get("slack_payload", {})
     evidence = response.get("anomaly_evidence", [])
     top_evidence = evidence[0]["reason"] if evidence else response.get("suspected_root_cause", {}).get("evidence", [""])[0]
+    actions = response.get("recommended_actions", [])
+    top_action = actions[0].get("summary") if actions else "Review incident context."
     concise_payload = {
         "channel": payload.get("channel", "#oncall"),
         "text": (
             f"{response.get('severity', 'unknown').upper()} {response.get('classification')} "
             f"for {response.get('incident_id')} ({response.get('status')}, confidence {response.get('confidence', 0):.2f}). "
-            f"Top evidence: {top_evidence} Report: {report_url}"
+            f"Top evidence: {top_evidence} Action: {top_action} Report: {report_url}"
         ),
     }
     if dry_run or not webhook:

@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.llm import synthesize_investigation_summary
+from app.action_catalog import select_actions
+from app.llm import reword_catalog_actions, synthesize_investigation_summary
 from app.rca import analyze_request
 from app.report_store import list_reports, read_report
 
@@ -110,10 +111,16 @@ class RootCause(BaseModel):
 
 
 class RecommendedAction(BaseModel):
+    id: str | None = None
     type: ActionType
     priority: int
     summary: str
     runbook_ref: str | None = None
+    risk: Literal["low", "medium", "high"] | None = None
+    why: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    requires_human_approval: bool | None = None
+    approval_reason: str | None = None
 
 
 class TicketPayload(BaseModel):
@@ -333,10 +340,12 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
     llm_metadata = {key: value for key, value in llm_result.items() if key != "summary"}
     evidence_preview = "; ".join(item.get("reason", "") for item in anomaly_evidence[:2])
 
-    actions = [
-        RecommendedAction(type=action_type, priority=index + 1, summary=summary, runbook_ref=runbook_ref)
-        for index, (action_type, summary) in enumerate(decision["actions"])
-    ]
+    selected_actions = select_actions(request, decision, rca, runbook_ref)
+    action_wording = reword_catalog_actions(request, decision, rca, selected_actions)
+    action_payloads = action_wording["actions"]
+    llm_metadata["action_wording"] = action_wording["metadata"]
+    actions = [RecommendedAction(**action) for action in action_payloads]
+    top_action = actions[0] if actions else None
 
     return TriageResponse(
         incident_id=request.incident_id,
@@ -364,7 +373,9 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
             text=(
                 f"{request.alert.service}: {decision['classification']} "
                 f"({decision['status']}, confidence {decision['confidence']:.2f}). "
-                f"Evidence: {evidence_preview or decision['evidence'][0]}. Audit: {audit_id}."
+                f"Evidence: {evidence_preview or decision['evidence'][0]}. "
+                f"Action: {top_action.summary if top_action else 'Review incident context.'} "
+                f"Audit: {audit_id}."
             ),
         ),
         audit_id=audit_id,

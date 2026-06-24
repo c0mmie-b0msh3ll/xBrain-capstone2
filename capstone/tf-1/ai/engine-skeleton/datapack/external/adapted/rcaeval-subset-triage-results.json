@@ -1,0 +1,215 @@
+{
+  "source": "RCAEval subset adapted from Figshare RCAEval-v2 stream",
+  "note": "Subset validation only; not a full RCAEval benchmark run.",
+  "total": 9,
+  "passed_200": 9,
+  "results": [
+    {
+      "request": "datapack/external/adapted/critical-service-down/re1ss_user_loss_2.request.json",
+      "scenario": "critical-service-down",
+      "case": "re1ss_user_loss_2",
+      "status_code": 200,
+      "classification": "critical_service_down",
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 13,
+      "top_rca_candidate": "user",
+      "slack_text": "user: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: user-db_cpu latest point was isolated against recent metric shape.; user-db_mem latest point was isolated against recent metric shape.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-14efaa7d6dcf."
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2ss_orders_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "case": "re2ss_orders_loss_1",
+      "status_code": 200,
+      "classification": "critical_service_down",
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 4,
+      "top_rca_candidate": "orders",
+      "slack_text": "orders: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: orders-db_mem latest point was isolated against recent metric shape.; orders_latency-50 latest point was isolated against recent metric shape.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-b62ffd155726."
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2tt_ts-auth-service_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "case": "re2tt_ts-auth-service_loss_1",
+      "status_code": 200,
+      "classification": "critical_service_down",
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 10,
+      "top_rca_candidate": "ts-auth-service",
+      "slack_text": "ts-auth-service: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.; ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-4799d6fa9033."
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ob_cartservice_delay_3.request.json",
+      "scenario": "latency-degradation",
+      "case": "re1ob_cartservice_delay_3",
+      "status_code": 200,
+      "classification": "latency_degradation",
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "action_ids": [
+        "latency_saturation_review"
+      ],
+      "action_risks": [
+        "low"
+      ],
+      "approval_required": [
+        false
+      ],
+      "anomaly_evidence_count": 2,
+      "top_rca_candidate": "cartservice",
+      "slack_text": "cartservice: latency_degradation (DIAGNOSED, confidence 0.82). Evidence: cartservice_latency-50 latest point was isolated against recent metric shape.; cartservice_latency-90 latest point was isolated against recent metric shape.. Action: Review saturation metrics, dependency latency, and trace samples before assigning remediation. Audit: audit-3b8964448d57."
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ss_carts_delay_1.request.json",
+      "scenario": "latency-degradation",
+      "case": "re1ss_carts_delay_1",
+      "status_code": 200,
+      "classification": "latency_degradation",
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "action_ids": [
+        "latency_saturation_review"
+      ],
+      "action_risks": [
+        "low"
+      ],
+      "approval_required": [
+        false
+      ],
+      "anomaly_evidence_count": 4,
+      "top_rca_candidate": "carts-db",
+      "slack_text": "carts: latency_degradation (DIAGNOSED, confidence 0.82). Evidence: carts-db_mem current value 9.11892e+07 is 3.2 sigma from baseline.; carts-db_mem latest point was isolated against recent metric shape.. Action: Review saturation metrics, dependency latency, and trace samples before assigning remediation. Audit: audit-6657b60f33a8."
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re2ss_catalogue_delay_2.request.json",
+      "scenario": "latency-degradation",
+      "case": "re2ss_catalogue_delay_2",
+      "status_code": 200,
+      "classification": "latency_degradation",
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "action_ids": [
+        "latency_saturation_review"
+      ],
+      "action_risks": [
+        "low"
+      ],
+      "approval_required": [
+        false
+      ],
+      "anomaly_evidence_count": 7,
+      "top_rca_candidate": "catalogue",
+      "slack_text": "catalogue: latency_degradation (DIAGNOSED, confidence 0.82). Evidence: catalogue-db_mem current value 4.31124e+08 is 6.2 sigma from baseline.; catalogue_latency-50 current value 0.00321687 is 3.8 sigma from baseline.. Action: Review saturation metrics, dependency latency, and trace samples before assigning remediation. Audit: audit-08c73dc60f1d."
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ob_cartservice_mem_1.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1ob_cartservice_mem_1",
+      "status_code": 200,
+      "classification": "noisy_or_ambiguous_alert",
+      "status": "INVESTIGATE",
+      "confidence": 0.45,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 10,
+      "top_rca_candidate": "cartservice",
+      "slack_text": "cartservice: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Evidence: cartservice_mem current value 2.46186e+08 is 4.3 sigma from baseline.; cartservice_mem latest point was isolated against recent metric shape.. Action: Watch for alert repetition and compare it with user-impacting metrics before opening remediation work. Audit: audit-84f60564f9da."
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ss_user_cpu_3.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1ss_user_cpu_3",
+      "status_code": 200,
+      "classification": "noisy_or_ambiguous_alert",
+      "status": "INVESTIGATE",
+      "confidence": 0.45,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 9,
+      "top_rca_candidate": "user",
+      "slack_text": "user: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Evidence: user_cpu latest point was isolated against recent metric shape.; user-db_mem latest point was isolated against recent metric shape.. Action: Watch for alert repetition and compare it with user-impacting metrics before opening remediation work. Audit: audit-58bdd435ecf1."
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1tt_ts-route-service_disk_3.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1tt_ts-route-service_disk_3",
+      "status_code": 200,
+      "classification": "noisy_or_ambiguous_alert",
+      "status": "INVESTIGATE",
+      "confidence": 0.45,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "action_risks": [
+        "low",
+        "low"
+      ],
+      "approval_required": [
+        false,
+        false
+      ],
+      "anomaly_evidence_count": 7,
+      "top_rca_candidate": "ts-route-service",
+      "slack_text": "ts-route-service: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Evidence: ts-route-service_cpu latest point was isolated against recent metric shape.; ts-route-service_latency-50 latest point was isolated against recent metric shape.. Action: Watch for alert repetition and compare it with user-impacting metrics before opening remediation work. Audit: audit-c68592a9cbb5."
+    }
+  ]
+}
