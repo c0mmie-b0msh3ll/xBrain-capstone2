@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.action_catalog import select_actions
-from app.llm import reword_catalog_actions, synthesize_investigation_summary
+from app.llm import investigate_with_tools, reword_catalog_actions, synthesize_investigation_summary
 from app.rca import analyze_request
 from app.report_store import list_reports, read_report
 
@@ -193,9 +193,16 @@ def triage(
 ) -> TriageResponse:
     validate_headers(request, x_tenant_id, x_correlation_id, authorization)
     audit_id = build_audit_id(request)
+    return triage_request(request, audit_id)
+
+
+def triage_request(request: TriageRequest, audit_id: str | None = None) -> TriageResponse:
+    audit_id = audit_id or build_audit_id(request)
     rca = analyze_request(request)
     decision = classify(request, rca)
-    return build_response(request, audit_id, decision)
+    request, rca, decision, tool_metadata = investigate_with_tools(request, decision, rca)
+    decision = classify(request, rca)
+    return build_response(request, audit_id, decision, {"tool_investigation": tool_metadata})
 
 
 def validate_headers(
@@ -324,7 +331,12 @@ def collect_evidence(request: TriageRequest, fallback: str) -> list[str]:
     return evidence or [fallback]
 
 
-def build_response(request: TriageRequest, audit_id: str, decision: dict[str, Any]) -> TriageResponse:
+def build_response(
+    request: TriageRequest,
+    audit_id: str,
+    decision: dict[str, Any],
+    extra_llm_metadata: dict[str, Any] | None = None,
+) -> TriageResponse:
     owner = request.ownership or Ownership(service=request.alert.service)
     project = owner.jira_project or "OPS"
     channel = owner.slack_channel or "#oncall"
@@ -338,6 +350,8 @@ def build_response(request: TriageRequest, audit_id: str, decision: dict[str, An
     llm_result = synthesize_investigation_summary(request, decision, rca)
     investigation_summary = request.investigation_summary or llm_result.get("summary") or rca.get("investigation_summary")
     llm_metadata = {key: value for key, value in llm_result.items() if key != "summary"}
+    if extra_llm_metadata:
+        llm_metadata.update(extra_llm_metadata)
     evidence_preview = "; ".join(item.get("reason", "") for item in anomaly_evidence[:2])
 
     selected_actions = select_actions(request, decision, rca, runbook_ref)

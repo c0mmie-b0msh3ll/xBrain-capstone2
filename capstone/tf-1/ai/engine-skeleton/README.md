@@ -84,16 +84,17 @@ python -m app.aiops_worker --offline-scenario --scenario latency-degradation --s
 
 If `SLACK_WEBHOOK_URL` is not set, the worker prints `slack_dry_run` and does not send anything.
 
-## Connect Bedrock LLM
+## Connect AgentCore LLM
 
-The triage API can optionally call Amazon Bedrock for the investigator summary. It still runs deterministic RCA first, sends only bounded evidence to the model, and falls back to the deterministic summary if Bedrock is disabled or errors.
+The triage API can optionally call Amazon Bedrock AgentCore Runtime for investigator summaries, catalog action wording, and bounded tool-call investigation. It still runs deterministic RCA first, sends only bounded evidence to the agent, executes only TF1 allowlisted read-only tools, and falls back to deterministic RCA if AgentCore is disabled or errors.
 
 Required env:
 
 ```bash
 export AWS_REGION="us-east-1"
-export BEDROCK_MODEL_IDS="us.anthropic.claude-opus-4-8,us.anthropic.claude-opus-4-6-v1,us.amazon.nova-2-lite-v1:0"
-export ENABLE_BEDROCK_LLM="true"
+export AGENTCORE_RUNTIME_ARN="arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1-investigator"
+export ENABLE_AGENTCORE_LLM="true"
+export ENABLE_AGENTCORE_LLM_TOOLS="true"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
 ```
 
@@ -101,22 +102,31 @@ PowerShell:
 
 ```powershell
 $env:AWS_REGION = "us-east-1"
-$env:BEDROCK_MODEL_IDS = "us.anthropic.claude-opus-4-8,us.anthropic.claude-opus-4-6-v1,us.amazon.nova-2-lite-v1:0"
-$env:ENABLE_BEDROCK_LLM = "true"
+$env:AGENTCORE_RUNTIME_ARN = "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1-investigator"
+$env:ENABLE_AGENTCORE_LLM = "true"
+$env:ENABLE_AGENTCORE_LLM_TOOLS = "true"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
 ```
 
-The local machine has AWS CLI access to the project AWS account, so local non-Docker runs can use that profile directly. Docker runs need credentials provided separately through your normal AWS credential mechanism; the Compose file only passes region/model/env values.
+The runtime IAM principal needs `bedrock-agentcore:InvokeAgentRuntime` on the configured AgentCore runtime. The local machine has AWS CLI access to the project AWS account, so local non-Docker runs can use that profile directly. Docker runs need credentials provided separately through your normal AWS credential mechanism; the Compose file only passes region/env values.
 
-Default model fallback order:
+AgentCore payload contract expected by TF1:
 
-```text
-us.anthropic.claude-opus-4-8
-us.anthropic.claude-opus-4-6-v1
-us.amazon.nova-2-lite-v1:0
+```json
+{
+  "task": "investigation_summary | action_wording",
+  "system_instructions": "bounded operating instructions",
+  "input": {}
+}
 ```
 
-These are Bedrock inference profile IDs. If a model/profile is unavailable or the account does not have access, the triage API tries the next model and records fallback errors in `llm_metadata`.
+For tool investigation, the AgentCore agent must return strict JSON:
+
+```json
+{"tool_calls": [{"name": "get_logs", "args": {"limit": 10}}]}
+```
+
+TF1 validates every returned tool name and tenant/service/environment/window scope before executing the local read-only tool registry.
 
 Useful model discovery commands:
 

@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Any
 
 import requests
+from pydantic import ValidationError
 
+from app.context_tools import ToolRegistry
+from app.incident_seed import IncidentSeed, build_triage_request_from_seed
 from app.report_store import write_report
 
 
@@ -38,6 +41,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=int, default=0)
     parser.add_argument("--offline-scenario", action="store_true")
     parser.add_argument("--dry-run-slack", action="store_true", default=os.getenv("SLACK_WEBHOOK_URL") is None)
+    parser.add_argument("--sqs-queue-url", default=os.getenv("SQS_QUEUE_URL"))
+    parser.add_argument("--sqs-wait-seconds", type=int, default=int(os.getenv("SQS_WAIT_SECONDS", "5")))
+    parser.add_argument("--sqs-max-messages", type=int, default=int(os.getenv("SQS_MAX_MESSAGES", "1")))
+    parser.add_argument("--sqs-region", default=os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1")
     return parser.parse_args()
 
 
@@ -431,8 +438,68 @@ def run_once(args: argparse.Namespace) -> bool:
     return True
 
 
+def process_sqs_message(
+    args: argparse.Namespace,
+    sqs_client: Any,
+    message: dict[str, Any],
+    registry: ToolRegistry | None = None,
+) -> bool:
+    body_text = message.get("Body", "")
+    try:
+        seed = IncidentSeed.model_validate_json(body_text)
+    except ValidationError:
+        print(json.dumps({"sqs_message": "invalid_incident_seed", "deleted": False}))
+        return False
+
+    body = build_triage_request_from_seed(seed, registry)
+    response = call_triage(args, body)
+    report_url = report_url_for(args, body["incident_id"])
+    report = build_report(body, response, {"evidence": ["cdo incident seed"]}, report_url)
+    report_path = write_report(report, Path(args.report_dir))
+    sqs_client.delete_message(QueueUrl=args.sqs_queue_url, ReceiptHandle=message["ReceiptHandle"])
+    print(
+        json.dumps(
+            {
+                "sqs_message": "processed",
+                "incident_id": body["incident_id"],
+                "report_written": str(report_path),
+                "deleted": True,
+            },
+            indent=2,
+        )
+    )
+    publish_slack(response, args.dry_run_slack, report_url)
+    return True
+
+
+def run_sqs_once(args: argparse.Namespace, registry: ToolRegistry | None = None) -> int:
+    if not args.sqs_queue_url:
+        raise ValueError("--sqs-queue-url or SQS_QUEUE_URL is required for SQS worker mode")
+    import boto3
+
+    sqs_client = boto3.client("sqs", region_name=args.sqs_region)
+    response = sqs_client.receive_message(
+        QueueUrl=args.sqs_queue_url,
+        MaxNumberOfMessages=max(1, min(args.sqs_max_messages, 10)),
+        WaitTimeSeconds=max(0, min(args.sqs_wait_seconds, 20)),
+    )
+    messages = response.get("Messages", [])
+    processed = 0
+    for message in messages:
+        if process_sqs_message(args, sqs_client, message, registry):
+            processed += 1
+    return processed
+
+
 def main() -> None:
     args = parse_args()
+    if args.sqs_queue_url:
+        while True:
+            run_sqs_once(args)
+            if args.poll_seconds <= 0:
+                break
+            time.sleep(args.poll_seconds)
+        return
     while True:
         run_once(args)
         if args.poll_seconds <= 0:
