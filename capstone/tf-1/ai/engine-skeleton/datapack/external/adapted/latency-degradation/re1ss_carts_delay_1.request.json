@@ -2074,6 +2074,7 @@
     }
   ],
   "logs": [],
+  "traces": [],
   "recent_deploys": [],
   "ownership": {
     "service": "carts",

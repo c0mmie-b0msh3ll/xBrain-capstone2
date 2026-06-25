@@ -2073,7 +2073,209 @@
       }
     }
   ],
-  "logs": [],
+  "logs": [
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "POST /cart 201 185.407 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Carts merged.",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "set cookie65a97c91d63d6a0001fbf45a",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Sent cookies.",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "POST /register 200 127.614 ms - 33",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "POST /cart 201 182.345 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "ts=2024-01-18T19:31:30Z caller=logging.go:85 method=Health result=2 took=34.594\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "ts=2024-01-18T19:31:30Z caller=logging.go:85 method=Health result=2 took=31.777\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Posting Address: {\"number\":\"123\",\"street\":\"123\",\"city\":\"123\",\"postcode\":\"123\",\"country\":\"123\",\"userID\":\"65a97c8bd63d6a0001fbf445\"}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "ts=2024-01-18T19:31:30.274265921Z caller=middlewares.go:88 method=PostAddress street=123 number=123 user=65a97c8bd63d6a0001fbf445 took=1.65368ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "POST /addresses 200 6.260 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Posting Card: {\"longNum\":\"123123321\",\"expires\":\"1232\",\"ccv\":\"123\",\"userID\":\"65a97c8bd63d6a0001fbf445\"}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "ts=2024-01-18T19:31:30.328812293Z caller=middlewares.go:118 method=PostCard card=*****3321 user=65a97c8bd63d6a0001fbf445 took=1.949002ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "POST /cards 200 7.133 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Attempting to delete cart for user: 65a97c8bd63d6a0001fbf445",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "User cart deleted with status: 202",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "DELETE /cart 202 22.696 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "Attempting to add to cart: {\"id\":\"zzz4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":1}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "ts=2024-01-18T19:31:30Z caller=logging.go:62 method=Get id=zzz4f044-b040-410d-8ead-4de0446aec7e sock=zzz4f044-b040-410d-8ead-4de0446aec7e err=null took=1.975786ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "orders",
+      "ts": "1705606290",
+      "level": "info",
+      "message": "{\"id\":\"zzz4f044-b040-410d-8ead-4de0446aec7e\",\"name\":\"Classic\",\"description\":\"Keep it simple.\",\"imageUrl\":[\"/catalogue/images/classic.jpg\",\"/catalogue/images/classic2.jpg\"],\"price\":12,\"count\":127,\"tag\":[\"brown\",\"green\"]}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    }
+  ],
+  "traces": [],
   "recent_deploys": [],
   "ownership": {
     "service": "orders",

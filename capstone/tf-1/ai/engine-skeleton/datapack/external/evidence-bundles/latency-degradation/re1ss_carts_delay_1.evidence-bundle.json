@@ -29,13 +29,8 @@
       "catalogue_cpu",
       "catalogue_latency-50"
     ],
-    "log_filters": [
-      "dependency latency increased during RCAEval delay fault window",
-      "request path exceeded latency SLO during RCAEval delay fault window"
-    ],
-    "trace_ids": [
-      "rcaeval-re1ss_carts_delay_1-trace-1"
-    ],
+    "log_filters": [],
+    "trace_ids": [],
     "dependencies": [
       "carts-db",
       "catalogue",
@@ -2096,58 +2091,18 @@
       }
     }
   ],
-  "logs": [
-    {
-      "service": "carts",
-      "ts": "2023-08-26T17:04:06Z",
-      "level": "error",
-      "message": "dependency latency increased during RCAEval delay fault window",
-      "trace_id": "rcaeval-re1ss_carts_delay_1-trace-1",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "delay"
-      }
-    },
-    {
-      "service": "carts",
-      "ts": "2023-08-26T17:04:06Z",
-      "level": "error",
-      "message": "request path exceeded latency SLO during RCAEval delay fault window",
-      "trace_id": "rcaeval-re1ss_carts_delay_1-trace-2",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "delay"
-      }
-    }
-  ],
-  "traces": [
-    {
-      "trace_id": "rcaeval-re1ss_carts_delay_1-trace-1",
-      "service": "carts",
-      "root_span": "RCAEval delay fault request",
-      "duration_ms": 3000,
-      "status": "error",
-      "bottleneck_service": "carts-db",
-      "bottleneck_reason": "delay fault produced slow downstream span in the mapped RCAEval service graph",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "mapped_scenario": "latency-degradation"
-      }
-    }
-  ],
+  "logs": [],
+  "traces": [],
   "deploy_events": [
     {
       "service": "carts",
       "version": "sample-re1ss_carts_delay_1",
       "deployed_at": "2023-08-26T16:57:06Z",
       "deployed_by": "ci",
-      "change_summary": "sample deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
+      "change_summary": "TF1 supplemental deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
       "rollback_ref": "previous-sample-version",
       "labels": {
-        "source": "tf1-supplement-from-sample-input",
+        "source": "tf1-supplemental-operational-context",
         "dataset": "RCAEval"
       }
     }
@@ -2166,7 +2121,7 @@
       }
     ],
     "labels": {
-      "source": "tf1-supplement-from-sample-input",
+      "source": "tf1-supplemental-operational-context",
       "dataset": "RCAEval"
     }
   },
@@ -2181,9 +2136,9 @@
     "primary_dataset": "RCAEval",
     "primary_request": "adapted/latency-degradation/re1ss_carts_delay_1.request.json",
     "metrics": "RCAEval adapted request",
-    "logs": "TF1 supplemental sample-derived records because local RCAEval subset currently excludes logs.csv",
-    "traces": "TF1 supplemental sample-derived summaries because local RCAEval subset currently excludes traces.csv",
-    "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
+    "logs": "Not available in this selected RCAEval case; no logs.csv is present in the extracted benchmark case",
+    "traces": "Not available in this selected RCAEval case; no traces.csv is present in the extracted benchmark case",
+    "deploy_events": "TF1 supplemental deploy metadata because RCAEval does not provide deploy events",
     "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff"
   }
 }

@@ -50,7 +50,7 @@ The client wants Triage Hub to reduce the investigation start time by automatica
 
 | Decision | Rationale |
 |---|---|
-| Use event-driven triage, not continuous full AI triage | Keeps cost and noise bounded while preserving continuous lightweight detection. |
+| Use event-driven triage, not continuous full AI triage | Keeps cost and noise bounded while CDO/platform owns alert detection and AI Ops handles incident-level RCA. |
 | Use compute-first RCA with optional AgentCore/LLM synthesis | Gives explainable evidence and confidence behavior before natural-language output. |
 | Use RCAEval subset as primary scenario data | More defensible than generated-only fixtures for RCA discussion. |
 | Use precomputed evidence bundles as CDO MVP | Gives CDO a concrete data artifact to host and avoids direct AI credentials into observability backends. |

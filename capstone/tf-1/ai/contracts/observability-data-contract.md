@@ -24,12 +24,14 @@ Production boundary:
 Services
   -> OpenTelemetry/exporters
   -> Prometheus/Loki/CloudWatch/Grafana stack
-  -> bounded query/export by tenant + service + environment + time window
-  -> AIOps ingestion/context service
-  -> normalize/window/baseline/anomaly/RCA logic
+  -> CDO/platform alert detection
+  -> CDO pushes incident seed/context to AI Ops
+  -> AI Ops requests bounded evidence if needed
+  -> AI Ops cleans/normalizes/curates evidence
+  -> AI Ops RCA logic
 ```
 
-Platform/DevOps ensures telemetry is observable, queryable, secure, and bounded. AIOps owns interpretation: normalization, windowing, baseline/trend, anomaly detection, incident context packaging, RCA scoring, confidence gating, and optional Bedrock synthesis.
+Platform/DevOps ensures telemetry is observable, queryable, secure, and bounded. Platform/DevOps also owns alert detection and production evidence storage/access. AIOps owns interpretation after invocation: context validation, bounded evidence query orchestration, cleaning/redaction/normalization, evidence sufficiency checks, RCA scoring, confidence gating, and optional Bedrock synthesis.
 
 ## Required Metadata
 
@@ -94,9 +96,20 @@ AIOps needs bounded query/export capability:
 | Auth | IAM/SigV4, service token, or platform-approved service auth. |
 | Isolation | A tenant-scoped query must not return other tenants' data. |
 
+This contract does not require AI Ops to collect infrastructure metrics continuously or evaluate real-time platform health. Real-time observability collection, alert rules, platform SLOs, and monitoring dashboards remain CDO/platform responsibilities. AI Ops consumes incident-scoped evidence after an alert exists, then cleans and normalizes that evidence for RCA.
+
 ## Extra Evidence Hosting Model
 
 When the initial incident package is not enough for confident RCA, AIOps may request additional evidence. That evidence must come from a controlled platform-owned data path, not from direct AI access to customer applications.
+
+Alert delivery and evidence retrieval are intentionally separate:
+
+```text
+Alert delivery: CDO/platform pushes incident to AI Ops immediately.
+Evidence retrieval: AI Ops pulls bounded evidence only after the alert exists, then cleans/curates it before triage.
+```
+
+AIOps should not continuously poll CDO/customer telemetry to discover incidents.
 
 ### Source Of Extra Evidence
 
@@ -114,6 +127,147 @@ CDO/platform should treat the existing observability stack as the source of trut
 ### Hosting Options For CDO
 
 CDO can implement either of these patterns, as long as the same query bounds and redaction rules are enforced.
+
+### Required Alert Seed Context
+
+CDO should send enough metadata for AI Ops to query the right evidence without guessing:
+
+| Field | Required | Why AI Ops needs it |
+|---|---:|---|
+| `tenant_id` | yes | Tenant isolation and evidence scope. |
+| `incident_id` | yes | Idempotency, report, and evidence lookup key. |
+| `correlation_id` | yes | End-to-end audit and traceability. |
+| `service` | yes | Primary service scope for metrics/logs/traces. |
+| `environment` | yes | `prod`, `staging`, or `sandbox` evidence scope. |
+| `severity` | yes | Triage urgency and confidence behavior. |
+| `title` / `description` | yes | Initial triage direction such as latency, outage, error, or noisy alert. |
+| `started_at` / `received_at` | yes | Query window construction. |
+| `region`, `cluster`, `namespace` | recommended | Multi-region or Kubernetes evidence scoping. |
+| `trace_id` / `correlation_id` label | recommended | Log/trace correlation. |
+| `metric_names` | recommended | Narrows metric query to alert-related signals. |
+| `suspected_dependency` | optional | Helps query dependency logs/traces and rank RCA candidates. |
+| `evidence_uri` | optional | Points to precomputed evidence bundle when available. |
+
+**Recommended foundation - Bounded evidence access**
+
+In production, CDO should expose bounded incident-scoped evidence access in front of Loki/Prometheus/Jaeger/CloudWatch/OpenSearch or equivalent systems. This is not a replacement for raw observability backends; it is a safe access layer that lets AI Ops retrieve only the tenant/service/environment/time-window evidence needed for RCA.
+
+CDO/platform responsibilities:
+
+- continuously ingest or query raw observability backends,
+- store or expose bounded records with tenant/service/environment/time indexes,
+- enforce retention, auth, rate limits, and audit logging,
+- expose read-only bounded query operations to AI Ops.
+
+AI Ops responsibilities:
+
+- query bounded evidence only after an alert exists,
+- clean, redact if needed, normalize, and curate RCA-useful logs/metrics/traces,
+- provide sample processors or mapping logic for datapacks,
+- define how cleaned/curated evidence affects RCA confidence and evidence sufficiency,
+- avoid storing or operating production raw telemetry as the system of record.
+
+Minimal cleaned/curated log record produced by AI Ops:
+
+```json
+{
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-123",
+  "service": "checkout-api",
+  "environment": "prod",
+  "ts": "2026-06-22T08:03:00Z",
+  "level": "error",
+  "message": "database timeout after 3000ms",
+  "trace_id": "trace-123",
+  "curation_reason": "timeout during alert window",
+  "source_ref": "cdo-evidence://redacted-query-id",
+  "labels": {"endpoint": "/v1/orders", "version": "sha-a1b2c3"}
+}
+```
+
+### Required Evidence API Surface For AI Follow-Up
+
+If CDO chooses to support AI follow-up queries after the initial alert, expose a small read-only evidence API or equivalent storage access. This is the interface AI Ops needs; AI Ops should not call raw customer Prometheus/Loki/CloudWatch/Datadog endpoints directly in production. AI Ops will clean and curate the bounded response before triage.
+
+#### `GET /v1/evidence/incidents/{incident_id}`
+
+Returns the precomputed evidence bundle for one incident.
+
+Required request headers:
+
+| Header | Required | Notes |
+|---|---:|---|
+| `Authorization` | yes | CDO-approved service auth. |
+| `X-Tenant-Id` | yes | Tenant scope. |
+| `X-Correlation-Id` | yes | End-to-end workflow id. |
+
+Query parameters:
+
+| Field | Required | Notes |
+|---|---:|---|
+| `service` | recommended | Used to enforce scope when incident id alone is not globally unique. |
+| `environment` | recommended | `prod`, `staging`, or `sandbox`. |
+
+#### `POST /v1/evidence/query`
+
+Returns bounded extra evidence when the first triage context is insufficient.
+
+Request body:
+
+```json
+{
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-123",
+  "service": "checkout-api",
+  "environment": "prod",
+  "start_time": "2026-06-22T07:45:00Z",
+  "end_time": "2026-06-22T08:10:00Z",
+  "include": ["metrics", "logs", "traces", "deploy_events", "ownership"],
+  "limits": {
+    "metrics": 20,
+    "logs": 50,
+    "traces": 20
+  },
+  "filters": {
+    "trace_id": "trace-123",
+    "metric_names": ["http_latency_p95_ms", "http_5xx_rate"]
+  }
+}
+```
+
+Response body:
+
+```json
+{
+  "tenant_id": "tenant-a",
+  "incident_id": "inc-123",
+  "service": "checkout-api",
+  "environment": "prod",
+  "time_window": {
+    "start": "2026-06-22T07:45:00Z",
+    "end": "2026-06-22T08:10:00Z"
+  },
+  "metrics": [],
+  "logs": [],
+  "traces": [],
+  "deploy_events": [],
+  "ownership": {},
+  "data_lineage": {
+    "metrics": "prometheus bounded query via CDO evidence API",
+    "logs": "bounded log query via CDO evidence API; cleaned by AI Ops",
+    "traces": "trace summary store"
+  }
+}
+```
+
+Rules:
+
+- Reject requests outside the tenant/service/environment/time window.
+- Reject or clamp windows over 60 minutes unless explicitly approved.
+- Return bounded logs, not unbounded log dumps. AI Ops will clean/curate returned snippets before RCA.
+- Return trace summaries, not full trace exports.
+- Return empty arrays for unavailable evidence instead of expanding scope silently.
+- Include `data_lineage` so AI and reviewers can tell raw-derived, curated, and supplemental evidence apart.
 
 **Option A - Read-only evidence proxy**
 
@@ -171,7 +325,7 @@ Expected bundle shape:
 
 ### MVP Recommendation
 
-For the capstone MVP, prefer **Option B: precomputed evidence bundle** first. It gives CDO a clear artifact to host, makes schema validation easier, avoids giving AIOps live backend credentials, and keeps demo behavior repeatable.
+For the capstone MVP, prefer **Option B: precomputed evidence bundle** first, optionally backed by a small bounded evidence/log store. It gives CDO a clear artifact to host, makes schema validation easier, avoids giving AIOps live backend credentials, and keeps demo behavior repeatable.
 
 If live follow-up queries are needed, add **Option A: read-only evidence proxy** behind the same bounds. The proxy should expose only approved operations, not arbitrary PromQL/LogQL from the LLM.
 
@@ -180,6 +334,7 @@ Implementation handoff for CDO teams is documented in `../docs/06_cdo_evidence_h
 ### Non-Goals
 
 - AIOps does not call customer applications directly for logs or metrics.
+- AIOps does not continuously poll CDO/customer systems for alert discovery.
 - AIOps does not receive unbounded raw telemetry dumps.
 - The LLM does not receive direct credentials or arbitrary query access.
 - The evidence path must not expose remediation, write, restart, rollback, or scale permissions.
@@ -202,7 +357,7 @@ The AIOps app converts bounded observability data into the triage context define
 
 ```text
 observability data contract
-  -> AIOps normalization/windowing/baseline/detection
+  -> CDO/platform alert push + optional bounded evidence lookup
   -> telemetry-contract.md incident context
   -> POST /v1/triage
 ```
@@ -212,6 +367,8 @@ observability data contract
 | Item | W11 decision |
 |---|---|
 | Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. |
+| Alert delivery | Push-based from CDO/platform to AI Ops. Poll-based alert discovery by AI Ops is out of scope. |
+| Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. CDO owns storage/hosting/access and query bounds. |
 | Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
 | Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |

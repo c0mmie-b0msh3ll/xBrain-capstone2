@@ -8,29 +8,48 @@ Freeze target: 2026-06-25
 
 Define the normalized incident context bundle passed from the AIOps context service to the AI triage engine. For TF1, the triage request is one bounded alert/incident package, not continuous raw metrics/logs.
 
-The current assumption is:
+The current production assumption is:
 
 ```text
-Observability data contract
-  -> AIOps ingestion, normalization, windowing, baseline, detection
-  -> Alert/anomaly/incident candidate
-  -> AIOps context aggregation
+CDO/platform observability
+  -> alert/incident detection
+  -> push incident seed or normalized context to AI Ops
+  -> AI Ops validates context and performs bounded evidence lookup if needed
+  -> AI Ops cleans, redacts, normalizes, and curates evidence
   -> Triage API request with normalized context bundle
   -> AI compute-first RCA + optional LLM synthesis
   -> AI diagnosis + ticket/slack payload
 ```
 
-The triage engine is event-driven. It is invoked when the AIOps detector has found an alert/anomaly/incident candidate and the context layer has assembled bounded context around that event.
+The triage engine is event-driven. It is invoked when CDO/platform has detected an alert/anomaly/incident and sends a request to the AI Ops API. AI Ops may query additional bounded evidence only after an incident exists; it is not responsible for continuously polling CDO/customer telemetry to discover alerts.
 
 The upstream platform/observability handoff is defined separately in `observability-data-contract.md`.
 
 ## Contract Boundary
 
-The AIOps app consumes bounded observability data, runs normalization/windowing/baseline/detection, and sends normalized incident context to `POST /v1/triage` only after an alert/anomaly/incident candidate exists. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the triage engine.
+The AIOps app consumes incident-scoped context from CDO/platform, runs validation, bounded evidence lookup, cleaning/redaction, normalization, evidence sufficiency checks, RCA scoring, and then sends normalized incident context to `POST /v1/triage`. Mentor datapack files are treated as raw source material and must be adapted into this contract before calling the triage engine.
 
 Field-name differences in the datapack should be handled in an adapter. The contract changes only when the datapack exposes a missing concept that cannot be represented by existing fields.
 
-The detector/context layer may connect to logs, metrics, traces, deploy stores, Jira, or Slack as part of the broader AIOps app. The triage endpoint itself receives normalized bounded context instead of pulling unbounded raw telemetry during RCA.
+The context layer may connect to bounded evidence APIs/storage for logs, metrics, traces, deploy stores, ownership catalogs, Jira, or Slack as part of the broader AIOps app. The triage endpoint itself receives normalized bounded context instead of pulling unbounded raw telemetry during RCA.
+
+## Alert Delivery And Evidence Retrieval Model
+
+Alert delivery is push-based:
+
+```text
+CDO detects alert -> CDO calls AI Ops endpoint -> AI Ops starts triage immediately
+```
+
+Evidence retrieval can be pull-based after the alert:
+
+```text
+AI Ops needs more context -> AI Ops calls CDO-owned bounded evidence API/storage -> AI Ops cleans/curates evidence
+```
+
+This split avoids polling delay for alert delivery while still allowing AI Ops to ask for more context when the initial datapack is insufficient.
+
+The current app already has bounded read-only context tools for metrics, logs, deploy metadata, ownership, and internal RCA helpers. Production use should point those tools at the CDO evidence API/storage, not directly at customer raw telemetry systems. AI Ops owns the cleaning/normalization/curation step before data enters the triage prompt or RCA logic.
 
 ## Required Envelope
 
@@ -63,6 +82,18 @@ Validation rules:
 | `alert.description` | string | optional | Raw alert description. |
 | `alert.started_at` | RFC3339 | yes | Alert start time. |
 | `alert.labels` | object | optional | Source-specific labels. |
+
+Recommended optional alert labels for evidence lookup:
+
+| Label | Notes |
+|---|---|
+| `evidence_uri` | Pointer to precomputed evidence bundle, e.g. S3/object key or CDO evidence API reference. |
+| `trace_id` / `correlation_id` | Helps fetch trace summary and correlated logs. |
+| `region` | Required when platform evidence is region-scoped. |
+| `cluster` / `namespace` | Helps scope Kubernetes or multi-cluster evidence queries. |
+| `metric_names` | Recommended list of metric names that triggered the alert, e.g. latency/error-rate metrics. |
+| `suspected_dependency` | Optional dependency hint from alert labels, e.g. `postgres`, `redis`, or downstream service name. |
+| `source` | Original monitoring source, e.g. `prometheus`, `cloudwatch`, `datadog`, or `cdo-detector`. |
 
 ## Metrics Window
 
@@ -108,6 +139,30 @@ Rules:
 - No PII in log snippets.
 - Maximum 50 log lines per service per incident unless otherwise agreed.
 - Preserve timestamp, service, level, and correlation/trace id when available.
+- Prefer AI-curated logs: meaningful, redacted snippets selected from noisy bounded log results by AI Ops cleaning/curation logic.
+
+## AI-Curated Log Records
+
+Production deployments may include an AI Ops cleaning/curation step after bounded evidence lookup. CDO/platform exposes safe incident-scoped log access; AI Ops filters the bounded results into logs that are useful for RCA.
+
+Minimal curated log fields:
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `service` | string | yes | Emitting or affected service. |
+| `ts` | RFC3339 | yes | Event timestamp. |
+| `level` | string | yes | `error`, `warning`, `info`, etc. |
+| `message` | string | yes | Redacted useful message. |
+| `trace_id` | string | optional | For trace/log correlation. |
+| `curation_reason` | string | recommended | Why this line is relevant, e.g. `error_burst`, `timeout`, `dependency_failure`, `deploy_correlation`. |
+| `source_ref` | string | optional | Pointer to original backend query/log stream without exposing credentials. |
+| `labels` | object | optional | Pod, version, endpoint, dependency, region, dataset lineage. |
+
+Ownership boundary:
+
+- CDO/platform owns production telemetry storage, retention, auth, tenant isolation, and bounded query access.
+- AI Ops owns cleaning, redaction before AI use when needed, curation criteria, sample processor logic, and how curated logs are consumed for RCA.
+- AI Ops must not receive arbitrary raw log backend credentials or unbounded raw log dumps.
 
 ## Traces Window
 
@@ -181,6 +236,8 @@ The AI engine can accept empty arrays for `metrics`, `logs`, `traces`, and `rece
 | Signals conflict or indicate a noisy/non-impacting alert | Return `INVESTIGATE`. |
 | Logs/metrics/traces/deploys support a scenario diagnosis | Return `DIAGNOSED`. |
 
+When context is insufficient and an evidence URI/API is configured, AI Ops may perform a bounded follow-up lookup before returning the final response. If no evidence source is configured or the lookup fails, AI Ops returns `INSUFFICIENT_CONTEXT` or lower-confidence `INVESTIGATE` instead of expanding the query scope.
+
 ## Datapack Mapping Table Template
 
 When the mentor datapack arrives, create a mapping table using this format:
@@ -202,9 +259,10 @@ Mapping type must be one of:
 ## Delivery And Quality
 
 - Upstream dependency: platform/DevOps provides bounded observability access as defined in `observability-data-contract.md`.
-- Delivery mode: request payload from the AIOps detector/context layer to the triage API.
-- Invocation mode: event-driven after lightweight detection, not continuous full triage over all telemetry.
-- Detection ownership: the AIOps app continuously detects candidate alerts/anomalies; the triage engine performs incident-level RCA after invocation.
+- Delivery mode: push request from CDO/platform to the AI Ops API after an alert exists.
+- Invocation mode: event-driven after platform alert detection, not continuous full triage over all telemetry.
+- Detection ownership: CDO/platform owns alert detection and incident triggering; AI Ops owns incident-level RCA after invocation.
+- Extra context ownership: CDO/platform owns bounded evidence storage/API; AI Ops may pull bounded evidence after alert delivery, clean/curate it, and then triage.
 - Duplicate handling: the caller must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
@@ -217,6 +275,7 @@ Mapping type must be one of:
 | Primary datapack format | Use the RCAEval subset under `../engine-skeleton/datapack/external/` as the primary scenario data. The CDO-hostable artifacts are normalized evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/`. |
 | Triage request format | `POST /v1/triage` remains the normalized incident context contract. Raw dataset fields are adapted before calling the triage endpoint. |
 | Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
+| Evidence follow-up | Optional CDO-owned evidence API/storage can be used after alert delivery for bounded follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |
 | Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. Higher platform load testing is deferred until CDO infrastructure is finalized. |
 | Deferred mentor item | If the mentor provides a different official datapack shape, create an adapter and mapping table instead of changing the triage contract unless a required concept is missing. |
 

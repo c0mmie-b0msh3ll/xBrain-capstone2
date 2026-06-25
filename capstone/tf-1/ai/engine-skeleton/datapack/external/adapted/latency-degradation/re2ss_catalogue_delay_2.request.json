@@ -2073,7 +2073,209 @@
       }
     }
   ],
-  "logs": [],
+  "logs": [
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03Z caller=logging.go:62 method=Get id=819e1fbf-8b7e-4f6d-811f-693534916a8b sock=819e1fbf-8b7e-4f6d-811f-693534916a8b err=null took=2.211381ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "{\"id\":\"819e1fbf-8b7e-4f6d-811f-693534916a8b\",\"name\":\"Figueroa\",\"description\":\"enim officia aliqua excepteur esse deserunt quis aliquip nostrud anim\",\"imageUrl\":[\"/catalogue/images/WAT.jpg\",\"/catalogue/images/WAT2.jpg\"],\"price\":14,\"count\":808,\"tag\":[\"formal\",\"green\",\"blue\"]}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "{'timestamp': '1705709163', 'container_name': 'front-end', 'message': ''}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "POST to carts: http://carts/carts/65ab0e6423abd70001c4c74b/items body: {\"itemId\":\"819e1fbf-8b7e-4f6d-811f-693534916a8b\",\"unitPrice\":14}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "POST /cart 201 45.049 ms - -",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03Z caller=logging.go:85 method=Health result=2 took=47.04\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709163",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03Z caller=logging.go:85 method=Health result=2 took=25.592\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03Z caller=logging.go:40 method=Health result=1 took=8.823\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03Z caller=logging.go:40 method=Health result=1 took=3.398\u00b5s",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "Request received with body: {}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03.668681045Z caller=middlewares.go:75 method=GetUsers id=65ab0e5223abd70001c4c710 result=1 took=1.076176ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "Received response: \"{\\\"firstName\\\":\\\"cMmwxDy\\\",\\\"lastName\\\":\\\"cMmwxDy\\\",\\\"username\\\":\\\"cMmwxDy\\\",\\\"id\\\":\\\"65ab0e5223abd70001c4c710\\\",\\\"_links\\\":{\\\"addresses\\\":{\\\"href\\\":\\\"http://user/customers/65ab0e5223abd70001c4c710/addresses\\\"},\\\"cards\\\":{\\\"href\\\":\\\"http://user/customers/65ab0e5223abd70001c4c710/cards\\\"},\\\"customer\\\":{\\\"href\\\":\\\"http://user/customers/65ab0e5223abd70001c4c710\\\"},\\\"self\\\":{\\\"href\\\":\\\"http://user/customers/65ab0e5223abd70001c4c710\\\"}}}\\n",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "GET Request to: http://user/customers/65ab0e5223abd70001c4c710/addresses",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "GET Request to: http://user/customers/65ab0e5223abd70001c4c710/cards",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03.677970224Z caller=middlewares.go:75 method=GetUsers id=65ab0e5223abd70001c4c710 result=1 took=1.319645ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "ts=2024-01-20T00:06:03.677970231Z caller=middlewares.go:75 method=GetUsers id=65ab0e5223abd70001c4c710 result=1 took=1.30333ms",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "Received response: \"{\\\"_embedded\\\":{\\\"card\\\":[{\\\"longNum\\\":\\\"123123321\\\",\\\"expires\\\":\\\"1232\\\",\\\"ccv\\\":\\\"123\\\",\\\"id\\\":\\\"65ab0e5b23abd70001c4c726\\\",\\\"_links\\\":{\\\"card\\\":{\\\"href\\\":\\\"http://user/cards/65ab0e5b23abd70001c4c726\\\"},\\\"self\\\":{\\\"href\\\":\\\"http://user/cards/65ab0e5b23abd70001c4c726\\\"}}}]}}\\n",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "Received response: \"{\\\"_embedded\\\":{\\\"address\\\":[{\\\"street\\\":\\\"123\\\",\\\"number\\\":\\\"123\\\",\\\"country\\\":\\\"123\\\",\\\"city\\\":\\\"123\\\",\\\"postcode\\\":\\\"123\\\",\\\"id\\\":\\\"65ab0e5b23abd70001c4c725\\\",\\\"_links\\\":{\\\"address\\\":{\\\"href\\\":\\\"http://user/addresses/65ab0e5b23abd70001c4c725\\\"},\\\"self\\\":{\\\"href\\\":\\\"http://user/addresses/65ab0e5b23abd70001c4c725\\\"}}}]}}\\n",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "[ undefined, undefined ]",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "catalogue",
+      "ts": "1705709164",
+      "level": "info",
+      "message": "Posting Order: {\"customer\":\"http://user/customers/65ab0e5223abd70001c4c710\",\"address\":\"http://user/addresses/65ab0e5b23abd70001c4c725\",\"card\":\"http://user/cards/65ab0e5b23abd70001c4c726\",\"items\":\"http://carts/carts/65ab0e5223abd70001c4c710/items\"}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    }
+  ],
+  "traces": [],
   "recent_deploys": [],
   "ownership": {
     "service": "catalogue",

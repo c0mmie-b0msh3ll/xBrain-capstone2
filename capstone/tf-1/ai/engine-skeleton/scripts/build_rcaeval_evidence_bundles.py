@@ -15,7 +15,7 @@ SCENARIO_SUPPLEMENTS = {
         ],
         "trace_status": "error",
         "trace_reason": "delay fault produced slow downstream span in the mapped RCAEval service graph",
-        "deploy_change": "sample deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
+        "deploy_change": "TF1 supplemental deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
         "runbook": {
             "title": "Latency degradation triage",
             "url": "runbook://latency-degradation",
@@ -32,7 +32,7 @@ SCENARIO_SUPPLEMENTS = {
         ],
         "trace_status": "error",
         "trace_reason": "loss fault produced failing or missing downstream spans in the mapped RCAEval service graph",
-        "deploy_change": "sample deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
+        "deploy_change": "TF1 supplemental deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
         "runbook": {
             "title": "Service down triage",
             "url": "runbook://service-down",
@@ -135,7 +135,7 @@ def supplemental_logs(request: dict[str, Any], scenario: str) -> list[dict[str, 
                 "message": message,
                 "trace_id": f"rcaeval-{request['alert']['labels']['case']}-trace-{index}",
                 "labels": {
-                    "source": "tf1-supplement-from-sample-input",
+                    "source": "tf1-supplemental-operational-context",
                     "dataset": "RCAEval",
                     "fault": request["alert"]["labels"].get("fault"),
                 },
@@ -159,7 +159,7 @@ def supplemental_traces(request: dict[str, Any], scenario: str) -> list[dict[str
             "bottleneck_service": dependency,
             "bottleneck_reason": supplement["trace_reason"],
             "labels": {
-                "source": "tf1-supplement-from-sample-input",
+                "source": "tf1-supplemental-operational-context",
                 "dataset": "RCAEval",
                 "mapped_scenario": scenario,
             },
@@ -170,15 +170,21 @@ def supplemental_traces(request: dict[str, Any], scenario: str) -> list[dict[str
 def bundle_logs(request: dict[str, Any], scenario: str) -> tuple[list[dict[str, Any]], str]:
     logs = request.get("logs") or []
     if logs:
+        lineage = request.get("metadata", {}).get("extra_evidence_lineage", {}).get("logs")
+        if lineage:
+            return logs, lineage
         return logs, "RCAEval logs.csv adapted into TF1 log evidence"
-    return supplemental_logs(request, scenario), "TF1 supplemental sample-derived records because this selected RCAEval case has no extracted logs.csv"
+    return [], "Not available in this selected RCAEval case; no logs.csv is present in the extracted benchmark case"
 
 
 def bundle_traces(request: dict[str, Any], scenario: str) -> tuple[list[dict[str, Any]], str]:
     traces = request.get("traces") or []
     if traces:
+        lineage = request.get("metadata", {}).get("extra_evidence_lineage", {}).get("traces")
+        if lineage:
+            return traces, lineage
         return traces, "RCAEval traces.csv adapted into TF1 trace evidence"
-    return supplemental_traces(request, scenario), "TF1 supplemental sample-derived summaries because this selected RCAEval case has no extracted traces.csv"
+    return [], "Not available in this selected RCAEval case; no traces.csv is present in the extracted benchmark case"
 
 
 def supplemental_deploys(request: dict[str, Any], scenario: str) -> list[dict[str, Any]]:
@@ -196,7 +202,7 @@ def supplemental_deploys(request: dict[str, Any], scenario: str) -> list[dict[st
             "change_summary": change,
             "rollback_ref": "previous-sample-version",
             "labels": {
-                "source": "tf1-supplement-from-sample-input",
+                "source": "tf1-supplemental-operational-context",
                 "dataset": "RCAEval",
             },
         }
@@ -214,7 +220,7 @@ def ownership(request: dict[str, Any], scenario: str) -> dict[str, Any]:
         "triage_queue": supplement["triage_queue"],
         "runbooks": [supplement["runbook"]],
         "labels": {
-            "source": "tf1-supplement-from-sample-input",
+            "source": "tf1-supplemental-operational-context",
             "dataset": "RCAEval",
         },
     }
@@ -241,8 +247,8 @@ def build_bundle(request_path: Path, adapted_root: Path) -> tuple[Path, dict[str
         "time_window": tw,
         "query_hints": {
             "metrics": metric_names(metrics),
-            "log_filters": [str(log.get("message")) for log in logs[:5] if log.get("message")] or SCENARIO_SUPPLEMENTS[scenario]["log_messages"],
-            "trace_ids": [str(trace.get("trace_id")) for trace in traces[:5] if trace.get("trace_id")] or [f"rcaeval-{case}-trace-1"],
+            "log_filters": [str(log.get("message")) for log in logs[:5] if log.get("message")],
+            "trace_ids": [str(trace.get("trace_id")) for trace in traces[:5] if trace.get("trace_id")],
             "dependencies": [item for item in services_from_metrics(metrics, request["alert"]["service"]) if item != request["alert"]["service"]][:5],
         },
         "metrics": metrics,
@@ -257,7 +263,7 @@ def build_bundle(request_path: Path, adapted_root: Path) -> tuple[Path, dict[str
             "metrics": "RCAEval adapted request",
             "logs": logs_lineage,
             "traces": traces_lineage,
-            "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
+            "deploy_events": "TF1 supplemental deploy metadata because RCAEval does not provide deploy events",
             "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff",
         },
     }

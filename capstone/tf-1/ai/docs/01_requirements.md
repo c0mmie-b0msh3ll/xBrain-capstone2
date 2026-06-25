@@ -47,6 +47,7 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 - ServiceNow implementation.
 - Historical incident migration or backfill.
 - Real production data ingestion unless explicitly provided in the data pack.
+- Continuous infrastructure metric collection, platform health monitoring, and alert rule operation.
 - Auto-retrain pipeline.
 - GDPR erasure API implementation.
 
@@ -64,9 +65,11 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 | Item | W11 decision |
 |---|---|
 | Primary dataset | Use the checked-in RCAEval subset under `../engine-skeleton/datapack/external/` as the main scenario source. |
-| Extra evidence | CDO hosts precomputed evidence bundles first. A read-only evidence proxy can be added later for live bounded queries. |
+| Extra evidence | CDO hosts precomputed evidence bundles first. A bounded evidence/log store or read-only evidence proxy can be added later for live bounded queries. |
 | Missing RCAEval fields | Logs, traces, deploy metadata, ownership, and runbooks may be supplied as TF1 supplemental records and must be marked in `data_lineage`. |
-| Context ownership | CDO/platform owns observability collection and bounded access. AIOps owns normalization, detection, context packaging, RCA, confidence, and output payloads. |
+| Alert delivery | CDO/platform detects alerts and pushes incident seed/context to AI Ops. AI Ops does not continuously poll CDO/customer systems for alert discovery. |
+| Context ownership | CDO/platform owns observability collection, alert detection, evidence storage/API, and bounded access. AIOps owns context validation, evidence query orchestration, cleaning/normalization/curation, evidence sufficiency, RCA, confidence, and output payloads. |
+| AI-curated logs | Optional but recommended. CDO exposes bounded log access; AI Ops owns cleaning/curation criteria, schema, sample processors, and RCA consumption behavior. |
 | Jira/Slack for W11 | AI returns Jira/Slack payloads. Live publishing can be feature-gated; payload generation and report links must be demoable. |
 | MTTA/MTTR baseline | Use manual investigation steps on the same three scenarios as the comparison baseline for W11. |
 | External dependency | A real deployed endpoint URL must be added after AWS smoke tests pass. |

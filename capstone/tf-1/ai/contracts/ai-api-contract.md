@@ -6,9 +6,9 @@ Freeze target: 2026-06-25
 
 ## Purpose
 
-Define the API exposed by the AI triage engine and consumed by the AIOps detector/context layer or deployment platform. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that the integration layer can use for Jira and Slack.
+Define the API exposed by the AI triage engine and consumed by the CDO/platform incident integration layer. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that the integration layer can use for Jira and Slack.
 
-The AIOps detector/context layer invokes this API after bounded observability data has been normalized, windowed, compared against baseline, and classified as an alert/anomaly/incident candidate. The API is not designed for streaming all raw metrics/logs directly into the triage engine.
+CDO/platform invokes this API after it detects an alert/anomaly/incident and has either assembled bounded context or provided references for AI Ops to fetch bounded context. The API is not designed for streaming all raw metrics/logs directly into the triage engine, and AI Ops is not expected to poll CDO continuously to discover alerts.
 
 ## Versioning
 
@@ -22,7 +22,7 @@ The AIOps detector/context layer invokes this API after bounded observability da
 
 W11 contract assumption:
 
-- The detector/context layer calls AI over private network or protected API Gateway.
+- The CDO/platform incident integration layer calls AI over private network or protected API Gateway.
 - Each request includes `X-Tenant-Id` and `X-Correlation-Id`.
 - Production design should use IAM SigV4 or service-to-service JWT.
 - Capstone demo may use a scoped bearer token stored in platform secret management if IAM/JWT is not ready by deployment freeze.
@@ -51,6 +51,10 @@ Diagnose an incident from alert metadata plus logs, metrics, bounded trace summa
 
 The endpoint performs compute-first triage: validation, feature extraction, RCA scoring, confidence gating, and safety checks. Bedrock/LLM synthesis may be enabled later, but only after grounded evidence has been produced by the compute layer.
 
+Alert delivery is push-based: CDO/platform calls this endpoint when an alert exists. If the initial request is missing useful evidence, AI Ops may use configured read-only evidence access to fetch bounded logs, metrics, traces, deploy metadata, or ownership records before final RCA. Evidence lookup must stay tenant/service/environment/time-window scoped, and AI Ops cleans/normalizes/curates the fetched data before triage.
+
+The AI API itself is not a raw telemetry API. CDO may pass evidence inline, pass an `evidence_uri` in `alert.labels`, or expose the evidence API defined in `observability-data-contract.md` for follow-up lookups.
+
 ### Request Headers
 
 | Header | Required | Notes |
@@ -76,10 +80,22 @@ The endpoint performs compute-first triage: validation, feature extraction, RCA 
     "title": "High p95 latency on checkout-api",
     "description": "p95 latency above threshold for 5 minutes",
     "started_at": "2026-06-22T08:00:00Z",
-    "labels": {"region": "us-east-1"}
+    "labels": {
+      "region": "us-east-1",
+      "evidence_uri": "evidence://tenant-a/inc-001"
+    }
   },
   "metrics": [],
-  "logs": [],
+  "logs": [
+    {
+      "service": "checkout-api",
+      "ts": "2026-06-22T08:03:00Z",
+      "level": "error",
+      "message": "database timeout after 3000ms",
+      "trace_id": "trace-123",
+      "curation_reason": "timeout during alert window"
+    }
+  ],
   "traces": [],
   "recent_deploys": [],
   "ownership": {
@@ -92,7 +108,7 @@ The endpoint performs compute-first triage: validation, feature extraction, RCA 
 }
 ```
 
-Field definitions are in `telemetry-contract.md`. Upstream observability access requirements are in `observability-data-contract.md`. `traces` is optional and should contain bounded span summaries only; full trace exports should be hosted as evidence bundles or evidence URIs.
+Field definitions are in `telemetry-contract.md`. Upstream observability and bounded evidence access requirements are in `observability-data-contract.md`. `logs` should be AI-cleaned/curated snippets when possible. `traces` is optional and should contain bounded span summaries only; full trace exports should be hosted as evidence bundles or evidence URIs.
 
 Sample request fixtures are stored in `../engine-skeleton/samples/`.
 
@@ -190,7 +206,7 @@ Before LLM integration, the skeleton service returns rule-based deterministic re
 | Latency title or latency metric with supporting deploy/log evidence | `DIAGNOSED` | `latency_degradation` |
 | Low severity, noisy, flapping, or conflicting signals | `INVESTIGATE` | `noisy_or_ambiguous_alert` |
 
-This behavior exists so the detector/context and Jira/Slack integration layers can integrate against stable response shapes before the final AI logic is added.
+This behavior exists so the CDO/platform incident integration and Jira/Slack integration layers can integrate against stable response shapes before the final AI logic is added.
 
 ## Reserved W12 Optional Interfaces
 
@@ -270,6 +286,10 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Slack/Jira ownership | AI response includes `ticket_payload` and `slack_payload` as integration-ready payloads. The integration layer owns actually creating Jira issues or sending Slack messages. |
 | Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
 | Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract. |
+| Alert delivery | CDO/platform pushes alerts/incidents to `/v1/triage`; AI Ops does not poll CDO/customer systems continuously for alert discovery. |
+| Evidence retrieval | After alert delivery, AI Ops may pull bounded evidence from CDO-owned storage/API when the initial request has insufficient context. |
+| Evidence API | If live follow-up is enabled, CDO should expose `GET /v1/evidence/incidents/{incident_id}` and/or `POST /v1/evidence/query` as described in `observability-data-contract.md`. |
+| Evidence cleaning | AI Ops owns cleaning, normalization, curation criteria, sample processors, and how cleaned evidence affects RCA confidence. |
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
 
 ## W11 Sign-Off

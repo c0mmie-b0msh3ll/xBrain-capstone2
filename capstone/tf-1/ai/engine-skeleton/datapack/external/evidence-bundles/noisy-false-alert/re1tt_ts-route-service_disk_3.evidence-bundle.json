@@ -29,12 +29,8 @@
       "ts-route-service_mem",
       "ts-route-service_workload"
     ],
-    "log_filters": [
-      "probe anomaly recovered on retry during RCAEval resource fault window"
-    ],
-    "trace_ids": [
-      "rcaeval-re1tt_ts-route-service_disk_3-trace-1"
-    ],
+    "log_filters": [],
+    "trace_ids": [],
     "dependencies": [
       "ts-admin-basic-info-service",
       "ts-admin-order-service"
@@ -2094,36 +2090,8 @@
       }
     }
   ],
-  "logs": [
-    {
-      "service": "ts-route-service",
-      "ts": "2023-12-12T15:46:33Z",
-      "level": "warning",
-      "message": "probe anomaly recovered on retry during RCAEval resource fault window",
-      "trace_id": "rcaeval-re1tt_ts-route-service_disk_3-trace-1",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "disk"
-      }
-    }
-  ],
-  "traces": [
-    {
-      "trace_id": "rcaeval-re1tt_ts-route-service_disk_3-trace-1",
-      "service": "ts-route-service",
-      "root_span": "RCAEval disk fault request",
-      "duration_ms": 180,
-      "status": "ok",
-      "bottleneck_service": "ts-admin-basic-info-service",
-      "bottleneck_reason": "sample trace indicates no user-impacting request failure for the noisy alert path",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "mapped_scenario": "noisy-false-alert"
-      }
-    }
-  ],
+  "logs": [],
+  "traces": [],
   "deploy_events": [],
   "ownership": {
     "service": "ts-route-service",
@@ -2139,7 +2107,7 @@
       }
     ],
     "labels": {
-      "source": "tf1-supplement-from-sample-input",
+      "source": "tf1-supplemental-operational-context",
       "dataset": "RCAEval"
     }
   },
@@ -2154,9 +2122,9 @@
     "primary_dataset": "RCAEval",
     "primary_request": "adapted/noisy-false-alert/re1tt_ts-route-service_disk_3.request.json",
     "metrics": "RCAEval adapted request",
-    "logs": "TF1 supplemental sample-derived records because local RCAEval subset currently excludes logs.csv",
-    "traces": "TF1 supplemental sample-derived summaries because local RCAEval subset currently excludes traces.csv",
-    "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
+    "logs": "Not available in this selected RCAEval case; no logs.csv is present in the extracted benchmark case",
+    "traces": "Not available in this selected RCAEval case; no traces.csv is present in the extracted benchmark case",
+    "deploy_events": "TF1 supplemental deploy metadata because RCAEval does not provide deploy events",
     "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff"
   }
 }

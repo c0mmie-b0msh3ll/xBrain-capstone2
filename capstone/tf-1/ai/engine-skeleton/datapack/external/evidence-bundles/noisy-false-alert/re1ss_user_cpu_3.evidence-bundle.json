@@ -29,12 +29,8 @@
       "user_latency-90",
       "user_mem"
     ],
-    "log_filters": [
-      "probe anomaly recovered on retry during RCAEval resource fault window"
-    ],
-    "trace_ids": [
-      "rcaeval-re1ss_user_cpu_3-trace-1"
-    ],
+    "log_filters": [],
+    "trace_ids": [],
     "dependencies": [
       "carts",
       "carts-db",
@@ -2097,36 +2093,8 @@
       }
     }
   ],
-  "logs": [
-    {
-      "service": "user",
-      "ts": "2023-08-27T16:10:48Z",
-      "level": "warning",
-      "message": "probe anomaly recovered on retry during RCAEval resource fault window",
-      "trace_id": "rcaeval-re1ss_user_cpu_3-trace-1",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "cpu"
-      }
-    }
-  ],
-  "traces": [
-    {
-      "trace_id": "rcaeval-re1ss_user_cpu_3-trace-1",
-      "service": "user",
-      "root_span": "RCAEval cpu fault request",
-      "duration_ms": 180,
-      "status": "ok",
-      "bottleneck_service": "carts",
-      "bottleneck_reason": "sample trace indicates no user-impacting request failure for the noisy alert path",
-      "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "mapped_scenario": "noisy-false-alert"
-      }
-    }
-  ],
+  "logs": [],
+  "traces": [],
   "deploy_events": [],
   "ownership": {
     "service": "user",
@@ -2142,7 +2110,7 @@
       }
     ],
     "labels": {
-      "source": "tf1-supplement-from-sample-input",
+      "source": "tf1-supplemental-operational-context",
       "dataset": "RCAEval"
     }
   },
@@ -2157,9 +2125,9 @@
     "primary_dataset": "RCAEval",
     "primary_request": "adapted/noisy-false-alert/re1ss_user_cpu_3.request.json",
     "metrics": "RCAEval adapted request",
-    "logs": "TF1 supplemental sample-derived records because local RCAEval subset currently excludes logs.csv",
-    "traces": "TF1 supplemental sample-derived summaries because local RCAEval subset currently excludes traces.csv",
-    "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
+    "logs": "Not available in this selected RCAEval case; no logs.csv is present in the extracted benchmark case",
+    "traces": "Not available in this selected RCAEval case; no traces.csv is present in the extracted benchmark case",
+    "deploy_events": "TF1 supplemental deploy metadata because RCAEval does not provide deploy events",
     "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff"
   }
 }

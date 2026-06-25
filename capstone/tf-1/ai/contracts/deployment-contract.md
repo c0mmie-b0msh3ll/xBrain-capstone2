@@ -11,7 +11,7 @@ Define how the TF1 AIOps triage engine artifact is packaged, deployed, connected
 
 The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
 
-The AI engine is an event-driven triage compute service. Platform/DevOps provides the observability stack and bounded access to metrics/logs/traces. The AIOps app performs normalization, windowing, baseline comparison, detection, context aggregation, and calls the AI engine only when an alert/anomaly/incident candidate needs triage.
+The AI engine is an event-driven triage compute service. Platform/DevOps provides the observability stack, alert detection, and bounded access to metrics/logs/traces. CDO/platform calls the AI Ops endpoint when an alert/anomaly/incident needs triage. The AIOps app performs validation, normalization, bounded context enrichment, RCA scoring, and optional synthesis after invocation.
 
 ## Runtime Boundary
 
@@ -19,12 +19,13 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 |---|---|
 | Service type | Dockerized HTTP API |
 | API surface | `GET /healthz`, `POST /v1/triage` |
-| Invocation pattern | Event-driven after AIOps detection, not continuous telemetry streaming into triage |
+| Invocation pattern | Event-driven after CDO/platform alert detection, not AI polling or continuous telemetry streaming into triage |
 | AI pattern | Compute-first RCA, optional Bedrock synthesis |
 | Port | `8080` |
 | Tenant isolation | `X-Tenant-Id` header must match body `tenant_id` |
 | Correlation | `X-Correlation-Id` header must match body `correlation_id` |
 | Remediation boundary | AI never executes remediation; it only returns human-reviewed recommendations |
+| Evidence retrieval | AI may pull bounded evidence after an alert exists; CDO/platform owns evidence storage/API, AI Ops owns cleaning/curation before triage |
 
 ## Compute
 
@@ -60,6 +61,10 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 | `AWS_REGION` | env var | ECS task definition | `us-east-1` |
 | `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
 | `SLACK_SIGNING_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if W12 Slack two-way endpoints are enabled |
+| `EVIDENCE_API_BASE_URL` | env var | CDO platform config | Required only if AI follow-up evidence lookup is enabled. Points to CDO-owned evidence API, not raw customer telemetry backend. |
+| `EVIDENCE_API_AUTH_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if `EVIDENCE_API_BASE_URL` is set. |
+| `EVIDENCE_API_TIMEOUT_SECONDS` | env var | ECS task definition | Optional; default target 2-5 seconds for bounded incident windows. |
+| `EVIDENCE_API_MAX_WINDOW_MINUTES` | env var | ECS task definition | Optional; default max 60 minutes unless approved. |
 
 No long-lived AWS access keys are stored in the service. Production AWS access uses task roles and scoped IAM policies.
 
@@ -70,7 +75,7 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 | Subnet type | Private subnets |
 | Load balancer | Internal ALB only |
 | Security group | `tf1-ai-engine-sg` |
-| Ingress | Allow only detector/context or approved platform security groups on port `8080` or ALB listener port |
+| Ingress | Allow only approved CDO/platform incident integration or context services on port `8080` or ALB listener port |
 | Egress | AWS service endpoints required for CloudWatch, Secrets Manager, and Bedrock if enabled |
 | DNS | Private hosted zone record such as `https://ai-engine.tf1.internal` |
 
@@ -81,7 +86,9 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 | Deploy metrics/logs/traces backend | Platform/DevOps | Prometheus/Grafana/Loki/CloudWatch/OpenTelemetry mix to be finalized. |
 | Preserve required metadata | Platform/DevOps + app emitters | `tenant_id`, `service`, `environment`, `timestamp`, labels. |
 | Provide bounded query/export path | Platform/DevOps | Query by tenant/service/env/time window. |
-| Interpret telemetry and detect anomalies | AIOps app | Normalize, aggregate windows, compute baselines, detect incidents. |
+| Detect alerts/incidents | Platform/DevOps | Monitoring, alert rules, incident event generation, and initial push to AI Ops. |
+| Expose bounded evidence | Platform/DevOps | CDO owns storage/access/query bounds for logs, metrics, traces, deploys, and ownership. |
+| Normalize/clean/enrich incident context | AIOps app | Validate pushed incident context, request bounded extra evidence if needed, clean/normalize/curate evidence before triage. |
 | RCA/confidence/LLM synthesis | AIOps triage engine | Compute-first RCA; Bedrock optional. |
 
 ```mermaid
@@ -112,12 +119,15 @@ graph TB
     ECS1 --> Bedrock
     ECS2 --> Bedrock
 
-    subgraph "AIOps Platform"
-        DET[Detector and context aggregation]
+    subgraph "CDO/AIOps Integration"
+        DET[CDO alert trigger and context aggregation]
         INT[Jira Slack integration]
+        EVD[CDO-owned bounded evidence store/API]
     end
     DET --> ALB1
     DET --> ALB2
+    ECS1 -. bounded read-only evidence lookup .-> EVD
+    ECS2 -. bounded read-only evidence lookup .-> EVD
     INT --> ALB1
     INT --> ALB2
 ```
@@ -144,7 +154,7 @@ Each CDO team deploys the same AI engine artifact behind its own private endpoin
 
 ## Rollout Strategy
 
-Use canary rollout once the detector/context layer has a working endpoint integration.
+Use canary rollout once the CDO/platform incident integration has a working endpoint integration.
 
 | Step | Traffic | Interval |
 |---|---:|---|
@@ -182,7 +192,7 @@ Abort and roll back if any of these occur during canary:
 | Failure | Detection | Response |
 |---|---|---|
 | Task crash | ECS health check | Auto-restart task |
-| AI unavailable | ALB/ECS 5xx or 503 | Detector/context layer queues retry or creates fallback ticket |
+| AI unavailable | ALB/ECS 5xx or 503 | CDO/platform integration queues retry or creates fallback ticket |
 | Bedrock throttling | App metric after optional LLM synthesis is enabled | Fall back to compute-only response |
 | Alert storm or request burst | Rate-limit metrics, backlog age, or platform retry depth | Apply bounded retry/backpressure and preserve idempotency by `correlation_id`. |
 | Tenant mismatch | API validation | Return `400`; caller must fix request |
@@ -199,6 +209,9 @@ Abort and roll back if any of these occur during canary:
 | Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
 | Production auth finalization | Before W12 integration, AI and CDO must choose either IAM SigV4 or service-to-service JWT for the CDO-hosted engine. `SERVICE_AUTH_TOKEN` remains a demo fallback only. |
 | W12 burst behavior | The deployment must support bounded retries, rate limiting, and idempotent replay for alert storms. Platform-specific buffering is allowed but must stay behind the same API contract. |
+| Alert delivery model | CDO/platform pushes alerts/incidents to the AI endpoint. AI Ops must not depend on continuous polling to discover incidents. |
+| Evidence cleaning layer | Optional but recommended. CDO/platform owns production storage, retention, auth, and query API; AI Ops owns cleaning, normalization, curation criteria, and RCA consumption behavior. |
+| Follow-up evidence API | Optional W12 integration. If enabled, CDO exposes bounded read-only evidence endpoints and sets `EVIDENCE_API_BASE_URL`; otherwise CDO sends evidence inline or via precomputed bundle. |
 
 ## W11 Sign-Off
 

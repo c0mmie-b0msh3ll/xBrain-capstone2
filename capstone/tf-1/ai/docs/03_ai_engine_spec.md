@@ -18,15 +18,16 @@ normalized incident context
   -> structured diagnosis + Jira/Slack payloads
 ```
 
-The LLM is not the primary detector. Platform/DevOps provides observability data through bounded, secure access. AIOps performs normalization, windowing, baseline comparison, lightweight detection, and incident-level RCA. Bedrock is optional and used only after the engine has grounded evidence.
+The LLM is not the primary detector. Platform/DevOps provides observability data, alert detection, and bounded secure evidence access. AIOps performs context validation, bounded evidence query, cleaning/normalization/curation, evidence sufficiency checks, and incident-level RCA after an alert is pushed to AI Ops. Bedrock is optional and used only after the engine has grounded evidence.
 
 ### 1.1 Responsibilities
 
 | Layer | Responsibility |
 |---|---|
 | Platform observability layer | Collect, retain, secure, and expose metrics/logs/traces/deploy events through bounded query/export. |
-| AIOps detection layer | Normalize telemetry, aggregate windows, compute baselines, run lightweight anomaly/alert detection, and produce incident candidates. |
-| AIOps context aggregation | Build a bounded triage context bundle around the alert/anomaly window. |
+| Platform alert detection layer | Detect alert/anomaly/incident candidates and push incident seed/context to AI Ops. |
+| Bounded evidence layer | Store or expose incident-scoped logs/events/traces/metrics/deploys/ownership through safe bounded access owned by CDO/platform. |
+| AIOps context aggregation | Validate pushed incident context, request bounded extra evidence when context is insufficient, and clean/normalize/curate it before RCA. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
 | Optional Bedrock synthesis | Convert grounded evidence into clear Jira/Slack wording and runbook-aware recommendations. |
 
@@ -54,20 +55,19 @@ The skeleton uses `AI_MODE=rules`. A later release may enable `AI_MODE=hybrid`, 
 
 ## 3. Invocation Pattern
 
-The triage engine is **event-driven**, while platform telemetry collection and AIOps lightweight detection are continuous.
+The triage engine is **event-driven**, while platform telemetry collection and platform alert detection are continuous.
 
 ```text
 continuous telemetry
   -> platform observability stack
-  -> bounded query/export
-  -> AIOps normalization/windowing/baseline
-  -> AIOps lightweight detection
+  -> platform alert detection
   -> alert/anomaly/incident candidate
-  -> AIOps context aggregation
+  -> push incident seed/context to AI Ops
+  -> AIOps context validation, bounded evidence lookup, cleaning, and curation
   -> POST /v1/triage
 ```
 
-Platform/DevOps may operate CloudWatch, Prometheus, Grafana, Loki, OpenTelemetry, or related data plumbing. AIOps consumes bounded telemetry from those systems and owns the interpretation/detection/RCA logic. The triage function receives normalized bounded context so RCA logic remains replayable and testable.
+Platform/DevOps may operate CloudWatch, Prometheus, Grafana, Loki, OpenTelemetry, or related data plumbing. CDO/platform owns alert detection and production evidence storage/access. AIOps consumes bounded incident evidence and owns interpretation/RCA logic. The triage function receives normalized bounded context so RCA logic remains replayable and testable.
 
 ## 4. Input And Feature Extraction
 
@@ -182,7 +182,7 @@ For W11, RCAEval-derived evidence bundles under `../engine-skeleton/datapack/ext
 The main cost control is event-driven invocation:
 
 - observability collection stays in the platform layer,
-- lightweight detection remains in the AIOps app,
+- alert detection remains in the CDO/platform layer,
 - AI compute runs only for incident candidates,
 - Bedrock runs only when synthesis is enabled and grounded evidence exists.
 
@@ -192,7 +192,10 @@ Initial skeleton cost is ECS/Fargate or local runtime only. LLM token costs are 
 
 ```mermaid
 graph TB
-    Obs[Platform observability stack] --> Context[AIOps detector and context aggregation]
+    Obs[Platform observability stack] --> Alert[CDO/platform alert detection]
+    Obs --> Evidence[CDO-owned bounded evidence store/API]
+    Alert --> Context[AIOps context validation, cleaning, and enrichment]
+    Context -. bounded evidence lookup .-> Evidence
     Context --> ALB[Internal ALB]
     ALB --> ECS[ECS Fargate AI triage engine]
     ECS --> Rules[Compute-first RCA rules and scoring]

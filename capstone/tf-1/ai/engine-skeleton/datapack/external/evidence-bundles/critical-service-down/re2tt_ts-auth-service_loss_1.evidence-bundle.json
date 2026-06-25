@@ -30,11 +30,18 @@
       "ts-auth-service_workload"
     ],
     "log_filters": [
-      "availability dropped during RCAEval loss fault window",
-      "dependency request failed during RCAEval loss fault window"
+      "2024-01-23 03:58:03.512  INFO 1 --- [io-12346-exec-5] travel.controller.TravelController       : [Travel Service] Query TripResponse",
+      "2024-01-23 03:58:03.519  INFO 1 --- [o-15680-exec-11] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Su Zhou",
+      "2024-01-23 03:58:03.537  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Query for Station id is: Response(status=1, msg=Success, data=suzhou)",
+      "2024-01-23 03:58:03.542  INFO 1 --- [io-15680-exec-8] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Shang Hai",
+      "2024-01-23 03:58:03.552  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Query for Station id is: Response(status=1, msg=Success, data=shanghai)"
     ],
     "trace_ids": [
-      "rcaeval-re2tt_ts-auth-service_loss_1-trace-1"
+      "f864e714f8c4e9188b0adfdbf899906c",
+      "f864e714f8c4e9188b0adfdbf899906c",
+      "f864e714f8c4e9188b0adfdbf899906c",
+      "f864e714f8c4e9188b0adfdbf899906c",
+      "f864e714f8c4e9188b0adfdbf899906c"
     ],
     "dependencies": [
       "ts-admin-basic-info-service"
@@ -2097,42 +2104,464 @@
   "logs": [
     {
       "service": "ts-auth-service",
-      "ts": "2024-01-23T04:10:03Z",
-      "level": "error",
-      "message": "availability dropped during RCAEval loss fault window",
-      "trace_id": "rcaeval-re2tt_ts-auth-service_loss_1-trace-1",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.512  INFO 1 --- [io-12346-exec-5] travel.controller.TravelController       : [Travel Service] Query TripResponse",
+      "trace_id": null,
       "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "loss"
+        "source_dataset": "RCAEval"
       }
     },
     {
       "service": "ts-auth-service",
-      "ts": "2024-01-23T04:10:03Z",
-      "level": "error",
-      "message": "dependency request failed during RCAEval loss fault window",
-      "trace_id": "rcaeval-re2tt_ts-auth-service_loss_1-trace-2",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.519  INFO 1 --- [o-15680-exec-11] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Su Zhou",
+      "trace_id": null,
       "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "fault": "loss"
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.537  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Query for Station id is: Response(status=1, msg=Success, data=suzhou)",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.542  INFO 1 --- [io-15680-exec-8] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Shang Hai",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.552  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Query for Station id is: Response(status=1, msg=Success, data=shanghai)",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.552  INFO 1 --- [io-12340-exec-5] auth.service.impl.TokenServiceImpl       : eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmZHNlX21pY3Jvc2VydmljZSIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJpZCI6IjRkMmE0NmM3LTcxY2ItNGNmMS1iNWJiLWI2ODQwNmQ5ZGE2ZiIsImlhdCI6MTcwNTk4MjI4MywiZXhwIjoxNzA1OTg1ODgzfQ.w2gnEPrXJp3Fq1yfHr7Q2E_CQ-mfhG10zxe9W6NA3OEUSER TOKEN",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.552  INFO 1 --- [io-12340-exec-5] auth.service.impl.TokenServiceImpl       : 4d2a46c7-71cb-4cf1-b5bb-b68406d9da6f   USER ID",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.554  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : [Travel Service][Get Route By Id] Route ID\uff1a92708982-77af-4318-be25-57ccb0ff69ad",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "127.0.0.6 - - [23/Jan/2024:11:58:03 +0800] \"POST /api/v1/users/login HTTP/1.1\" 200 380 \"http://34.129.185.245:32677/client_login.html\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.557  INFO 1 --- [io-11178-exec-7] route.controller.RouteController         : Route id: 92708982-77af-4318-be25-57ccb0ff69ad",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.560  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Routes Response is : Response(status=1, msg=Success, data={id=92708982-77af-4318-be25-57ccb0ff69ad, stations=[nanjing, zhenjiang, wuxi, suzhou, shanghai], distances=[0, 100, 150, 200, 250], startStationId=nanjing, terminalStationId=shanghai})",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.560  INFO 1 --- [o-16346-exec-18] travel2.controller.Travel2Controller     : [Travel Service] Query TripResponse",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.561  INFO 1 --- [io-12346-exec-5] travel.service.TravelServiceImpl         : Route is: Route{id='92708982-77af-4318-be25-57ccb0ff69ad', stations=[nanjing, zhenjiang, wuxi, suzhou, shanghai], distances=[0, 100, 150, 200, 250], startStationId='nanjing', terminalStationId='shanghai'}",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.566  INFO 1 --- [o-15680-exec-10] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Nan Jing",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.568  INFO 1 --- [io-15680-exec-3] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Check Station Exists] Station Name: Su Zhou",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.573  INFO 1 --- [io-15680-exec-3] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Check Station Exists] Station Name: Shang Hai",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.578  INFO 1 --- [io-15680-exec-3] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query Train Type] Train Type: GaoTieOne",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.581  INFO 1 --- [io-15680-exec-2] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Query For Station Id] Station Id: Shang Hai",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.586  INFO 1 --- [io-15680-exec-3] f.microservice.service.BasicServiceImpl  : [Basic Information Service][Get Route By Id] Route ID\uff1a92708982-77af-4318-be25-57ccb0ff69ad",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "service": "ts-auth-service",
+      "ts": "1705982284",
+      "level": "info",
+      "message": "2024-01-23 03:58:03.591  INFO 1 --- [o-16346-exec-18] travel2.service.Travel2ServiceImpl       : [Travel Service][Get Route By Id] Route ID\uff1a0b23bd3e-876a-4af3-b920-c50a90c90b04",
+      "trace_id": null,
+      "labels": {
+        "source_dataset": "RCAEval"
       }
     }
   ],
   "traces": [
     {
-      "trace_id": "rcaeval-re2tt_ts-auth-service_loss_1-trace-1",
-      "service": "ts-auth-service",
-      "root_span": "RCAEval loss fault request",
-      "duration_ms": 3000,
-      "status": "error",
-      "bottleneck_service": "ts-admin-basic-info-service",
-      "bottleneck_reason": "loss fault produced failing or missing downstream spans in the mapped RCAEval service graph",
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "10a2804083dc17f5",
+      "parent_span_id": null,
+      "service": "ts-travel-service",
+      "operation": "POST /api/v1/travelservice/trips/left",
+      "ts": "03:58",
+      "duration_ms": 811451.0,
+      "status": "unknown",
       "labels": {
-        "source": "tf1-supplement-from-sample-input",
-        "dataset": "RCAEval",
-        "mapped_scenario": "critical-service-down"
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "d02f443e6bc078e3",
+      "parent_span_id": null,
+      "service": "ts-travel-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 23834.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "da634ef9a08fbfcc",
+      "parent_span_id": null,
+      "service": "ts-ticketinfo-service",
+      "operation": "GET /api/v1/ticketinfoservice/ticketinfo/{name}",
+      "ts": "03:58",
+      "duration_ms": 21402.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "c464fbd8b270db6e",
+      "parent_span_id": null,
+      "service": "ts-ticketinfo-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 18943.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "6cbf29178dd57b92",
+      "parent_span_id": null,
+      "service": "ts-basic-service",
+      "operation": "GET /api/v1/basicservice/basic/{stationName}",
+      "ts": "03:58",
+      "duration_ms": 10442.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "a7db0114120e9af2",
+      "parent_span_id": null,
+      "service": "ts-basic-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 7903.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "8f251fd416e5bbb9",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "GET /api/v1/stationservice/stations/id/{stationNameForId}",
+      "ts": "03:58",
+      "duration_ms": 4015.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "3c98819f18ff7b9c",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "find ts.station",
+      "ts": "03:58",
+      "duration_ms": 1477.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "1bd4440970d9fafb",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "StationRepository.findByName",
+      "ts": "03:58",
+      "duration_ms": 1851.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "9ffaa3d78f854e24",
+      "parent_span_id": null,
+      "service": "ts-travel-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 14477.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "3cb795ca83ee0d3a",
+      "parent_span_id": null,
+      "service": "ts-ticketinfo-service",
+      "operation": "GET /api/v1/ticketinfoservice/ticketinfo/{name}",
+      "ts": "03:58",
+      "duration_ms": 12078.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "c73720afb5d2bbf2",
+      "parent_span_id": null,
+      "service": "ts-ticketinfo-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 9928.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "6b5d8c3724e8aa1b",
+      "parent_span_id": null,
+      "service": "ts-basic-service",
+      "operation": "GET /api/v1/basicservice/basic/{stationName}",
+      "ts": "03:58",
+      "duration_ms": 8085.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "66c67c6236df845d",
+      "parent_span_id": null,
+      "service": "ts-basic-service",
+      "operation": "GET",
+      "ts": "03:58",
+      "duration_ms": 5588.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "bde9c0339d87d37d",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "GET /api/v1/stationservice/stations/id/{stationNameForId}",
+      "ts": "03:58",
+      "duration_ms": 3651.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "b331d8e5b8a74ca3",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "find ts.station",
+      "ts": "03:58",
+      "duration_ms": 1194.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "7c259b9b97b5d8a4",
+      "parent_span_id": null,
+      "service": "ts-station-service",
+      "operation": "StationRepository.findByName",
+      "ts": "03:58",
+      "duration_ms": 1548.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "a01094db6f4ab2b7c53dfb5aca7bb64e",
+      "span_id": "eb30d9ef364448c6",
+      "parent_span_id": null,
+      "service": "ts-auth-service",
+      "operation": "UserRepository.findByUsername",
+      "ts": "03:58",
+      "duration_ms": 2611.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "a01094db6f4ab2b7c53dfb5aca7bb64e",
+      "span_id": "a5c7024e4b459486",
+      "parent_span_id": null,
+      "service": "ts-auth-service",
+      "operation": "find ts-auth-mongo.user",
+      "ts": "03:58",
+      "duration_ms": 2141.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
+      }
+    },
+    {
+      "trace_id": "f864e714f8c4e9188b0adfdbf899906c",
+      "span_id": "6ef26484944ab563",
+      "parent_span_id": null,
+      "service": "ts-travel-service",
+      "operation": "find ts.trip",
+      "ts": "03:58",
+      "duration_ms": 1291.0,
+      "status": "unknown",
+      "labels": {
+        "source_dataset": "RCAEval"
       }
     }
   ],
@@ -2142,10 +2571,10 @@
       "version": "sample-re2tt_ts-auth-service_loss_1",
       "deployed_at": "2024-01-23T04:03:03Z",
       "deployed_by": "ci",
-      "change_summary": "sample deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
+      "change_summary": "TF1 supplemental deploy metadata placeholder for CDO routing demo; RCAEval does not provide deploy events",
       "rollback_ref": "previous-sample-version",
       "labels": {
-        "source": "tf1-supplement-from-sample-input",
+        "source": "tf1-supplemental-operational-context",
         "dataset": "RCAEval"
       }
     }
@@ -2164,7 +2593,7 @@
       }
     ],
     "labels": {
-      "source": "tf1-supplement-from-sample-input",
+      "source": "tf1-supplemental-operational-context",
       "dataset": "RCAEval"
     }
   },
@@ -2179,9 +2608,9 @@
     "primary_dataset": "RCAEval",
     "primary_request": "adapted/critical-service-down/re2tt_ts-auth-service_loss_1.request.json",
     "metrics": "RCAEval adapted request",
-    "logs": "TF1 supplemental sample-derived records because local RCAEval subset currently excludes logs.csv",
-    "traces": "TF1 supplemental sample-derived summaries because local RCAEval subset currently excludes traces.csv",
-    "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
+    "logs": "RCAEval logs.csv adapted into TF1 log evidence",
+    "traces": "RCAEval traces.csv adapted into TF1 trace evidence",
+    "deploy_events": "TF1 supplemental deploy metadata because RCAEval does not provide deploy events",
     "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff"
   }
 }
