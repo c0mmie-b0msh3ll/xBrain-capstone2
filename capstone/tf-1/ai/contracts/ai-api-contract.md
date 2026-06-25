@@ -305,7 +305,7 @@ Allowed feedback values should be limited to non-executable audit metadata such 
 | Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
 | Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract and approved Jira history access. |
 | Alert delivery | CDO/platform pushes alerts/incidents to `/v1/triage`; AI Ops does not poll CDO/customer systems continuously for alert discovery. |
-| Evidence retrieval | After alert delivery, AI Ops may pull bounded evidence from CDO-owned storage/API when the initial request has insufficient context. |
+| Evidence retrieval | After alert delivery, AI Ops may pull bounded evidence from the customer observability/evidence layer through CDO/platform-approved access when the initial request has insufficient context. |
 | Evidence API | If live follow-up is enabled, CDO should expose `GET /v1/evidence/incidents/{incident_id}` and/or `POST /v1/evidence/query` as described in `observability-data-contract.md`. |
 | Evidence cleaning | AI Ops owns cleaning, normalization, curation criteria, sample processors, and how cleaned evidence affects RCA confidence. |
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |

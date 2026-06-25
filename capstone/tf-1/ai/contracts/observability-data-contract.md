@@ -23,7 +23,7 @@ Production boundary:
 ```text
 Customer applications
   -> OpenTelemetry/exporters
-  -> customer/CDO observability layer such as Prometheus/Loki/Jaeger/CloudWatch/Grafana
+  -> customer-owned observability layer such as Prometheus/Loki/Jaeger/CloudWatch/Grafana
   -> CDO/platform alert detection
   -> CDO pushes incident seed/context to AI Ops
   -> AI Ops requests bounded evidence if needed through allowlisted tools
@@ -113,7 +113,7 @@ AIOps should not continuously poll CDO/customer telemetry to discover incidents.
 
 ### Source Of Extra Evidence
 
-CDO/platform should treat the existing observability stack as the source of truth:
+CDO/platform should treat the customer's existing observability stack as the source of truth:
 
 | Data type | Preferred source systems | Notes |
 |---|---|---|
@@ -254,8 +254,8 @@ Response body:
   "deploy_events": [],
   "ownership": {},
   "data_lineage": {
-    "metrics": "prometheus bounded query via CDO evidence API",
-    "logs": "bounded log query via CDO evidence API; cleaned by AI Ops",
+    "metrics": "prometheus bounded query via CDO/platform access endpoint",
+    "logs": "bounded log query via CDO/platform access endpoint; cleaned by AI Ops",
     "traces": "trace summary store"
   }
 }
@@ -302,7 +302,7 @@ Suitable storage:
 
 - S3/MinIO/object storage for JSON evidence bundles by `tenant_id/incident_id`.
 - Postgres/DynamoDB for incident metadata, evidence indexes, and report metadata.
-- Existing Prometheus/Loki/Jaeger backends remain the source of truth for raw observability data.
+- Existing customer Prometheus/Loki/Jaeger backends remain the source of truth for raw observability data.
 - Vector DB is optional for runbooks/docs search only; it should not be the primary store for raw logs or metrics.
 - Jira history storage or indexing is optional for W11. If not available, AI returns no personal accountId suggestion and routes to the owner queue/team.
 
@@ -372,7 +372,7 @@ observability data contract
 |---|---|
 | Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. |
 | Alert delivery | Push-based from CDO/platform to AI Ops. Poll-based alert discovery by AI Ops is out of scope. |
-| Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. CDO owns storage/hosting/access and query bounds. |
+| Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. Customer observability remains the source of truth; CDO/platform owns hosting/access/query bounds for the integration path exposed to AI Ops. |
 | Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
 | Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
 | Jira assignee suggestion | Optional. AI may query bounded Jira history/accountId mapping and return a suggestion reason, but CDO must require human confirmation before assignment. |

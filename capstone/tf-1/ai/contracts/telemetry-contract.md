@@ -12,7 +12,7 @@ The current production assumption is:
 
 ```text
 Customer applications
-  -> customer/CDO observability layer
+  -> customer-owned observability layer exposed through CDO/platform access
   -> alert/incident detection
   -> push incident seed or normalized context to AI Ops
   -> AI Ops validates context and performs bounded evidence lookup if needed
@@ -45,12 +45,12 @@ CDO detects alert -> CDO calls AI Ops endpoint -> AI Ops starts triage immediate
 Evidence retrieval can be pull-based after the alert:
 
 ```text
-AI Ops needs more context -> AI Ops calls CDO-owned bounded evidence API/storage -> AI Ops cleans/curates evidence -> RCA/optional LLM synthesis starts
+AI Ops needs more context -> AI Ops calls bounded access to the customer's observability/evidence layer -> AI Ops cleans/curates evidence -> RCA/optional LLM synthesis starts
 ```
 
 This split avoids polling delay for alert delivery while still allowing AI Ops to ask for more context when the initial datapack is insufficient.
 
-The current app already has bounded read-only context tools for metrics, logs, deploy metadata, ownership, and internal RCA helpers. Production use should point those tools at the CDO evidence API/storage, not directly at customer applications or raw unbounded telemetry systems. AI Ops owns the cleaning/normalization/curation step before data enters the triage prompt or RCA logic. The LLM must use allowlisted tools and cleaned evidence only; it must not receive backend credentials or arbitrary query privileges.
+The current app already has bounded read-only context tools for metrics, logs, deploy metadata, ownership, and internal RCA helpers. Production use should point those tools at the bounded access path that CDO/platform exposes for the customer's observability layer, not directly at customer applications or raw unbounded telemetry systems. AI Ops owns the cleaning/normalization/curation step before data enters the triage prompt or RCA logic. The LLM must use allowlisted tools and cleaned evidence only; it must not receive backend credentials or arbitrary query privileges.
 
 ## Required Envelope
 
@@ -88,7 +88,7 @@ Recommended optional alert labels for evidence lookup:
 
 | Label | Notes |
 |---|---|
-| `evidence_uri` | Pointer to precomputed evidence bundle, e.g. S3/object key or CDO evidence API reference. |
+| `evidence_uri` | Pointer to precomputed evidence bundle, e.g. S3/object key or bounded evidence API reference exposed by CDO/platform. |
 | `trace_id` / `correlation_id` | Helps fetch trace summary and correlated logs. |
 | `region` | Required when platform evidence is region-scoped. |
 | `cluster` / `namespace` | Helps scope Kubernetes or multi-cluster evidence queries. |
@@ -162,7 +162,7 @@ Minimal curated log fields:
 
 Ownership boundary:
 
-- CDO/platform owns production telemetry storage, retention, auth, tenant isolation, and bounded query access.
+- The customer's observability layer owns production telemetry storage and retention. CDO/platform owns the integration boundary, auth, tenant isolation, and bounded query access exposed to AI Ops.
 - AI Ops owns cleaning, redaction before AI use when needed, curation criteria, sample processor logic, and how curated logs are consumed for RCA.
 - AI Ops must not receive arbitrary raw log backend credentials or unbounded raw log dumps.
 
@@ -264,7 +264,7 @@ Mapping type must be one of:
 - Delivery mode: push request from CDO/platform to the AI Ops API after an alert exists.
 - Invocation mode: event-driven after platform alert detection, not continuous full triage over all telemetry.
 - Detection ownership: CDO/platform owns alert detection and incident triggering; AI Ops owns incident-level RCA after invocation.
-- Extra context ownership: CDO/platform owns bounded evidence storage/API; AI Ops may pull bounded evidence after alert delivery, clean/curate it, and then triage.
+- Extra context ownership: Customer observability is the source of truth. CDO/platform exposes bounded evidence access; AI Ops may pull bounded evidence after alert delivery, clean/curate it, and then triage.
 - Duplicate handling: the caller must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
@@ -279,7 +279,7 @@ Mapping type must be one of:
 | Primary datapack format | Use the RCAEval subset under `../engine-skeleton/datapack/external/` as the primary scenario data. The CDO-hostable artifacts are normalized evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/`. |
 | Triage request format | `POST /v1/triage` remains the normalized incident context contract. Raw dataset fields are adapted before calling the triage endpoint. |
 | Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
-| Evidence follow-up | Optional CDO-owned evidence API/storage can be used after alert delivery for bounded follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |
+| Evidence follow-up | Optional bounded access to the customer's observability/evidence layer can be used after alert delivery for follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |
 | Jira history for suggestion | AI Ops may use bounded Jira history/accountId mapping to return an advisory assignee suggestion. CDO owns human confirmation and actual Jira assignment. |
 | Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. Higher platform load testing is deferred until CDO infrastructure is finalized. |
 | Deferred mentor item | If the mentor provides a different official datapack shape, create an adapter and mapping table instead of changing the triage contract unless a required concept is missing. |

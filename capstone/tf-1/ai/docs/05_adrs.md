@@ -5,7 +5,7 @@
 - **Status**: Accepted
 - **Date**: 2026-06-22
 - **Context**: TF1 requires logs, metrics, recent deploys, ownership, and runbook/docs context. Platform/DevOps owns observability plumbing and alert detection, while the triage/RCA function should not poll every raw telemetry store to discover incidents.
-- **Decision**: CDO/platform detects alerts and pushes incident seed/context to AI Ops. AI Ops may pull bounded evidence from CDO-owned evidence storage/API after alert delivery if the initial context is insufficient, then calls `POST /v1/triage`.
+- **Decision**: CDO/platform detects alerts and pushes incident seed/context to AI Ops. AI Ops may pull bounded evidence from the customer's observability/evidence layer through CDO/platform-approved access after alert delivery if the initial context is insufficient, then calls `POST /v1/triage`.
 - **Consequence**: Platform owns data availability, alert detection, quality, access, retention, and security. AIOps owns context validation/enrichment, triage, confidence, and output integration. This keeps the platform/AIOps boundary clear and avoids polling delay.
 - **Alternatives considered**:
   - Triage pulls directly from observability stores at request time: richer control, but higher coupling and latency.

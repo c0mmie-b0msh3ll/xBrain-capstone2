@@ -21,7 +21,7 @@ CDO/platform detects alert and pushes incident seed/context
   -> report + raw Slack-renderable fields + Jira ticket_payload + optional assignee suggestion
 ```
 
-TF1 AI Ops does not call customer applications directly for logs or metrics. Customer applications push telemetry into the customer/CDO observability layer; CDO/platform detects alerts; AI Ops queries only bounded evidence exposed from that observability layer or CDO-hosted evidence store after an alert exists.
+TF1 AI Ops does not call customer applications directly for logs or metrics. Customer applications push telemetry into the customer's observability layer; CDO/platform detects alerts and exposes only bounded read-only access to that observability/evidence layer; AI Ops queries that bounded access path only after an alert exists.
 
 AI Ops also does not own continuous infrastructure metric collection or real-time platform health evaluation. That remains CDO/platform scope. AI Ops consumes incident-scoped evidence after an alert exists, then cleans/normalizes/curates it for RCA.
 
@@ -97,7 +97,7 @@ Recommended stores:
 
 - S3 or MinIO for JSON evidence bundles by `tenant_id/incident_id`.
 - Postgres or DynamoDB for incident metadata, evidence indexes, report metadata, and idempotency records.
-- Prometheus/Loki/Jaeger remain the source of truth for raw observability data.
+- The customer's Prometheus/Loki/Jaeger or equivalent observability backends remain the source of truth for raw observability data.
 
 Minimal bundle shape:
 
@@ -210,7 +210,7 @@ Current worker supports:
 - Ownership mapping file via `OWNERSHIP_PATH`.
 - Jaeger query in the worker path via `JAEGER_URL`, currently used for trace count/logging rather than full trace enrichment.
 
-For production, those local/demo query paths should be fronted or replaced by the CDO-owned evidence bundle/API layer. AI Ops should not receive broad raw backend credentials.
+For production, those local/demo query paths should be fronted or replaced by a CDO/platform-approved bounded access layer over the customer's observability/evidence sources. AI Ops should not receive broad raw backend credentials.
 
 Current env expected by the app:
 

@@ -11,7 +11,7 @@ Define how the TF1 AIOps triage engine artifact is packaged, deployed, connected
 
 The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
 
-The AI engine is an event-driven triage compute service. Platform/DevOps provides the observability stack, alert detection, and bounded access to metrics/logs/traces. CDO/platform calls the AI Ops endpoint when an alert/anomaly/incident needs triage. The AIOps app performs validation, normalization, bounded context enrichment, RCA scoring, and optional synthesis after invocation.
+The AI engine is an event-driven triage compute service. Customer applications emit telemetry into the customer's observability stack; Platform/DevOps provides alert detection and bounded access to that metrics/logs/traces evidence. CDO/platform calls the AI Ops endpoint when an alert/anomaly/incident needs triage. The AIOps app performs validation, normalization, bounded context enrichment, RCA scoring, and optional synthesis after invocation.
 
 ## Runtime Boundary
 
@@ -61,7 +61,7 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 | `AWS_REGION` | env var | ECS task definition | `us-east-1` |
 | `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
 | `SLACK_SIGNING_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if W12 Slack two-way endpoints are enabled |
-| `EVIDENCE_API_BASE_URL` | env var | CDO platform config | Required only if AI follow-up evidence lookup is enabled. Points to CDO-owned evidence API, not raw customer telemetry backend. |
+| `EVIDENCE_API_BASE_URL` | env var | CDO platform config | Required only if AI follow-up evidence lookup is enabled. Points to a CDO/platform-approved bounded access endpoint for the customer's observability/evidence layer, not directly to customer applications. |
 | `EVIDENCE_API_AUTH_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if `EVIDENCE_API_BASE_URL` is set. |
 | `EVIDENCE_API_TIMEOUT_SECONDS` | env var | ECS task definition | Optional; default target 2-5 seconds for bounded incident windows. |
 | `EVIDENCE_API_MAX_WINDOW_MINUTES` | env var | ECS task definition | Optional; default max 60 minutes unless approved. |
@@ -87,7 +87,7 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 | Preserve required metadata | Platform/DevOps + app emitters | `tenant_id`, `service`, `environment`, `timestamp`, labels. |
 | Provide bounded query/export path | Platform/DevOps | Query by tenant/service/env/time window. |
 | Detect alerts/incidents | Platform/DevOps | Monitoring, alert rules, incident event generation, and initial push to AI Ops. |
-| Expose bounded evidence | Platform/DevOps | CDO owns storage/access/query bounds for logs, metrics, traces, deploys, and ownership. |
+| Expose bounded evidence | Platform/DevOps | Customer observability is the source of truth; CDO/platform owns the bounded access path, auth, query limits, and tenant isolation exposed to AI Ops. |
 | Normalize/clean/enrich incident context | AIOps app | Validate pushed incident context, request bounded extra evidence if needed, clean/normalize/curate evidence before triage. |
 | RCA/confidence/LLM synthesis | AIOps triage engine | Compute-first RCA; Bedrock optional. |
 
@@ -122,7 +122,7 @@ graph TB
     subgraph "CDO/AIOps Integration"
         DET[CDO alert trigger and context aggregation]
         INT[Jira Slack integration]
-        EVD[CDO-owned bounded evidence store/API]
+        EVD[Bounded access to customer observability/evidence]
     end
     DET --> ALB1
     DET --> ALB2

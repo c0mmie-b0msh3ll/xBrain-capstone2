@@ -26,9 +26,10 @@ The LLM is not the primary detector and does not receive direct observability ba
 
 | Layer | Responsibility |
 |---|---|
-| Platform observability layer | Collect, retain, secure, and expose metrics/logs/traces/deploy events through bounded query/export. |
+| Customer observability layer | Source of truth for metrics/logs/traces/deploy events emitted by customer applications. |
+| CDO/platform access layer | Expose customer observability evidence to AI Ops through bounded query/export, auth, tenant isolation, and query limits. |
 | Platform alert detection layer | Detect alert/anomaly/incident candidates and push incident seed/context to AI Ops. |
-| Bounded evidence layer | Store or expose incident-scoped logs/events/traces/metrics/deploys/ownership through safe bounded access owned by CDO/platform. |
+| Bounded evidence layer | Expose incident-scoped logs/events/traces/metrics/deploys/ownership from the customer's observability/evidence sources through safe bounded access owned by CDO/platform. |
 | AIOps context aggregation | Validate pushed incident context, request bounded extra evidence when context is insufficient through allowlisted tools, and clean/normalize/curate it before RCA. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
 | Optional Bedrock synthesis | Convert grounded evidence into clear diagnosis, Jira description, assignee suggestion rationale, and runbook-aware recommendations. |
@@ -198,7 +199,7 @@ Initial skeleton cost is ECS/Fargate or local runtime only. LLM token costs are 
 ```mermaid
 graph TB
     Obs[Platform observability stack] --> Alert[CDO/platform alert detection]
-    Obs --> Evidence[CDO-owned bounded evidence store/API]
+    Obs --> Evidence[Bounded access to customer observability/evidence]
     Alert --> Context[AIOps context validation, cleaning, and enrichment]
     Context -. bounded evidence lookup .-> Evidence
     Context --> ALB[Internal ALB]

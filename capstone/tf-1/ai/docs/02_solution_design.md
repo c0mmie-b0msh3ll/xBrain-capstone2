@@ -6,7 +6,7 @@ Last updated: 2026-06-24
 
 ## 1. High-Level Architecture
 
-TF1 uses an event-driven triage design. Production-grade ownership is split between platform observability and AIOps reasoning. Customer applications emit telemetry into the customer/CDO observability layer. Platform/DevOps makes telemetry observable, queryable, secure, bounded, and owns alert detection. CDO/platform pushes incidents to AI Ops. AI Ops validates the incident context, gathers bounded evidence only when needed through allowlisted tools, cleans/normalizes/curates that evidence, then performs RCA and optional LLM synthesis.
+TF1 uses an event-driven triage design. Production-grade ownership is split between customer observability, CDO/platform integration, and AIOps reasoning. Customer applications emit telemetry into the customer's observability layer. CDO/platform makes that telemetry safely reachable through bounded access, owns alert detection/integration, and pushes incidents to AI Ops. AI Ops validates the incident context, gathers bounded evidence only when needed through allowlisted tools, cleans/normalizes/curates that evidence, then performs RCA and optional LLM synthesis.
 
 ```mermaid
 graph LR
@@ -46,7 +46,7 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
 1. Services continuously emit telemetry: metrics, logs, traces, deploy events, and alert-source events.
 2. Platform observability stack collects/stores telemetry and exposes bounded query/export paths by tenant, service, environment, and time window.
 3. CDO/platform detection evaluates alert rules, SLOs, anomaly signals, or monitoring events and pushes an incident seed/context to AI Ops.
-4. If the initial context is insufficient, AI Ops requests bounded extra evidence from a CDO-owned evidence bundle, bounded evidence store, or read-only evidence proxy.
+4. If the initial context is insufficient, AI Ops requests bounded extra evidence from the customer's observability/evidence layer through a CDO/platform-approved bundle, bounded evidence store, or read-only evidence proxy.
 5. AI Ops cleans, redacts if needed, normalizes, and curates the evidence into the `telemetry-contract.md` request shape.
 6. The integration/context layer invokes the triage engine through `POST /v1/triage`, with normalized alert metadata, metrics, AI-curated logs, traces, recent deploys, ownership, and runbook/docs context.
 7. The AI engine validates tenant/correlation headers, validates schema, extracts features, and runs compute-first RCA rules/scoring with topology-aware candidates, bounded anomaly evidence, experimental lag-correlation causal hints, and deterministic investigator summaries.
@@ -107,7 +107,7 @@ Chosen: Option B. Bedrock is optional synthesis after grounded compute evidence.
   - Pros: clearer platform/AIOps separation, cheaper triage calls, easier replay/eval, and safer LLM prompting.
   - Cons: observability data contract must preserve enough evidence for RCA.
 
-Chosen: Option B. Platform owns observability plumbing, alert detection, evidence storage, and bounded access. AIOps owns context validation, evidence cleaning/curation, enrichment, and incident-level RCA.
+Chosen: Option B. Customer observability remains the telemetry source of truth. Platform/CDO owns alert detection plus the bounded access path to that evidence. AIOps owns context validation, evidence cleaning/curation, enrichment, and incident-level RCA.
 
 ## 5. Risk And Mitigation
 
