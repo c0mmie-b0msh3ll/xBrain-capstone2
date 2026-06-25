@@ -7,9 +7,9 @@ Reviewers: AI Lead, CDO Leads, reviewer panel
 
 ## Purpose
 
-Define how the TF1 AIOps triage components are packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to provision infrastructure, observability access, and safe triage endpoint connectivity.
+Define how the TF1 AIOps triage engine artifact is packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to deploy the engine on their own platform while preserving one stable AI API and telemetry boundary.
 
-The AI engine is hosted once for TF1 and consumed by the AIOps detector/context layer or demo integration path through a shared, multi-tenant API. Separate engine deployments require a formal contract change.
+The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
 
 The AI engine is an event-driven triage compute service. Platform/DevOps provides the observability stack and bounded access to metrics/logs/traces. The AIOps app performs normalization, windowing, baseline comparison, detection, context aggregation, and calls the AI engine only when an alert/anomaly/incident candidate needs triage.
 
@@ -30,11 +30,11 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 
 | Aspect | Configuration |
 |---|---|
-| Target | ECS Fargate service behind an internal ALB |
+| Target | ECS Fargate service behind an internal ALB, or equivalent CDO platform runtime |
 | Region | `us-east-1` for capstone scope |
-| Cluster | `tf-1-aiops-cluster` |
-| Service name | `tf1-ai-triage-engine` |
-| Image source | ECR repo `tf1/ai-triage-engine`, immutable image tag per release |
+| Cluster | `tf-1-aiops-cluster` or CDO platform equivalent |
+| Service name | `tf1-ai-triage-engine` or CDO platform equivalent |
+| Image source | AI-provided ECR image URI plus immutable image tag/digest per release |
 | CPU per task | 512 CPU units for skeleton, 1024 CPU units if LLM calls are enabled |
 | Memory per task | 1024 MB for skeleton, 2048 MB if LLM calls are enabled |
 
@@ -59,6 +59,7 @@ The AI engine is an event-driven triage compute service. Platform/DevOps provide
 | `BEDROCK_MODEL_ID` | env var | ECS task definition | Required only when `AI_MODE=hybrid` |
 | `AWS_REGION` | env var | ECS task definition | `us-east-1` |
 | `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
+| `SLACK_SIGNING_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if W12 Slack two-way endpoints are enabled |
 
 No long-lived AWS access keys are stored in the service. Production AWS access uses task roles and scoped IAM policies.
 
@@ -85,34 +86,51 @@ No long-lived AWS access keys are stored in the service. Production AWS access u
 
 ```mermaid
 graph TB
-    subgraph "TF1 VPC"
+    AI[AI team: engine artifact + deployment contract]
+
+    subgraph "CDO platform 1"
         subgraph "Private subnets"
-            ALB[Internal ALB]
-            ECS[ECS Fargate: tf1-ai-triage-engine]
-            ALB --> ECS
+            ALB1[Internal ALB or platform ingress]
+            ECS1[AI engine instance]
+            ALB1 --> ECS1
         end
-        SM[Secrets Manager VPC endpoint]
-        CW[CloudWatch Logs]
-        ECS --> SM
-        ECS --> CW
+        SM1[Secrets Manager]
+        CW1[Logs and metrics]
+        ECS1 --> SM1
+        ECS1 --> CW1
     end
+
+    subgraph "CDO platform 2"
+        ALB2[Internal ALB or platform ingress]
+        ECS2[AI engine instance]
+        ALB2 --> ECS2
+    end
+
     Bedrock[AWS Bedrock, optional synthesis after compute RCA]
-    ECS --> Bedrock
+    AI -. ships artifact .-> ECS1
+    AI -. ships artifact .-> ECS2
+    ECS1 --> Bedrock
+    ECS2 --> Bedrock
 
     subgraph "AIOps Platform"
         DET[Detector and context aggregation]
         INT[Jira Slack integration]
     end
-    DET --> ALB
-    INT --> ALB
+    DET --> ALB1
+    DET --> ALB2
+    INT --> ALB1
+    INT --> ALB2
 ```
 
-## Platform Pointer
+## Per-CDO Deployment
 
-| Consumer | Endpoint URL | Auth draft |
-|---|---|---|
-| AIOps detector/context layer | `https://ai-engine.tf1.internal` | IAM SigV4 preferred; bearer token fallback |
-| Demo/manual smoke test | Same shared endpoint | Scoped bearer token fallback |
+Each CDO team deploys the same AI engine artifact behind its own private endpoint. The CDO-hosted instance must preserve the API paths, request/response schema, tenant isolation, auth boundary, health check, and rollback behavior defined in this contract.
+
+| Platform | Endpoint URL | Auth draft | Notes |
+|---|---|---|---|
+| CDO platform 1 | `https://ai-engine.cdo-1.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for one CDO team. |
+| CDO platform 2 | `https://ai-engine.cdo-2.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for the second CDO team. |
+| Bootstrap/demo | `https://snpmtcwpys.us-east-1.awsapprunner.com` | Scoped bearer token fallback | Temporary W11 endpoint for early integration and mentor smoke tests only. |
 
 ## Health Check
 
@@ -166,6 +184,7 @@ Abort and roll back if any of these occur during canary:
 | Task crash | ECS health check | Auto-restart task |
 | AI unavailable | ALB/ECS 5xx or 503 | Detector/context layer queues retry or creates fallback ticket |
 | Bedrock throttling | App metric after optional LLM synthesis is enabled | Fall back to compute-only response |
+| Alert storm or request burst | Rate-limit metrics, backlog age, or platform retry depth | Apply bounded retry/backpressure and preserve idempotency by `correlation_id`. |
 | Tenant mismatch | API validation | Return `400`; caller must fix request |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 
@@ -176,7 +195,10 @@ Abort and roll back if any of these occur during canary:
 | Demo auth | Use private networking or protected gateway. Scoped bearer token is allowed as a capstone fallback; IAM SigV4 or service-to-service JWT is preferred when CDO infra supports it. |
 | Load target | 30 triage requests/minute for skeleton validation, p99 < 2 seconds on bounded payloads. |
 | Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. Production design target is object storage or DynamoDB/Postgres with report metadata. |
-| AWS endpoint evidence | A real deployed endpoint must be recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
+| Bootstrap endpoint evidence | The W11 App Runner endpoint is recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
+| Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
+| Production auth finalization | Before W12 integration, AI and CDO must choose either IAM SigV4 or service-to-service JWT for the CDO-hosted engine. `SERVICE_AUTH_TOKEN` remains a demo fallback only. |
+| W12 burst behavior | The deployment must support bounded retries, rate limiting, and idempotent replay for alert storms. Platform-specific buffering is allowed but must stay behind the same API contract. |
 
 ## W11 Sign-Off
 

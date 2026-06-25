@@ -16,7 +16,7 @@ Status: Ready for design/contract review, live demo endpoint smoke-tested
 | `docs/06_cdo_evidence_handoff.md` | Ready | Explains extra evidence source, hosting model, and CDO responsibilities. |
 | `contracts/telemetry-contract.md` | Ready | Normalized incident context contract. |
 | `contracts/ai-api-contract.md` | Ready | `/healthz` and `/v1/triage` contract plus Jira/Slack payload boundary. |
-| `contracts/deployment-contract.md` | Ready | ECS/Fargate target, auth fallback, scaling, rollout, and smoke test requirements. |
+| `contracts/deployment-contract.md` | Ready | AI artifact handoff, per-CDO deployment expectation, auth fallback, scaling, rollout, and smoke test requirements. |
 | `contracts/observability-data-contract.md` | Ready | Supporting data-availability contract/handoff; not one of the 3 signed W11 contracts. |
 
 ## Data Readiness
@@ -70,7 +70,9 @@ Run from `capstone/tf-1/ai/engine-skeleton/report-ui`:
 npm run build
 ```
 
-## AWS Endpoint Evidence
+## Bootstrap AWS Endpoint Evidence
+
+This endpoint is the W11 bootstrap/demo endpoint for early CDO integration and mentor smoke tests. It is not the final W12 hosting target; each CDO team is expected to deploy its own AI engine instance from the AI-provided artifact according to `contracts/deployment-contract.md`.
 
 | Item | Value |
 |---|---|
@@ -111,7 +113,8 @@ Each team member should:
 
 | Dependency | Owner | Status |
 |---|---|---|
-| Live AWS endpoint | AI | Complete for demo endpoint; production/internal deployment remains per CDO contract |
+| Bootstrap AWS endpoint | AI | Complete for demo endpoint; final W12 engine hosting remains per CDO deployment contract |
+| Per-CDO engine deployment | CDO + AI | Pending W12 handoff of image/artifact and CDO platform deployment |
 | CDO-hosted evidence bundle location | CDO | Pending CDO implementation |
 | Final auth mechanism beyond capstone token fallback | CDO + AI | Deferred after W11 sign-off |
 | Richer logs/traces from official dataset, if provided | AI | Deferred until source is available |

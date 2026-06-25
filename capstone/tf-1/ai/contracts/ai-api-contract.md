@@ -47,7 +47,7 @@ Allow load balancers, deployment checks, and smoke tests to verify the service i
 
 ### Purpose
 
-Diagnose an incident from alert metadata plus logs, metrics, recent deploys, ownership, and runbook/docs context.
+Diagnose an incident from alert metadata plus logs, metrics, bounded trace summaries, recent deploys, ownership, and runbook/docs context.
 
 The endpoint performs compute-first triage: validation, feature extraction, RCA scoring, confidence gating, and safety checks. Bedrock/LLM synthesis may be enabled later, but only after grounded evidence has been produced by the compute layer.
 
@@ -80,6 +80,7 @@ The endpoint performs compute-first triage: validation, feature extraction, RCA 
   },
   "metrics": [],
   "logs": [],
+  "traces": [],
   "recent_deploys": [],
   "ownership": {
     "service": "checkout-api",
@@ -91,7 +92,7 @@ The endpoint performs compute-first triage: validation, feature extraction, RCA 
 }
 ```
 
-Field definitions are in `telemetry-contract.md`. Upstream observability access requirements are in `observability-data-contract.md`.
+Field definitions are in `telemetry-contract.md`. Upstream observability access requirements are in `observability-data-contract.md`. `traces` is optional and should contain bounded span summaries only; full trace exports should be hosted as evidence bundles or evidence URIs.
 
 Sample request fixtures are stored in `../engine-skeleton/samples/`.
 
@@ -191,6 +192,51 @@ Before LLM integration, the skeleton service returns rule-based deterministic re
 
 This behavior exists so the detector/context and Jira/Slack integration layers can integrate against stable response shapes before the final AI logic is added.
 
+## Reserved W12 Optional Interfaces
+
+These endpoints reserve the W12 interface surface so CDO and AI can build without changing the frozen `/v1` contract. They are not required for the W11 skeleton demo. If not implemented yet, they must return `404` or `501` consistently and must not change `/v1/triage` behavior.
+
+### Slack Two-Way Read-Only API
+
+Slack endpoints are for read-only follow-up questions and button actions against an existing incident/report. They must not expose remediation execution.
+
+| Endpoint | Purpose | Required verification |
+|---|---|---|
+| `POST /v1/slack/events` | Receive Slack app event callbacks. | Verify Slack signing secret before processing. |
+| `POST /v1/slack/commands` | Receive slash command payloads such as incident lookup or RCA explanation. | Verify Slack signing secret before processing. |
+| `POST /v1/slack/actions` | Receive interactive button payloads such as Explain RCA, Show Evidence, Show Actions, or Show Jira Payload. | Verify Slack signing secret before processing. |
+
+Slack request verification requirements:
+
+- Use `SLACK_SIGNING_SECRET`.
+- Validate `X-Slack-Signature`.
+- Validate `X-Slack-Request-Timestamp`.
+- Reject stale timestamps before parsing business payload.
+- Reject invalid signatures with `401` or `403`.
+- Process only authorized Slack channels/users configured for the incident tenant.
+
+Slack responses must stay read-only and scoped to bounded report/evidence context. They may post a threaded reply, but must not trigger rollback, restart, scale, database, or shell actions.
+
+### Jira Lifecycle Sync API
+
+The W11 contract returns `ticket_payload` only. W12 may add a callback/update endpoint for Jira lifecycle synchronization.
+
+| Endpoint | Purpose | Notes |
+|---|---|---|
+| `PATCH /v1/incidents/{incident_id}/lifecycle` | Update incident lifecycle metadata when Jira status changes or a human closes the ticket. | Optional W12 extension; caller must provide `audit_id` or Jira issue key. |
+
+Accepted lifecycle states should be limited to non-destructive workflow metadata such as `OPEN`, `ACKNOWLEDGED`, `IN_REVIEW`, `RESOLVED`, and `CLOSED`. Jira remains the source of truth for Jira issue status; AI stores only audit/report metadata.
+
+### Audit Query API
+
+W11 audit data is available through report JSON. W12 may expose audit lookup by `audit_id` for external reviewers and integration flows.
+
+| Endpoint | Purpose | Notes |
+|---|---|---|
+| `GET /v1/audit/{audit_id}` | Return the stored triage decision, evidence references, report link, and integration metadata for one audit id. | Must enforce tenant isolation and may return `404` when the audit record is not retained. |
+
+The audit response must not expose raw unbounded logs, secrets, tokens, or cross-tenant data.
+
 ## Error Codes
 
 | Code | Meaning | Integration action |
@@ -224,6 +270,7 @@ This behavior exists so the detector/context and Jira/Slack integration layers c
 | Slack/Jira ownership | AI response includes `ticket_payload` and `slack_payload` as integration-ready payloads. The integration layer owns actually creating Jira issues or sending Slack messages. |
 | Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
 | Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract. |
+| Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
 
 ## W11 Sign-Off
 

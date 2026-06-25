@@ -109,6 +109,32 @@ Rules:
 - Maximum 50 log lines per service per incident unless otherwise agreed.
 - Preserve timestamp, service, level, and correlation/trace id when available.
 
+## Traces Window
+
+Traces should be passed as bounded span summaries, not full raw trace exports. The context layer should include spans or trace summaries that are relevant to the incident service, dependencies, and alert window.
+
+```json
+{
+  "trace_id": "trace-123",
+  "span_id": "span-456",
+  "parent_span_id": "span-root",
+  "service": "checkout-api",
+  "operation": "POST /v1/orders",
+  "ts": "2026-06-22T08:03:01Z",
+  "duration_ms": 1250,
+  "status_code": "500",
+  "labels": {"dependency": "postgres", "source_dataset": "RCAEval"}
+}
+```
+
+Rules:
+
+- `traces` is optional for `/v1/triage`; pass an empty array when trace data is unavailable.
+- Preserve `trace_id`, `span_id`, service name, operation name, timestamp, duration, and response/status code when available.
+- Keep only spans in the bounded incident window and relevant dependency path.
+- Full trace dumps should be hosted as evidence bundles or evidence URIs, not inlined into `/v1/triage`.
+- RCAEval `traces.csv` rows are adapted into this normalized span-summary shape.
+
 ## Recent Deploys
 
 ```json
@@ -146,14 +172,14 @@ Runbook/docs are preferred for AI suggestion quality. If the mentor data pack do
 
 ## Context Sufficiency
 
-The AI engine can accept empty arrays for `metrics`, `logs`, and `recent_deploys`, but response status changes based on available context:
+The AI engine can accept empty arrays for `metrics`, `logs`, `traces`, and `recent_deploys`, but response status changes based on available context:
 
 | Context state | Expected AI behavior |
 |---|---|
 | Missing required envelope or alert fields | Reject with `400`. |
-| Alert exists but no metrics, logs, deploys, or ownership | Return `INSUFFICIENT_CONTEXT`. |
+| Alert exists but no metrics, logs, traces, deploys, or ownership | Return `INSUFFICIENT_CONTEXT`. |
 | Signals conflict or indicate a noisy/non-impacting alert | Return `INVESTIGATE`. |
-| Logs/metrics/deploys support a scenario diagnosis | Return `DIAGNOSED`. |
+| Logs/metrics/traces/deploys support a scenario diagnosis | Return `DIAGNOSED`. |
 
 ## Datapack Mapping Table Template
 
