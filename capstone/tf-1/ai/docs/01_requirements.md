@@ -36,7 +36,7 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 - Input schema for alert, logs, metrics, recent deploys, service ownership, and runbook/docs snippets.
 - Output schema for diagnosis, severity, confidence, recommendation, ticket payload, Slack summary, and audit reference.
 - Runbook/doc-aware suggestion logic.
-- Evaluation set using the RCAEval subset as the primary scenario dataset plus clearly marked supplemental records where RCAEval lacks logs/traces/deploys/runbooks.
+- Evaluation set using the RCAEval subset as the primary scenario dataset plus clearly marked supplemental records where the selected RCAEval case or RCAEval itself lacks logs/traces/deploys/ownership/runbooks.
 - Engine skeleton endpoint with dummy response before full AI logic.
 
 ## 6. Out of Scope

@@ -167,6 +167,20 @@ def supplemental_traces(request: dict[str, Any], scenario: str) -> list[dict[str
     ]
 
 
+def bundle_logs(request: dict[str, Any], scenario: str) -> tuple[list[dict[str, Any]], str]:
+    logs = request.get("logs") or []
+    if logs:
+        return logs, "RCAEval logs.csv adapted into TF1 log evidence"
+    return supplemental_logs(request, scenario), "TF1 supplemental sample-derived records because this selected RCAEval case has no extracted logs.csv"
+
+
+def bundle_traces(request: dict[str, Any], scenario: str) -> tuple[list[dict[str, Any]], str]:
+    traces = request.get("traces") or []
+    if traces:
+        return traces, "RCAEval traces.csv adapted into TF1 trace evidence"
+    return supplemental_traces(request, scenario), "TF1 supplemental sample-derived summaries because this selected RCAEval case has no extracted traces.csv"
+
+
 def supplemental_deploys(request: dict[str, Any], scenario: str) -> list[dict[str, Any]]:
     change = SCENARIO_SUPPLEMENTS[scenario]["deploy_change"]
     if not change:
@@ -211,6 +225,8 @@ def build_bundle(request_path: Path, adapted_root: Path) -> tuple[Path, dict[str
     scenario = request_path.parent.name
     case = request_path.stem.replace(".request", "")
     metrics = request.get("metrics", [])
+    logs, logs_lineage = bundle_logs(request, scenario)
+    traces, traces_lineage = bundle_traces(request, scenario)
     tw = time_window(request)
     bundle = {
         "schema_version": "tf1.evidence_bundle.v1",
@@ -225,13 +241,13 @@ def build_bundle(request_path: Path, adapted_root: Path) -> tuple[Path, dict[str
         "time_window": tw,
         "query_hints": {
             "metrics": metric_names(metrics),
-            "log_filters": SCENARIO_SUPPLEMENTS[scenario]["log_messages"],
-            "trace_ids": [f"rcaeval-{case}-trace-1"],
+            "log_filters": [str(log.get("message")) for log in logs[:5] if log.get("message")] or SCENARIO_SUPPLEMENTS[scenario]["log_messages"],
+            "trace_ids": [str(trace.get("trace_id")) for trace in traces[:5] if trace.get("trace_id")] or [f"rcaeval-{case}-trace-1"],
             "dependencies": [item for item in services_from_metrics(metrics, request["alert"]["service"]) if item != request["alert"]["service"]][:5],
         },
         "metrics": metrics,
-        "logs": supplemental_logs(request, scenario),
-        "traces": supplemental_traces(request, scenario),
+        "logs": logs,
+        "traces": traces,
         "deploy_events": supplemental_deploys(request, scenario),
         "ownership": ownership(request, scenario),
         "runbooks": [SCENARIO_SUPPLEMENTS[scenario]["runbook"]],
@@ -239,8 +255,8 @@ def build_bundle(request_path: Path, adapted_root: Path) -> tuple[Path, dict[str
             "primary_dataset": "RCAEval",
             "primary_request": str(request_path.relative_to(adapted_root.parent)).replace("\\", "/"),
             "metrics": "RCAEval adapted request",
-            "logs": "TF1 supplemental sample-derived records because local RCAEval subset currently excludes logs.csv",
-            "traces": "TF1 supplemental sample-derived summaries because local RCAEval subset currently excludes traces.csv",
+            "logs": logs_lineage,
+            "traces": traces_lineage,
             "deploy_events": "TF1 supplemental sample-derived records because RCAEval does not provide deploy metadata",
             "ownership_runbooks": "TF1 supplemental routing/runbook config for CDO handoff",
         },

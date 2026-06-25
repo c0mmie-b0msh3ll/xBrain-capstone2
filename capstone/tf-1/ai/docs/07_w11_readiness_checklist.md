@@ -27,15 +27,15 @@ Status: Ready for design/contract review, live demo endpoint smoke-tested
 | RCAEval adapted triage requests | Ready | Stored under `engine-skeleton/datapack/external/adapted/`. |
 | RCAEval evidence bundles | Ready | 9 bundles under `engine-skeleton/datapack/external/evidence-bundles/`. |
 | Synthetic scenario datapack | Supplemental | Kept for smoke tests, observability demos, and dashboard wiring only. |
-| Logs/traces/deploy/ownership/runbook extras | Ready as supplemental | Marked in evidence bundle `data_lineage` because the local RCAEval subset contains metrics and injection time only. |
+| Logs/traces/deploy/ownership/runbook extras | Ready with lineage | RCAEval logs/traces are used when available in the selected RE2/RE3 cases. Deploy events, ownership, and runbooks remain TF1 supplemental because RCAEval does not provide those operational records. |
 
 ## CDO Handoff Decision
 
 For W11, CDO should host **precomputed evidence bundles** first:
 
 ```text
-RCAEval subset metrics
-  + TF1 supplemental logs/traces/deploy/ownership/runbook records
+RCAEval subset metrics/logs/traces where available
+  + TF1 supplemental deploy/ownership/runbook records where RCAEval has no equivalent
   -> evidence-bundle.json
   -> CDO-hosted object storage or metadata store
   -> AIOps context layer
@@ -117,4 +117,4 @@ Each team member should:
 | Per-CDO engine deployment | CDO + AI | Pending W12 handoff of image/artifact and CDO platform deployment |
 | CDO-hosted evidence bundle location | CDO | Pending CDO implementation |
 | Final auth mechanism beyond capstone token fallback | CDO + AI | Deferred after W11 sign-off |
-| Richer logs/traces from official dataset, if provided | AI | Deferred until source is available |
+| Regenerate selected subset after RCAEval utility download succeeds | AI | Active follow-up; current scripts support copying RE2 logs/traces from official utility output |

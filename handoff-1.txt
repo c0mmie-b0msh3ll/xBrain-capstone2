@@ -47,7 +47,7 @@ Hiện có 9 evidence bundles cho 3 nhóm scenario:
 Lưu ý quan trọng:
 
 - Local RCAEval subset hiện có metrics và inject_time là primary evidence.
-- Logs/traces/deploy/ownership/runbook trong bundle là TF1 supplemental sample-derived records vì local RCAEval subset chưa có đủ các field đó.
+- Logs/traces trong bundle lấy từ RCAEval khi selected case có `logs.csv`/`traces.csv` sau khi tải official dataset. Deploy/ownership/runbook là TF1 supplemental records vì RCAEval không cung cấp metadata vận hành đó.
 - Các supplemental records đều được đánh dấu trong `data_lineage`.
 - Synthetic scenario datapack vẫn còn trong repo nhưng chỉ dùng cho smoke test, observability demo, dashboard wiring, và supplemental examples.
 
@@ -57,8 +57,8 @@ W11 MVP nên dùng precomputed evidence bundle trước.
 
 Mô hình đề xuất:
 
-RCAEval subset metrics
-+ TF1 supplemental logs/traces/deploy/ownership/runbook records
+RCAEval subset metrics/logs/traces where available
++ TF1 supplemental deploy/ownership/runbook records
 -> evidence-bundle.json
 -> CDO-hosted object storage hoặc metadata store
 -> AIOps context layer

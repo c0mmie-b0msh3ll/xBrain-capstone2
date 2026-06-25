@@ -215,5 +215,5 @@ observability data contract
 | Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
 | Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
-| Ownership/runbooks | RCAEval metrics are primary; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
+| Ownership/runbooks | RCAEval telemetry is primary for scenario evidence; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
 | Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, and evidence retention long enough to replay all approved scenarios. |

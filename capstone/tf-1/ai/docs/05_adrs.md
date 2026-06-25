@@ -62,7 +62,7 @@
 - **Date**: 2026-06-24
 - **Context**: The team needs defensible scenario data for W11 and CDO handoff. Synthetic fixtures are useful for smoke tests, but they are not enough to claim credible RCA evaluation.
 - **Decision**: Use the checked-in RCAEval subset under `engine-skeleton/datapack/external/` as the primary scenario source. Generate CDO-hostable evidence bundles under `engine-skeleton/datapack/external/evidence-bundles/`.
-- **Consequence**: Scenario evidence is grounded in the RCAEval subset. Where the local subset lacks logs, traces, deploy metadata, ownership, or runbooks, TF1 may add supplemental records and mark them in `data_lineage`.
+- **Consequence**: Scenario evidence is grounded in the RCAEval subset. RE2/RE3 logs and traces are used when present in the official dataset. Where a selected case lacks logs/traces, or where RCAEval lacks deploy metadata, ownership, or runbooks, TF1 may add supplemental records and mark them in `data_lineage`.
 - **Alternatives considered**:
   - Use generated demo fixtures only: easier, but weak for CDO/mentor defense.
   - Wait for richer external data before handoff: safer academically, but blocks W11 contract review.

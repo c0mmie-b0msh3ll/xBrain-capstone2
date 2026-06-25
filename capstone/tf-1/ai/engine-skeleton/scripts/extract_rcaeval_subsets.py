@@ -11,7 +11,9 @@ import requests
 
 
 DEFAULT_FIGSHARE_URL = "https://ndownloader.figshare.com/files/60960049"
-WANTED_FILES = {"metrics.json", "inject_time.txt"}
+BASE_FILES = {"metrics.json", "inject_time.txt"}
+LOG_FILES = {"logs.csv"}
+TRACE_FILES = {"traces.csv"}
 DEFAULT_SELECTION = {
     "latency-degradation": [
         "data/re1ss_carts_delay_1",
@@ -31,6 +33,16 @@ DEFAULT_SELECTION = {
 }
 
 
+def wanted_files_for_case(case: str) -> set[str]:
+    case_name = Path(case).name.lower()
+    files = set(BASE_FILES)
+    if case_name.startswith(("re2", "re3")):
+        files.update(LOG_FILES)
+    if case_name.startswith(("re2ob", "re2tt", "re3ob", "re3tt")):
+        files.update(TRACE_FILES)
+    return files
+
+
 class CountingStream:
     def __init__(self, raw: BinaryIO) -> None:
         self.raw = raw
@@ -45,6 +57,7 @@ class CountingStream:
 def extract_subsets(source_url: str, output_dir: Path) -> dict[str, object]:
     targets = {case for cases in DEFAULT_SELECTION.values() for case in cases}
     case_to_scenario = {case: scenario for scenario, cases in DEFAULT_SELECTION.items() for case in cases}
+    wanted_by_case = {case: wanted_files_for_case(case) for case in targets}
     found = {case: set() for case in targets}
 
     if output_dir.exists():
@@ -63,7 +76,7 @@ def extract_subsets(source_url: str, output_dir: Path) -> dict[str, object]:
                 continue
             case = "/".join(parts[:2])
             filename = parts[-1]
-            if case not in targets or filename not in WANTED_FILES:
+            if case not in targets or filename not in wanted_by_case[case]:
                 continue
 
             source = archive.extractfile(member)
@@ -78,13 +91,13 @@ def extract_subsets(source_url: str, output_dir: Path) -> dict[str, object]:
             found[case].add(filename)
             print(f"extracted {member.name} -> {destination}")
 
-            if all(WANTED_FILES.issubset(files) for files in found.values()):
+            if all(wanted_by_case[case].issubset(files) for case, files in found.items()):
                 break
 
     manifest = {
         "source": "Figshare RCAEval-v2 stream https://doi.org/10.6084/m9.figshare.31048672.v1",
         "source_url": source_url,
-        "selection_policy": "Three RCAEval cases per TF1 scenario; extracted only metrics.json and inject_time.txt.",
+        "selection_policy": "Three RCAEval cases per TF1 scenario; extracted metrics/inject time plus RCAEval logs/traces when available for the selected dataset.",
         "stream_bytes_read": stream.bytes_read,
         "cases": [],
     }
@@ -98,7 +111,8 @@ def extract_subsets(source_url: str, output_dir: Path) -> dict[str, object]:
                     "source_case": case,
                     "local_dir": str(local_dir).replace("\\", "/"),
                     "files": files,
-                    "complete": WANTED_FILES.issubset(set(files)),
+                    "expected_files": sorted(wanted_by_case[case]),
+                    "complete": wanted_by_case[case].issubset(set(files)),
                 }
             )
     (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

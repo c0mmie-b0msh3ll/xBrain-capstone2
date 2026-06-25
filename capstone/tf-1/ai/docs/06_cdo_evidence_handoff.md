@@ -28,7 +28,7 @@ Provided data assets:
 
 | Asset | Path | Purpose |
 |---|---|---|
-| RCAEval raw subset | `capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/` | Selected raw metrics used to produce adapted evaluation requests. |
+| RCAEval raw subset | `capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/` | Selected RCAEval metrics/logs/traces used to produce adapted evaluation requests where available by dataset. |
 | RCAEval adapted subset | `capstone/tf-1/ai/engine-skeleton/datapack/external/adapted/` | Primary eval requests mapped into TF1 request shape. |
 | RCAEval evidence bundles | `capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles/` | Primary CDO-hostable evidence bundles for the three TF1 scenarios. |
 | Direct API samples | `capstone/tf-1/ai/engine-skeleton/samples/` | Requests and expected responses for `/v1/triage` contract testing. |

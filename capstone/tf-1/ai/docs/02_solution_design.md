@@ -115,7 +115,7 @@ Chosen: Option B. Platform owns observability plumbing and bounded access. AIOps
 | Persistent audit store | JSON/report store is accepted for W11 skeleton/demo; object storage or database-backed metadata is the production target. |
 | Local demo path | Simulator/evidence bundles -> bounded observability/context -> `/v1/triage` -> report JSON/API -> React report UI. |
 | Production telemetry mix | Any CDO-approved Prometheus/Loki/Jaeger/CloudWatch/OpenTelemetry mix is acceptable if it satisfies the supporting `observability-data-contract.md`. |
-| Dataset schema | RCAEval metrics are primary. Supplemental logs/traces/deploy/ownership/runbook records are used only where the RCAEval subset lacks those fields. |
+| Dataset schema | RCAEval telemetry is primary. Supplemental deploy/ownership/runbook records are used where RCAEval lacks operational fields; logs/traces are supplemental only for selected cases that do not provide them. |
 | Deferred | Final AWS endpoint URL and live CDO observability backend are recorded after deployment smoke tests pass. |
 
 ## Related Documents

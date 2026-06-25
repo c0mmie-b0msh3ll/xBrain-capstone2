@@ -71,7 +71,7 @@ For demo purposes, the scenario bundles include:
 - Deploy events: recent change records when relevant.
 - Ownership/runbooks: routing and human-review context.
 
-The local RCAEval subset under `datapack/external/rcaeval-subsets/` currently contains only `metrics.json` and `inject_time.txt`; the generated external evidence bundles therefore use RCAEval metrics as primary data and clearly mark logs/traces/deploy/ownership as TF1 supplemental sample-derived records in `data_lineage`.
+The local RCAEval subset under `datapack/external/rcaeval-subsets/` is generated from official RCAEval utility output. Selected RE2/RE3 cases should include RCAEval `logs.csv` and `traces.csv` when the utility download is available. Evidence bundles use RCAEval telemetry as primary data where present and clearly mark deploy/ownership/runbook records, plus any missing RE1 logs/traces, as TF1 supplemental records in `data_lineage`.
 
 ## Validation
 

@@ -64,6 +64,18 @@ class LogEntry(BaseModel):
     labels: dict[str, Any] = Field(default_factory=dict)
 
 
+class TraceSummary(BaseModel):
+    trace_id: str = Field(min_length=1)
+    span_id: str | None = None
+    parent_span_id: str | None = None
+    service: str = Field(min_length=1)
+    operation: str | None = None
+    ts: str | None = None
+    duration_ms: float | None = None
+    status: str | None = None
+    labels: dict[str, Any] = Field(default_factory=dict)
+
+
 class RecentDeploy(BaseModel):
     service: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -96,6 +108,7 @@ class TriageRequest(BaseModel):
     alert: Alert
     metrics: list[MetricSeries] = Field(default_factory=list)
     logs: list[LogEntry] = Field(default_factory=list)
+    traces: list[TraceSummary] = Field(default_factory=list)
     recent_deploys: list[RecentDeploy] = Field(default_factory=list)
     ownership: Ownership | None = None
     anomaly_evidence: list[dict[str, Any]] = Field(default_factory=list)

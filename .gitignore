@@ -2,6 +2,7 @@ capstone/tf-1/ai/PLAN.md
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.cache/
 .venv/
 venv/
 .env

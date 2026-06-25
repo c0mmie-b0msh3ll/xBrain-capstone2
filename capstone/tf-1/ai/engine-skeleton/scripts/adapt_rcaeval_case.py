@@ -144,7 +144,7 @@ def convert_logs(case_dir: Path, default_service: str) -> list[dict[str, Any]]:
     if not logs_file.exists():
         return []
     logs: list[dict[str, Any]] = []
-    with logs_file.open("r", encoding="utf-8", newline="") as handle:
+    with logs_file.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         for index, row in enumerate(reader):
             if index >= 20:
@@ -161,6 +161,56 @@ def convert_logs(case_dir: Path, default_service: str) -> list[dict[str, Any]]:
                 }
             )
     return logs
+
+
+def parse_duration_ms(row: dict[str, str]) -> float | None:
+    for key in ("duration_ms", "durationMs", "duration", "latency_ms", "elapsed_ms"):
+        value = row.get(key)
+        if value is None or value == "":
+            continue
+        try:
+            number = float(value)
+        except ValueError:
+            continue
+        if key == "duration" and number > 1_000_000:
+            return number / 1_000_000
+        return number
+    return None
+
+
+def convert_traces(case_dir: Path, default_service: str) -> list[dict[str, Any]]:
+    traces_file = case_dir / "traces.csv"
+    if not traces_file.exists():
+        return []
+    traces: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    with traces_file.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for index, row in enumerate(reader):
+            if len(traces) >= 20:
+                break
+            trace_id = row.get("trace_id") or row.get("traceId") or row.get("traceID") or f"{case_dir.name}-trace-{index}"
+            span_id = row.get("span_id") or row.get("spanId") or row.get("spanID") or str(index)
+            unique_key = f"{trace_id}:{span_id}"
+            if unique_key in seen:
+                continue
+            seen.add(unique_key)
+            service = row.get("service") or row.get("serviceName") or row.get("process.serviceName") or default_service
+            status = row.get("status") or row.get("status_code") or row.get("statusCode") or row.get("error") or "unknown"
+            traces.append(
+                {
+                    "trace_id": trace_id,
+                    "span_id": span_id,
+                    "parent_span_id": row.get("parent_span_id") or row.get("parentSpanId"),
+                    "service": service,
+                    "operation": row.get("operation") or row.get("operationName") or row.get("name") or row.get("span_name"),
+                    "ts": row.get("time") or row.get("timestamp") or row.get("startTime") or str(index),
+                    "duration_ms": parse_duration_ms(row),
+                    "status": str(status),
+                    "labels": {"source_dataset": "RCAEval"},
+                }
+            )
+    return traces
 
 
 def scenario_alert_fields(scenario: str | None, service: str, fault: str) -> dict[str, str]:
@@ -196,6 +246,7 @@ def build_triage_request(case_dir: Path, scenario: str | None = None) -> dict[st
     metrics_path = case_dir / "metrics.json"
     metrics = convert_metrics(load_json(metrics_path), service, fault, inject_epoch) if metrics_path.exists() else []
     logs = convert_logs(case_dir, service)
+    traces = convert_traces(case_dir, service)
     alert_fields = scenario_alert_fields(scenario, service, fault)
 
     return {
@@ -216,6 +267,7 @@ def build_triage_request(case_dir: Path, scenario: str | None = None) -> dict[st
         },
         "metrics": metrics,
         "logs": logs,
+        "traces": traces,
         "recent_deploys": [],
         "ownership": {
             "service": service,

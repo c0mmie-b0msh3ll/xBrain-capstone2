@@ -61,7 +61,7 @@ CDO-hostable evidence bundles generated from the adapted RCAEval requests are st
 datapack/external/evidence-bundles/
 ```
 
-These bundles are the primary scenario datapacks for CDO handoff. They use RCAEval metrics as the primary evidence. Because the local subset extractor currently keeps only `metrics.json` and `inject_time.txt`, each bundle has a `data_lineage` section that marks logs, traces, deploy events, ownership, and runbooks as TF1 supplemental sample-derived records.
+These bundles are the primary scenario datapacks for CDO handoff. They use RCAEval telemetry as the primary evidence. RE2/RE3 `logs.csv` and `traces.csv` are adapted into the bundles when available from the official RCAEval utility download. Each bundle has a `data_lineage` section that marks operational records RCAEval does not provide, such as deploy events, ownership, and runbooks, as TF1 supplemental records.
 
 To regenerate them:
 
@@ -76,7 +76,39 @@ python scripts/extract_rcaeval_subsets.py `
   --output-dir datapack\external\rcaeval-subsets
 ```
 
-Note: the Figshare archive is gzip/tar stream ordered by case. The extractor persists only selected `metrics.json` and `inject_time.txt` files, but may need to read through a large portion of the remote stream before all selected cases appear. To make logs/traces primary RCAEval data too, update `scripts/extract_rcaeval_subsets.py` to include `logs.csv` and `traces.csv` for RE2/RE3 cases, then rerun the adapter and evidence bundle generator.
+Note: the Figshare archive is gzip/tar stream ordered by case. Prefer the official RCAEval utility download path below when possible because it downloads dataset zips by suite/system instead of streaming the full Figshare archive.
+
+To download with the official RCAEval utility, run it outside the checked-in datapack directory:
+
+```powershell
+git clone https://github.com/phamquiluan/RCAEval E:\xBrain-capstone2\.cache\rcaeval\RCAEval
+$env:PYTHONPATH = "E:\xBrain-capstone2\.cache\rcaeval\RCAEval;$env:PYTHONPATH"
+
+@'
+from RCAEval.utility import (
+    download_re1ob_dataset,
+    download_re1ss_dataset,
+    download_re1tt_dataset,
+    download_re2ss_dataset,
+    download_re2tt_dataset,
+)
+
+root = r"E:\xBrain-capstone2\.cache\rcaeval\data"
+download_re1ob_dataset(local_path=fr"{root}\RE1")
+download_re1ss_dataset(local_path=fr"{root}\RE1")
+download_re1tt_dataset(local_path=fr"{root}\RE1")
+download_re2ss_dataset(local_path=fr"{root}\RE2")
+download_re2tt_dataset(local_path=fr"{root}\RE2")
+'@ | python -
+```
+
+Then copy only the selected TF1 cases into the repo datapack:
+
+```powershell
+python scripts/extract_selected_rcaeval_cases.py `
+  --data-root E:\xBrain-capstone2\.cache\rcaeval\data `
+  --output-dir datapack\external\rcaeval-subsets
+```
 
 To adapt one selected case:
 

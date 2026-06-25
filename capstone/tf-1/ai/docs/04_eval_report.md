@@ -99,11 +99,11 @@ The W11 handoff includes 9 RCAEval-derived evidence bundles across the three req
 
 | Scenario category | Bundle count | Source |
 |---|---:|---|
-| `critical-service-down` | 3 | RCAEval subset metrics as primary evidence |
-| `latency-degradation` | 3 | RCAEval subset metrics as primary evidence |
-| `noisy-false-alert` | 3 | RCAEval subset metrics as primary evidence |
+| `critical-service-down` | 3 | RCAEval subset telemetry as primary evidence |
+| `latency-degradation` | 3 | RCAEval subset telemetry as primary evidence |
+| `noisy-false-alert` | 3 | RCAEval subset telemetry as primary evidence |
 
-Because the local RCAEval subset currently contains `metrics.json` and `inject_time.txt`, each bundle includes `data_lineage` that marks logs, traces, deploy events, ownership, and runbooks as TF1 supplemental sample-derived records. These supplemental records are included so CDO can host a complete evidence contract while the primary scenario signal remains RCAEval-derived.
+RCAEval is the primary scenario source. For selected RE2/RE3 cases, logs and traces should come from official RCAEval `logs.csv` and `traces.csv` after the RCAEval utility download succeeds. For selected RE1 cases, or for operational records RCAEval does not provide, evidence bundles include `data_lineage` that marks deploy events, ownership, and runbooks as TF1 supplemental records.
 
 Regeneration command:
 
@@ -124,7 +124,7 @@ python scripts/build_rcaeval_evidence_bundles.py
 ## 5. Gaps Before Final Eval
 
 - RCAEval subset evidence bundles now cover the 3 required demo scenario categories, but final quality claims still need a larger labeled set.
-- The checked-in RCAEval subset currently provides metrics and injection time only; logs/traces/deploy/runbook details remain supplemental unless a richer RCAEval export is added.
+- The checked-in RCAEval subset must be regenerated from official RCAEval utility output to include RE2/RE3 `logs.csv` and `traces.csv` when the network path to Zenodo is available.
 - Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until RCAEval mapping and final AI logic exist.
 - Current logic is deterministic scenario routing, not LLM reasoning.
 - Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
