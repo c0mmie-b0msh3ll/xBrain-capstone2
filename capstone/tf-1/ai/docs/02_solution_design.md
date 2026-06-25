@@ -6,7 +6,7 @@ Last updated: 2026-06-24
 
 ## 1. High-Level Architecture
 
-TF1 uses an event-driven triage design. Production-grade ownership is split between platform observability and AIOps reasoning. Platform/DevOps makes telemetry observable, queryable, secure, bounded, and owns alert detection. CDO/platform pushes incidents to AI Ops. AI Ops validates the incident context, pulls bounded evidence only when needed, cleans/normalizes/curates that evidence, then performs RCA and optional LLM synthesis.
+TF1 uses an event-driven triage design. Production-grade ownership is split between platform observability and AIOps reasoning. Customer applications emit telemetry into the customer/CDO observability layer. Platform/DevOps makes telemetry observable, queryable, secure, bounded, and owns alert detection. CDO/platform pushes incidents to AI Ops. AI Ops validates the incident context, gathers bounded evidence only when needed through allowlisted tools, cleans/normalizes/curates that evidence, then performs RCA and optional LLM synthesis.
 
 ```mermaid
 graph LR
@@ -18,7 +18,8 @@ graph LR
     K -->|POST /v1/triage| G[Compute-first RCA and confidence gate]
     G -->|Optional grounded synthesis| H[Bedrock LLM]
     G --> I[Report JSON audit artifact]
-    I --> J[Slack summary Jira payload React report UI]
+    I --> J[Raw response fields Jira payload React report UI]
+    J --> L[CDO Slack Block Kit renderer]
     H --> I
 ```
 
@@ -33,8 +34,8 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
 | Bounded evidence access | Platform/DevOps | Store or expose incident-scoped logs/traces/metrics/deploy/ownership data with tenant/service/environment/time bounds. | S3/MinIO/Postgres/DynamoDB or read-only evidence proxy | Gives AI bounded evidence without raw backend credentials. |
 | AIOps context enrichment | AIOps app | Validate pushed incident context, request bounded extra evidence if insufficient, clean/redact/normalize/curate evidence, normalize schema. | Python/FastAPI worker or service | Product logic consumes platform evidence but does not own production storage. |
 | AI triage engine | AIOps app | Validate request, extract features, run RCA scoring, confidence gate, and produce response payloads. | Dockerized FastAPI service on ECS/Fargate | Gives the team full control of diagnosis behavior and API contract. |
-| Optional LLM synthesis | AIOps app | Turn grounded RCA evidence into concise Jira/Slack wording and runbook-aware recommendations. | Bedrock via AI engine | LLM is used after compute evidence exists, not as the first decision-maker. |
-| Ticket/notification integration | AIOps app, with platform credentials/config | Create Jira issue and send Slack notification using AI response payloads. | Jira/Slack APIs or mocks | Required for E2E demo flow. |
+| Optional LLM synthesis | AIOps app | Turn grounded RCA evidence into concise diagnosis, Jira description, assignee suggestion rationale, and runbook-aware recommendations. | Bedrock via AI engine | LLM is used after bounded evidence exists, not as the first decision-maker or a raw query engine. |
+| Ticket/notification integration | CDO integration layer with AI output | Create Jira issue from `ticket_payload`, render Slack Block Kit from raw AI response fields, and handle human-confirmed assignment. | Jira/Slack APIs or mocks | Required for E2E demo flow. |
 | Audit/report store | AIOps app | Persist traceable AI decisions and link them to ticket/notification artifacts. | JSON files for local demo; DynamoDB/S3/CloudWatch later | Required for confidence behavior and demo evidence. |
 | Report UI | AIOps app | Render incident list, RCA candidates, evidence, topology, causal hints, Slack/Jira previews, and audit metadata. | React/Vite local demo UI | Keeps Slack concise while preserving a complete investigation surface. |
 | Telemetry simulator | AIOps app for demo/eval | Replay sanitized RCAEval-style cases into observability as metrics, logs, and traces. | Python, Prometheus client, Loki push API, OTLP traces | Lets the capstone demonstrate production-like data flow without committing the full RCAEval dataset. |
@@ -53,8 +54,8 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
    - high enough signal: `DIAGNOSED`
    - weak or conflicting signal: `INVESTIGATE`
    - missing supporting context: `INSUFFICIENT_CONTEXT`
-9. If enabled, the AI engine calls Bedrock only to synthesize grounded human-readable diagnosis, recommendations, Jira description, and Slack text.
-10. The AIOps integration layer writes `reports/{incident_id}.json`, uses Slack for a concise notification with report link, and keeps Jira payload generation available for workflow integration.
+9. If enabled, the AI engine calls Bedrock only to synthesize grounded diagnosis, recommendations, Jira description, and assignee suggestion rationale from cleaned evidence.
+10. The CDO integration layer renders Slack Block Kit from raw AI response fields, creates or updates Jira from `ticket_payload`, and requires human confirmation before assigning a Jira user.
 11. Grafana remains the raw observability dashboard. The React report UI is the AI RCA explanation and audit surface.
 
 For the local demo, `engine-skeleton/app/simulator.py` replays sanitized scenario files into the Compose observability stack, and `engine-skeleton/app/aiops_worker.py` queries Prometheus/Loki/Jaeger before building the `telemetry-contract.md` request. The triage service receives bounded normalized context, enriches the response with optional RCA/report fields, and exposes local report APIs for the React viewer.
@@ -124,7 +125,7 @@ Chosen: Option B. Platform owns observability plumbing, alert detection, evidenc
 |---|---|
 | Auth | Private network or protected gateway with scoped bearer token fallback for capstone. IAM SigV4 or service-to-service JWT remains production-preferred. |
 | Persistent audit store | JSON/report store is accepted for W11 skeleton/demo; object storage or database-backed metadata is the production target. |
-| Local demo path | Simulator/evidence bundles -> bounded observability/context -> `/v1/triage` -> report JSON/API -> React report UI. |
+| Local demo path | Simulator/evidence bundles -> bounded observability/context -> `/v1/triage` -> report JSON/API -> React report UI. Slack text in local dry-run is a demo convenience, not the signed API response contract. |
 | Production telemetry mix | Any CDO-approved Prometheus/Loki/Jaeger/CloudWatch/OpenTelemetry mix is acceptable if it satisfies the supporting `observability-data-contract.md`. |
 | Alert delivery model | CDO/platform pushes incident seed/context to AI Ops. AI Ops does not continuously poll CDO/customer systems for alert discovery. |
 | Evidence cleaning layer | Optional but recommended. CDO owns production storage/access/query bounds; AI Ops owns cleaning, curation criteria, schemas, sample processors, and RCA consumption. |

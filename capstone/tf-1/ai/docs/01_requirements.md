@@ -34,7 +34,7 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 
 - AI engine endpoint for triage diagnosis.
 - Input schema for alert, logs, metrics, recent deploys, service ownership, and runbook/docs snippets.
-- Output schema for diagnosis, severity, confidence, recommendation, ticket payload, Slack summary, and audit reference.
+- Output schema for diagnosis, severity, confidence, recommendation, Jira ticket payload, Slack-renderable raw fields, optional assignee suggestion, and audit reference.
 - Runbook/doc-aware suggestion logic.
 - Evaluation set using the RCAEval subset as the primary scenario dataset plus clearly marked supplemental records where the selected RCAEval case or RCAEval itself lacks logs/traces/deploys/ownership/runbooks.
 - Engine skeleton endpoint with dummy response before full AI logic.
@@ -70,6 +70,6 @@ The product goal is Triage Hub: when an alert fires, the system gathers context,
 | Alert delivery | CDO/platform detects alerts and pushes incident seed/context to AI Ops. AI Ops does not continuously poll CDO/customer systems for alert discovery. |
 | Context ownership | CDO/platform owns observability collection, alert detection, evidence storage/API, and bounded access. AIOps owns context validation, evidence query orchestration, cleaning/normalization/curation, evidence sufficiency, RCA, confidence, and output payloads. |
 | AI-curated logs | Optional but recommended. CDO exposes bounded log access; AI Ops owns cleaning/curation criteria, schema, sample processors, and RCA consumption behavior. |
-| Jira/Slack for W11 | AI returns Jira/Slack payloads. Live publishing can be feature-gated; payload generation and report links must be demoable. |
+| Jira/Slack for W11 | AI returns Jira ticket fields and raw diagnosis data for CDO Slack Block Kit rendering. Live publishing can be feature-gated; payload generation, assignee suggestion, and report links must be demoable. |
 | MTTA/MTTR baseline | Use manual investigation steps on the same three scenarios as the comparison baseline for W11. |
 | External dependency | A real deployed endpoint URL must be added after AWS smoke tests pass. |

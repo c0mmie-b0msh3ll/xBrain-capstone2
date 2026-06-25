@@ -11,14 +11,15 @@ Define the normalized incident context bundle passed from the AIOps context serv
 The current production assumption is:
 
 ```text
-CDO/platform observability
+Customer applications
+  -> customer/CDO observability layer
   -> alert/incident detection
   -> push incident seed or normalized context to AI Ops
   -> AI Ops validates context and performs bounded evidence lookup if needed
   -> AI Ops cleans, redacts, normalizes, and curates evidence
   -> Triage API request with normalized context bundle
   -> AI compute-first RCA + optional LLM synthesis
-  -> AI diagnosis + ticket/slack payload
+  -> AI diagnosis + Jira ticket fields + Slack-renderable raw fields
 ```
 
 The triage engine is event-driven. It is invoked when CDO/platform has detected an alert/anomaly/incident and sends a request to the AI Ops API. AI Ops may query additional bounded evidence only after an incident exists; it is not responsible for continuously polling CDO/customer telemetry to discover alerts.
@@ -31,7 +32,7 @@ The AIOps app consumes incident-scoped context from CDO/platform, runs validatio
 
 Field-name differences in the datapack should be handled in an adapter. The contract changes only when the datapack exposes a missing concept that cannot be represented by existing fields.
 
-The context layer may connect to bounded evidence APIs/storage for logs, metrics, traces, deploy stores, ownership catalogs, Jira, or Slack as part of the broader AIOps app. The triage endpoint itself receives normalized bounded context instead of pulling unbounded raw telemetry during RCA.
+The context layer may connect to bounded evidence APIs/storage for logs, metrics, traces, deploy stores, ownership catalogs, and Jira history as part of the broader AIOps app. The triage endpoint itself receives normalized bounded context instead of pulling unbounded raw telemetry during RCA. Slack presentation is owned by CDO and is rendered from raw response fields, not from pre-rendered AI text.
 
 ## Alert Delivery And Evidence Retrieval Model
 
@@ -44,12 +45,12 @@ CDO detects alert -> CDO calls AI Ops endpoint -> AI Ops starts triage immediate
 Evidence retrieval can be pull-based after the alert:
 
 ```text
-AI Ops needs more context -> AI Ops calls CDO-owned bounded evidence API/storage -> AI Ops cleans/curates evidence
+AI Ops needs more context -> AI Ops calls CDO-owned bounded evidence API/storage -> AI Ops cleans/curates evidence -> RCA/optional LLM synthesis starts
 ```
 
 This split avoids polling delay for alert delivery while still allowing AI Ops to ask for more context when the initial datapack is insufficient.
 
-The current app already has bounded read-only context tools for metrics, logs, deploy metadata, ownership, and internal RCA helpers. Production use should point those tools at the CDO evidence API/storage, not directly at customer raw telemetry systems. AI Ops owns the cleaning/normalization/curation step before data enters the triage prompt or RCA logic.
+The current app already has bounded read-only context tools for metrics, logs, deploy metadata, ownership, and internal RCA helpers. Production use should point those tools at the CDO evidence API/storage, not directly at customer applications or raw unbounded telemetry systems. AI Ops owns the cleaning/normalization/curation step before data enters the triage prompt or RCA logic. The LLM must use allowlisted tools and cleaned evidence only; it must not receive backend credentials or arbitrary query privileges.
 
 ## Required Envelope
 
@@ -94,6 +95,7 @@ Recommended optional alert labels for evidence lookup:
 | `metric_names` | Recommended list of metric names that triggered the alert, e.g. latency/error-rate metrics. |
 | `suspected_dependency` | Optional dependency hint from alert labels, e.g. `postgres`, `redis`, or downstream service name. |
 | `source` | Original monitoring source, e.g. `prometheus`, `cloudwatch`, `datadog`, or `cdo-detector`. |
+| `jira_component` / `jira_project` | Optional routing hints if the alerting platform already knows the Jira target. |
 
 ## Metrics Window
 
@@ -267,6 +269,8 @@ Mapping type must be one of:
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
 - Safety behavior: AI must never return an executable auto-remediation action.
+- Slack behavior: AI returns raw diagnosis fields only; CDO renders Slack Block Kit.
+- Jira assignment behavior: AI may suggest a Jira `accountId` only when configured Jira history/accountId mapping supports it. Human confirmation is required before personal assignment.
 
 ## W11 Decisions And Deferred Items
 
@@ -276,6 +280,7 @@ Mapping type must be one of:
 | Triage request format | `POST /v1/triage` remains the normalized incident context contract. Raw dataset fields are adapted before calling the triage endpoint. |
 | Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
 | Evidence follow-up | Optional CDO-owned evidence API/storage can be used after alert delivery for bounded follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |
+| Jira history for suggestion | AI Ops may use bounded Jira history/accountId mapping to return an advisory assignee suggestion. CDO owns human confirmation and actual Jira assignment. |
 | Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. Higher platform load testing is deferred until CDO infrastructure is finalized. |
 | Deferred mentor item | If the mentor provides a different official datapack shape, create an adapter and mapping table instead of changing the triage contract unless a required concept is missing. |
 

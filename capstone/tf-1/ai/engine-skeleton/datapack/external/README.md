@@ -150,4 +150,4 @@ Current subset validation result: 9 adapted requests returned HTTP 200 from `/v1
 
 ## Why Synthetic Fixtures Still Exist
 
-The synthetic datapack under `datapack/scenarios/` is now treated as demo fixture data only. It is useful for stable API smoke tests and Jira/Slack payload examples. RCAEval is the preferred evidence direction for RCA quality.
+The synthetic datapack under `datapack/scenarios/` is now treated as demo fixture data only. It is useful for stable API smoke tests, Jira ticket fields, and Slack-renderable raw response examples. RCAEval is the preferred evidence direction for RCA quality.

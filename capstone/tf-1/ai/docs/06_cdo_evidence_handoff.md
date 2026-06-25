@@ -15,13 +15,13 @@ The key boundary is:
 ```text
 CDO/platform detects alert and pushes incident seed/context
   -> TF1 AIOps validates context
-  -> TF1 AIOps pulls bounded evidence only if needed
+  -> TF1 AIOps gathers bounded context from the observability layer only if needed
   -> TF1 AIOps cleans, redacts, normalizes, and curates evidence
   -> POST /v1/triage
-  -> report + Slack payload + Jira ticket_payload
+  -> report + raw Slack-renderable fields + Jira ticket_payload + optional assignee suggestion
 ```
 
-TF1 AI Ops does not call customer applications directly for logs or metrics. Extra evidence comes from controlled datasets, observability backends, or a CDO-hosted evidence layer.
+TF1 AI Ops does not call customer applications directly for logs or metrics. Customer applications push telemetry into the customer/CDO observability layer; CDO/platform detects alerts; AI Ops queries only bounded evidence exposed from that observability layer or CDO-hosted evidence store after an alert exists.
 
 AI Ops also does not own continuous infrastructure metric collection or real-time platform health evaluation. That remains CDO/platform scope. AI Ops consumes incident-scoped evidence after an alert exists, then cleans/normalizes/curates it for RCA.
 
@@ -63,8 +63,11 @@ Ownership split:
 | Raw telemetry ingestion | CDO/platform | Customer telemetry, agents/exporters, backend storage. |
 | Alert detection | CDO/platform | Alert rules, monitoring events, incident trigger to AI Ops. |
 | Bounded evidence storage/API | CDO/platform | Storage, retention, auth, tenant isolation, query limits, and safe read-only access. |
+| Evidence gathering orchestration | AI Ops | Uses allowlisted tools/LLM planning to request only incident-scoped metrics/logs/traces/deploy/Jira history. |
 | Evidence cleaning/curation | AI Ops | Redaction before AI use if needed, useful RCA evidence selection, fields, examples, confidence impact. |
 | RCA interpretation | AI Ops | Uses cleaned bounded evidence; does not own production raw telemetry store. |
+| Slack Block Kit rendering | CDO/platform | Injects raw AI response fields into the CDO-owned Slack template and handles interactive buttons. |
+| Jira personal assignment | CDO/platform | Shows AI suggestion and performs Jira assignment only after human confirmation. |
 
 Minimal AI-cleaned/curated log fields:
 
@@ -173,8 +176,9 @@ Required operations for v1:
 | `get_trace_summary` | `tenant_id`, `trace_id` or `correlation_id` | trace/span summary and error/latency highlights |
 | `get_deploy_events` | `tenant_id`, `service`, `environment`, `start_time`, `end_time` | recent deploy/change records |
 | `get_ownership` | `service`, optional `tenant_id` | owner team, Slack channel, Jira routing, runbook refs |
+| `get_jira_history` | service/component, lookback limit, status filters | recent issue owners, component leads, accountId candidates, suggestion evidence |
 
-The proxy owns PromQL/LogQL/index details, auth, timeout, retry, rate limit, and audit logging. TF1 should not receive arbitrary Prometheus/Loki credentials or arbitrary query access. AI Ops owns cleaning/redaction/normalization/curation after the bounded response is returned.
+The proxy owns PromQL/LogQL/index details, auth, timeout, retry, rate limit, and audit logging. TF1 should not receive arbitrary Prometheus/Loki/Jaeger credentials or arbitrary query access. AI Ops owns allowlisted evidence gathering, cleaning/redaction/normalization/curation after the bounded response is returned.
 
 ## Current TF1 App State
 
@@ -232,10 +236,11 @@ For the current app state, the lowest-risk CDO integration is:
 3. Store RCAEval evidence bundles from `datapack/external/evidence-bundles/` in S3, MinIO, Postgres, or DynamoDB.
 4. Optionally add a bounded evidence/log table or object path keyed by `tenant_id/incident_id`.
 5. If live follow-up is needed, expose `GET /v1/evidence/incidents/{incident_id}` and/or `POST /v1/evidence/query`.
-6. Generate deploy metadata and ownership JSON files or expose equivalent read-only endpoints.
-7. Expose Prometheus-compatible and Loki-compatible read-only URLs only behind CDO-controlled evidence proxy if running the live observability path.
-8. Configure worker env vars so TF1 can read only the tenant/service/environment/time-window data.
-9. Verify three flows: latency, critical service-down, and noisy alert.
+6. Optionally expose bounded Jira history/accountId mapping for AI assignee suggestion.
+7. Generate deploy metadata and ownership JSON files or expose equivalent read-only endpoints.
+8. Expose Prometheus/Loki/Jaeger-compatible read-only URLs only behind CDO-controlled evidence proxy if running the live observability path.
+9. Configure worker env vars so TF1 can read only the tenant/service/environment/time-window data.
+10. Verify three flows: latency, critical service-down, and noisy alert.
 
 For MVP, CDO does not need to build a full production evidence proxy on day one. They can host precomputed evidence bundles first, then add live proxy operations if time permits.
 
@@ -291,6 +296,7 @@ CDO-hosted evidence must enforce:
 - query timeout and retry policy
 - audit log for evidence access
 - no remediation/write/restart/rollback/scale permissions
+- no direct Jira personal assignment without human confirmation
 
 ## Contract References
 
@@ -309,5 +315,5 @@ CDO-hosted evidence must enforce:
 - CDO can explain whether AI follow-up evidence uses precomputed bundles, `GET /v1/evidence/incidents/{incident_id}`, or `POST /v1/evidence/query`.
 - CDO can show how TF1 is scoped to tenant/service/environment/time window.
 - CDO can show that logs are redacted and bounded.
-- CDO can show report URL, Slack payload, and Jira `ticket_payload`.
+- CDO can show report URL, Slack Block Kit rendered from raw AI response fields, Jira `ticket_payload`, and optional assignee suggestion.
 - CDO can explain whether it chose evidence bundle, read-only proxy, or both.

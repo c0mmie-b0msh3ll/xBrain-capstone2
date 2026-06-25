@@ -41,7 +41,8 @@ def test_offline_scenario_detects_and_triages_latency_degradation() -> None:
     payload = response.json()
     assert payload["status"] == "DIAGNOSED"
     assert payload["classification"] == "latency_degradation"
-    assert payload["slack_payload"]["text"]
+    assert "slack_payload" not in payload
+    assert payload["suggestion_reason"]
     assert payload["anomaly_evidence"]
     assert payload["rca_candidates"]
 
@@ -339,8 +340,9 @@ def test_sqs_seed_success_deletes_message_after_report_write(tmp_path, monkeypat
             "confidence": 0.82,
             "anomaly_evidence": [],
             "recommended_actions": [{"summary": "Review dependency timeout signals."}],
-            "slack_payload": {},
             "ticket_payload": {},
+            "suggested_assignee_account_id": None,
+            "suggestion_reason": "No Jira accountId history mapping is configured yet.",
         },
     )
 

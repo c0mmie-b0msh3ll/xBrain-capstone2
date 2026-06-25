@@ -21,12 +21,12 @@ Define what the platform/DevOps side must make available from the observability 
 Production boundary:
 
 ```text
-Services
+Customer applications
   -> OpenTelemetry/exporters
-  -> Prometheus/Loki/CloudWatch/Grafana stack
+  -> customer/CDO observability layer such as Prometheus/Loki/Jaeger/CloudWatch/Grafana
   -> CDO/platform alert detection
   -> CDO pushes incident seed/context to AI Ops
-  -> AI Ops requests bounded evidence if needed
+  -> AI Ops requests bounded evidence if needed through allowlisted tools
   -> AI Ops cleans/normalizes/curates evidence
   -> AI Ops RCA logic
 ```
@@ -100,7 +100,7 @@ This contract does not require AI Ops to collect infrastructure metrics continuo
 
 ## Extra Evidence Hosting Model
 
-When the initial incident package is not enough for confident RCA, AIOps may request additional evidence. That evidence must come from a controlled platform-owned data path, not from direct AI access to customer applications.
+When the initial incident package is not enough for confident RCA, AIOps may request additional evidence. That evidence must come from a controlled platform-owned data path, not from direct AI access to customer applications. The LLM may help decide which approved context tool to invoke, but it must not receive direct backend credentials or arbitrary PromQL/LogQL/query privileges.
 
 Alert delivery and evidence retrieval are intentionally separate:
 
@@ -123,6 +123,7 @@ CDO/platform should treat the existing observability stack as the source of trut
 | Alerts/incidents | Alertmanager, EventBridge, event pipeline, webhook/API integration, monitoring system | Provides incident id, severity, labels, and start time. |
 | Deploy metadata | CI/CD system, deployment event table, GitOps controller, CloudTrail/EventBridge | Used for deploy correlation and rollback references. |
 | Ownership/runbooks | Repo config, service catalog, Jira/Confluence, static config | Used for routing, recommendations, and Slack/Jira payloads. |
+| Jira history/accountId map | Jira issue history, component ownership, service catalog | Used only for advisory `suggested_assignee_account_id` and `suggestion_reason`; CDO performs human-confirmed assignment. |
 
 ### Hosting Options For CDO
 
@@ -291,6 +292,7 @@ Example proxy operations:
 | `get_log_snippets` | tenant, service, environment, time window, filters, limit | redacted relevant log lines |
 | `get_trace_summary` | tenant, trace id or correlation id | span summary and error/latency highlights |
 | `get_deploy_events` | tenant, service, environment, time window | bounded deploy/change records |
+| `get_jira_history` | tenant/service/component, lookback limit, issue status filters | recent issue owners, component leads, and accountId candidates for advisory assignment |
 
 **Option B - Precomputed evidence bundle**
 
@@ -302,6 +304,7 @@ Suitable storage:
 - Postgres/DynamoDB for incident metadata, evidence indexes, and report metadata.
 - Existing Prometheus/Loki/Jaeger backends remain the source of truth for raw observability data.
 - Vector DB is optional for runbooks/docs search only; it should not be the primary store for raw logs or metrics.
+- Jira history storage or indexing is optional for W11. If not available, AI returns no personal accountId suggestion and routes to the owner queue/team.
 
 Expected bundle shape:
 
@@ -338,6 +341,7 @@ Implementation handoff for CDO teams is documented in `../docs/06_cdo_evidence_h
 - AIOps does not receive unbounded raw telemetry dumps.
 - The LLM does not receive direct credentials or arbitrary query access.
 - The evidence path must not expose remediation, write, restart, rollback, or scale permissions.
+- AIOps does not personally assign Jira tickets; it may only return an advisory assignee suggestion when accountId evidence exists.
 
 ## Quality SLA Targets
 
@@ -371,6 +375,7 @@ observability data contract
 | Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. CDO owns storage/hosting/access and query bounds. |
 | Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
 | Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
+| Jira assignee suggestion | Optional. AI may query bounded Jira history/accountId mapping and return a suggestion reason, but CDO must require human confirmation before assignment. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
 | Ownership/runbooks | RCAEval telemetry is primary for scenario evidence; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
 | Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, and evidence retention long enough to replay all approved scenarios. |

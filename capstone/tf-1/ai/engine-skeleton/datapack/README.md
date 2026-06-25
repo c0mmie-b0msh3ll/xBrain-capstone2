@@ -4,7 +4,7 @@ Status: Synthetic v1, demo/smoke only
 Owner: TF1 AI team  
 Last updated: 2026-06-23
 
-This folder contains controlled synthetic fixtures for the TF1 Triage Hub. These files are useful for API smoke tests, deterministic demo flows, and Jira/Slack payload examples.
+This folder contains controlled synthetic fixtures for the TF1 Triage Hub. These files are useful for API smoke tests, deterministic demo flows, Jira ticket fields, and Slack-renderable raw response examples.
 
 Synthetic fixtures are **not** the primary evidence dataset. The primary dataset for TF1 evaluation and CDO evidence handoff is the RCAEval subset under `datapack/external/`, documented in `datapack/external/README.md` and `docs/public-dataset-review.md`.
 

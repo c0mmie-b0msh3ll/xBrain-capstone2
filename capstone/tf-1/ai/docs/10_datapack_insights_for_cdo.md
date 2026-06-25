@@ -162,6 +162,6 @@ For each case, CDO should be able to answer:
    - confidence
    - suspected root cause
    - ranked RCA candidates
-   - Slack payload
+   - Slack-renderable raw response fields
    - Jira payload
    - audit id

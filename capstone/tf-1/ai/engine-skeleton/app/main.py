@@ -144,11 +144,6 @@ class TicketPayload(BaseModel):
     fields: dict[str, Any]
 
 
-class SlackPayload(BaseModel):
-    channel: str
-    text: str
-
-
 class TriageResponse(BaseModel):
     incident_id: str
     classification: str
@@ -158,7 +153,8 @@ class TriageResponse(BaseModel):
     suspected_root_cause: RootCause
     recommended_actions: list[RecommendedAction]
     ticket_payload: TicketPayload
-    slack_payload: SlackPayload
+    suggested_assignee_account_id: str | None = None
+    suggestion_reason: str | None = None
     audit_id: str
     anomaly_evidence: list[dict[str, Any]] = Field(default_factory=list)
     service_topology: dict[str, Any] | None = None
@@ -352,7 +348,6 @@ def build_response(
 ) -> TriageResponse:
     owner = request.ownership or Ownership(service=request.alert.service)
     project = owner.jira_project or "OPS"
-    channel = owner.slack_channel or "#oncall"
     runbook_ref = owner.runbooks[0].url if owner.runbooks else None
     labels = ["ai-triage", request.tenant_id, request.alert.service, decision["classification"]]
     rca = decision.get("rca", {})
@@ -365,14 +360,12 @@ def build_response(
     llm_metadata = {key: value for key, value in llm_result.items() if key != "summary"}
     if extra_llm_metadata:
         llm_metadata.update(extra_llm_metadata)
-    evidence_preview = "; ".join(item.get("reason", "") for item in anomaly_evidence[:2])
-
     selected_actions = select_actions(request, decision, rca, runbook_ref)
     action_wording = reword_catalog_actions(request, decision, rca, selected_actions)
     action_payloads = action_wording["actions"]
     llm_metadata["action_wording"] = action_wording["metadata"]
     actions = [RecommendedAction(**action) for action in action_payloads]
-    top_action = actions[0] if actions else None
+    suggested_assignee_account_id, suggestion_reason = suggest_assignee(request, owner, rca)
 
     return TriageResponse(
         incident_id=request.incident_id,
@@ -393,18 +386,12 @@ def build_response(
                 "correlation_id": request.correlation_id,
                 "audit_id": audit_id,
                 "status": decision["status"],
+                "suggested_assignee_account_id": suggested_assignee_account_id,
+                "suggestion_reason": suggestion_reason,
             },
         ),
-        slack_payload=SlackPayload(
-            channel=channel,
-            text=(
-                f"{request.alert.service}: {decision['classification']} "
-                f"({decision['status']}, confidence {decision['confidence']:.2f}). "
-                f"Evidence: {evidence_preview or decision['evidence'][0]}. "
-                f"Action: {top_action.summary if top_action else 'Review incident context.'} "
-                f"Audit: {audit_id}."
-            ),
-        ),
+        suggested_assignee_account_id=suggested_assignee_account_id,
+        suggestion_reason=suggestion_reason,
         audit_id=audit_id,
         anomaly_evidence=anomaly_evidence,
         service_topology=service_topology,
@@ -413,3 +400,24 @@ def build_response(
         investigation_summary=investigation_summary,
         llm_metadata=llm_metadata,
     )
+
+
+def suggest_assignee(
+    request: TriageRequest,
+    owner: Ownership,
+    rca: dict[str, Any],
+) -> tuple[str | None, str]:
+    account_id = request.alert.labels.get("suggested_assignee_account_id")
+    reason = request.alert.labels.get("suggestion_reason")
+    if isinstance(account_id, str) and account_id:
+        return account_id, str(reason or "Suggested by incident seed metadata from the integration layer.")
+
+    jira_history = rca.get("jira_history") if isinstance(rca, dict) else None
+    if isinstance(jira_history, dict):
+        candidate = jira_history.get("suggested_assignee_account_id")
+        if isinstance(candidate, str) and candidate:
+            history_reason = jira_history.get("suggestion_reason")
+            return candidate, str(history_reason or "Suggested from matching historical Jira incidents.")
+
+    target = owner.owner_team or owner.service
+    return None, f"No Jira accountId history mapping is configured yet; route to {target} for human confirmation."

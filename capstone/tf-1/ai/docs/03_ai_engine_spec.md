@@ -11,14 +11,16 @@ TF1 uses a **hybrid compute-first triage architecture**:
 ```text
 normalized incident context
   -> schema and tenant validation
+  -> bounded evidence gathering through allowlisted tools when needed
+  -> cleaning, redaction, normalization, and curation
   -> feature extraction
   -> deterministic anomaly/RCA scoring
   -> confidence gate and safety checks
   -> optional Bedrock synthesis
-  -> structured diagnosis + Jira/Slack payloads
+  -> structured diagnosis + Jira ticket fields + Slack-renderable raw fields
 ```
 
-The LLM is not the primary detector. Platform/DevOps provides observability data, alert detection, and bounded secure evidence access. AIOps performs context validation, bounded evidence query, cleaning/normalization/curation, evidence sufficiency checks, and incident-level RCA after an alert is pushed to AI Ops. Bedrock is optional and used only after the engine has grounded evidence.
+The LLM is not the primary detector and does not receive direct observability backend credentials. Platform/DevOps provides observability data, alert detection, and bounded secure evidence access. AIOps performs context validation, bounded evidence query through allowlisted tools, cleaning/normalization/curation, evidence sufficiency checks, and incident-level RCA after an alert is pushed to AI Ops. Bedrock is optional and used only after the engine has grounded evidence.
 
 ### 1.1 Responsibilities
 
@@ -27,9 +29,9 @@ The LLM is not the primary detector. Platform/DevOps provides observability data
 | Platform observability layer | Collect, retain, secure, and expose metrics/logs/traces/deploy events through bounded query/export. |
 | Platform alert detection layer | Detect alert/anomaly/incident candidates and push incident seed/context to AI Ops. |
 | Bounded evidence layer | Store or expose incident-scoped logs/events/traces/metrics/deploys/ownership through safe bounded access owned by CDO/platform. |
-| AIOps context aggregation | Validate pushed incident context, request bounded extra evidence when context is insufficient, and clean/normalize/curate it before RCA. |
+| AIOps context aggregation | Validate pushed incident context, request bounded extra evidence when context is insufficient through allowlisted tools, and clean/normalize/curate it before RCA. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
-| Optional Bedrock synthesis | Convert grounded evidence into clear Jira/Slack wording and runbook-aware recommendations. |
+| Optional Bedrock synthesis | Convert grounded evidence into clear diagnosis, Jira description, assignee suggestion rationale, and runbook-aware recommendations. |
 
 ### 1.2 Why Compute-First
 
@@ -47,7 +49,7 @@ The LLM is not the primary detector. Platform/DevOps provides observability data
 | Deployment target | ECS Fargate behind internal ALB |
 | Primary logic | Rules, thresholds, scenario classifiers, deploy/log/metric correlation |
 | LLM provider | AWS Bedrock, optional after skeleton |
-| LLM role | Grounded synthesis of diagnosis, recommendations, Jira text, and Slack text |
+| LLM role | Grounded synthesis of diagnosis, recommendations, Jira text, and assignee suggestion rationale |
 | Region | `us-east-1` for capstone scope |
 | Fallback | Deterministic rule-based response without Bedrock |
 
@@ -63,7 +65,7 @@ continuous telemetry
   -> platform alert detection
   -> alert/anomaly/incident candidate
   -> push incident seed/context to AI Ops
-  -> AIOps context validation, bounded evidence lookup, cleaning, and curation
+  -> AIOps context validation, bounded evidence lookup through allowlisted tools, cleaning, and curation
   -> POST /v1/triage
 ```
 
@@ -121,7 +123,7 @@ Allowed LLM outputs:
 - concise diagnosis wording,
 - evidence summary,
 - Jira description text,
-- Slack text,
+- assignee suggestion rationale when Jira history/accountId evidence exists,
 - runbook-aware next-step phrasing.
 
 Disallowed LLM outputs:
@@ -129,6 +131,8 @@ Disallowed LLM outputs:
 - executable auto-remediation,
 - destructive production commands,
 - root-cause claims unsupported by compute evidence,
+- arbitrary PromQL/LogQL/backend queries outside the approved tool schema,
+- rendered Slack Block Kit or pre-rendered Slack text in the API response,
 - cross-tenant references.
 
 ## 7. Multi-Tenant Routing

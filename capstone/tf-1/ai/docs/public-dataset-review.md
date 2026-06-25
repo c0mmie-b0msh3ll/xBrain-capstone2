@@ -12,7 +12,7 @@ Use **RCAEval** as the primary external dataset direction for RCA evaluation.
 - Zenodo: https://zenodo.org/records/14590730
 - Figshare: https://figshare.com/articles/dataset/RCAEval_A_Benchmark_for_Root_Cause_Analysis_of_Microservice_Systems/31048672
 
-Keep the current synthetic datapack only as controlled API/demo fixtures for contract shape, Jira/Slack payloads, and deterministic smoke tests.
+Keep the current synthetic datapack only as controlled API/demo fixtures for contract shape, Jira ticket fields, Slack-renderable response fields, and deterministic smoke tests.
 
 ## Why RCAEval
 
@@ -49,7 +49,7 @@ RCAEval case directory
 Synthetic data remains useful for:
 
 - repeatable demo scenarios,
-- Jira/Slack payload shape,
+- Jira ticket fields and Slack-renderable raw response shape,
 - smoke testing `/v1/triage`,
 - documenting expected happy-path and edge behavior.
 

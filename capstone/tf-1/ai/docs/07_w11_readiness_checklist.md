@@ -15,7 +15,7 @@ Status: Ready for design/contract review, live demo endpoint smoke-tested
 | `docs/05_adrs.md` | Ready | ADRs accepted for W11, including RCAEval primary data and transport-neutral handoff. |
 | `docs/06_cdo_evidence_handoff.md` | Ready | Explains extra evidence source, hosting model, and CDO responsibilities. |
 | `contracts/telemetry-contract.md` | Ready | Normalized incident context contract. |
-| `contracts/ai-api-contract.md` | Ready | `/healthz` and `/v1/triage` contract plus Jira/Slack payload boundary. |
+| `contracts/ai-api-contract.md` | Ready | `/healthz` and `/v1/triage` contract plus Jira ticket fields, Slack Block Kit rendering boundary, and advisory assignee suggestion. |
 | `contracts/deployment-contract.md` | Ready | AI artifact handoff, per-CDO deployment expectation, auth fallback, scaling, rollout, and smoke test requirements. |
 | `contracts/observability-data-contract.md` | Ready | Supporting data-availability contract/handoff; not one of the 3 signed W11 contracts. |
 

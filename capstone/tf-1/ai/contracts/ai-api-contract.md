@@ -6,7 +6,7 @@ Freeze target: 2026-06-25
 
 ## Purpose
 
-Define the API exposed by the AI triage engine and consumed by the CDO/platform incident integration layer. The API receives a normalized incident context bundle and returns a diagnosis, confidence, suggested next steps, and payloads that the integration layer can use for Jira and Slack.
+Define the API exposed by the AI triage engine and consumed by the CDO/platform incident integration layer. The API receives a normalized incident context bundle and returns raw diagnosis data, confidence, suggested next steps, Jira ticket fields, and optional Jira assignee suggestion fields that the integration layer can inject into Slack Block Kit or Jira workflows.
 
 CDO/platform invokes this API after it detects an alert/anomaly/incident and has either assembled bounded context or provided references for AI Ops to fetch bounded context. The API is not designed for streaming all raw metrics/logs directly into the triage engine, and AI Ops is not expected to poll CDO continuously to discover alerts.
 
@@ -49,11 +49,11 @@ Allow load balancers, deployment checks, and smoke tests to verify the service i
 
 Diagnose an incident from alert metadata plus logs, metrics, bounded trace summaries, recent deploys, ownership, and runbook/docs context.
 
-The endpoint performs compute-first triage: validation, feature extraction, RCA scoring, confidence gating, and safety checks. Bedrock/LLM synthesis may be enabled later, but only after grounded evidence has been produced by the compute layer.
+The endpoint performs compute-first triage: validation, bounded evidence gathering through approved tools, cleaning/normalization/curation, feature extraction, RCA scoring, confidence gating, and safety checks. Bedrock/LLM synthesis may be enabled later, but only after grounded evidence has been gathered by the context layer and checked by the compute layer.
 
-Alert delivery is push-based: CDO/platform calls this endpoint when an alert exists. If the initial request is missing useful evidence, AI Ops may use configured read-only evidence access to fetch bounded logs, metrics, traces, deploy metadata, or ownership records before final RCA. Evidence lookup must stay tenant/service/environment/time-window scoped, and AI Ops cleans/normalizes/curates the fetched data before triage.
+Alert delivery is push-based: customer systems publish telemetry into their observability layer, CDO/platform detects the alert, then CDO/platform calls this endpoint when an alert exists. If the initial request is missing useful evidence, AI Ops may use configured read-only evidence access to fetch bounded logs, metrics, traces, deploy metadata, ownership records, or Jira history before final RCA. Evidence lookup must stay tenant/service/environment/time-window scoped, and AI Ops cleans/normalizes/curates the fetched data before triage.
 
-The AI API itself is not a raw telemetry API. CDO may pass evidence inline, pass an `evidence_uri` in `alert.labels`, or expose the evidence API defined in `observability-data-contract.md` for follow-up lookups.
+The AI API itself is not a raw telemetry API. CDO may pass evidence inline, pass an `evidence_uri` in `alert.labels`, or expose the evidence API defined in `observability-data-contract.md` for follow-up lookups. The LLM must not receive direct credentials or arbitrary query access; AI Ops uses bounded, allowlisted context tools and passes only cleaned evidence into RCA and synthesis.
 
 ### Request Headers
 
@@ -151,16 +151,18 @@ Sample request fixtures are stored in `../engine-skeleton/samples/`.
     "fields": {
       "confidence": 0.82,
       "owner_team": "payments-platform",
-      "audit_id": "audit-001"
+      "audit_id": "audit-001",
+      "suggested_assignee_account_id": "712020:abc123",
+      "suggestion_reason": "Based on recent Jira history, this account is the SME for checkout-api incidents."
     }
   },
-  "slack_payload": {
-    "channel": "#oncall-payments",
-    "text": "checkout-api high latency. Suspected deploy-related DB timeout. Confidence 0.82. Jira: pending."
-  },
+  "suggested_assignee_account_id": "712020:abc123",
+  "suggestion_reason": "Based on recent Jira history, this account is the SME for checkout-api incidents.",
   "audit_id": "audit-001"
 }
 ```
+
+The response intentionally does **not** include a rendered `slack_payload`. CDO owns Slack presentation and may inject these raw fields into its Block Kit template, including buttons such as acknowledge, view report, or confirm assignment.
 
 Required successful response fields:
 
@@ -173,8 +175,14 @@ Required successful response fields:
 - `suspected_root_cause.evidence`
 - `recommended_actions`
 - `ticket_payload`
-- `slack_payload`
 - `audit_id`
+
+Optional successful response fields:
+
+- `suggested_assignee_account_id`
+- `suggestion_reason`
+
+Assignee suggestions are advisory only. CDO may show them in Slack, but a human must confirm before Jira is assigned to a person.
 
 `recommended_actions[].type` must be advisory only. Allowed values for v1 are:
 
@@ -190,7 +198,7 @@ The API must not return auto-executing action types.
 
 | Status | Meaning | Integration action |
 |---|---|---|
-| `DIAGNOSED` | AI has enough context to suggest next steps. | Create ticket and notify owner. |
+| `DIAGNOSED` | AI has enough context to suggest next steps. | Create ticket, render Slack Block Kit from raw response fields, and notify owner. |
 | `INVESTIGATE` | Weak or ambiguous signal; do not overstate cause. | Create ticket with investigation label. |
 | `INSUFFICIENT_CONTEXT` | Required context missing or stale. | Create fallback ticket and include missing fields. |
 | `UNSAFE_SUGGESTION_BLOCKED` | Candidate suggestion violated safety boundary. | Create ticket with no unsafe action. |
@@ -206,7 +214,7 @@ Before LLM integration, the skeleton service returns rule-based deterministic re
 | Latency title or latency metric with supporting deploy/log evidence | `DIAGNOSED` | `latency_degradation` |
 | Low severity, noisy, flapping, or conflicting signals | `INVESTIGATE` | `noisy_or_ambiguous_alert` |
 
-This behavior exists so the CDO/platform incident integration and Jira/Slack integration layers can integrate against stable response shapes before the final AI logic is added.
+This behavior exists so the CDO/platform incident integration and Jira/Slack integration layers can integrate against stable raw response shapes before the final AI logic is added.
 
 ## Reserved W12 Optional Interfaces
 
@@ -235,7 +243,7 @@ Slack responses must stay read-only and scoped to bounded report/evidence contex
 
 ### Jira Lifecycle Sync API
 
-The W11 contract returns `ticket_payload` only. W12 may add a callback/update endpoint for Jira lifecycle synchronization.
+The W11 contract returns `ticket_payload` plus optional assignee suggestion fields only. W12 may add a callback/update endpoint for Jira lifecycle synchronization.
 
 | Endpoint | Purpose | Notes |
 |---|---|---|
@@ -283,14 +291,16 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Item | W11 decision |
 |---|---|
 | Auth for W11 demo | Private network or protected gateway plus scoped bearer token fallback. IAM SigV4 or service-to-service JWT remains the production-preferred mechanism. |
-| Slack/Jira ownership | AI response includes `ticket_payload` and `slack_payload` as integration-ready payloads. The integration layer owns actually creating Jira issues or sending Slack messages. |
+| Slack/Jira ownership | AI response includes raw diagnosis fields, `ticket_payload`, and optional assignee suggestion fields. CDO owns Slack Block Kit rendering, Jira issue creation, and human-confirmed personal assignment. |
 | Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
-| Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract. |
+| Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract and approved Jira history access. |
 | Alert delivery | CDO/platform pushes alerts/incidents to `/v1/triage`; AI Ops does not poll CDO/customer systems continuously for alert discovery. |
 | Evidence retrieval | After alert delivery, AI Ops may pull bounded evidence from CDO-owned storage/API when the initial request has insufficient context. |
 | Evidence API | If live follow-up is enabled, CDO should expose `GET /v1/evidence/incidents/{incident_id}` and/or `POST /v1/evidence/query` as described in `observability-data-contract.md`. |
 | Evidence cleaning | AI Ops owns cleaning, normalization, curation criteria, sample processors, and how cleaned evidence affects RCA confidence. |
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
+| Slack rendering | CDO renders Slack Block Kit from raw response fields; AI does not return pre-rendered Slack text in the contract response. |
+| Jira assignment | AI may suggest `suggested_assignee_account_id` and `suggestion_reason` from configured Jira history/accountId mappings. CDO must require human confirmation before assigning Jira to a person. If no mapping exists, suggestion fields may be `null` with a queue/team reason. |
 
 ## W11 Sign-Off
 

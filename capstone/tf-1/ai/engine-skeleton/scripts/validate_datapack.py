@@ -75,7 +75,13 @@ def validate_triage(scenario: Path, client: TestClient) -> None:
         f"{scenario.name} confidence out of range: {body['confidence']}",
     )
     for field in expected["must_include_fields"]:
+        if field == "slack_payload":
+            require(field not in body, f"{scenario.name} must not return deprecated response field {field}")
+            continue
         require(field in body, f"{scenario.name} missing response field {field}")
+    require("ticket_payload" in body, f"{scenario.name} missing response field ticket_payload")
+    require("suggestion_reason" in body, f"{scenario.name} missing response field suggestion_reason")
+    require("slack_payload" not in body, f"{scenario.name} must not return deprecated response field slack_payload")
 
 
 def main() -> None:

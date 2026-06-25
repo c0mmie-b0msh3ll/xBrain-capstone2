@@ -42,7 +42,7 @@ External dataset direction is documented in `public-dataset-review.md`.
 | Noisy alert fixture | `INVESTIGATE` | `INVESTIGATE` | Pass |
 | Insufficient context fixture | `INSUFFICIENT_CONTEXT` | `INSUFFICIENT_CONTEXT` | Pass |
 | Tenant mismatch | `400` | `400` | Pass |
-| Required output fields | diagnosis, confidence, evidence, recommendation, ticket payload, Slack payload, audit ID | Present | Pass |
+| Required output fields | diagnosis, confidence, evidence, recommendation, ticket payload, Slack-renderable raw fields, optional assignee suggestion, audit ID | Present | Pass |
 | Auto-remediation boundary | No executable remediation actions | Advisory actions only | Pass |
 
 ### 3.1 Synthetic Fixture Results
