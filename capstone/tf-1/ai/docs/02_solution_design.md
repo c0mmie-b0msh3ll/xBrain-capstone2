@@ -56,7 +56,8 @@ The triage engine is not a direct Bedrock wrapper. It is a Dockerized compute se
    - missing supporting context: `INSUFFICIENT_CONTEXT`
 9. If enabled, the AI engine calls Bedrock only to synthesize grounded diagnosis, recommendations, Jira description, and assignee suggestion rationale from cleaned evidence.
 10. The CDO integration layer renders Slack Block Kit from raw AI response fields, creates or updates Jira from `ticket_payload`, and requires human confirmation before assigning a Jira user.
-11. Grafana remains the raw observability dashboard. The React report UI is the AI RCA explanation and audit surface.
+11. Engineer feedback such as RCA confirmed, RCA corrected, owner accepted, or owner rejected is recorded as audit metadata when available. Retrain trigger is design-only until reviewed feedback volume is sufficient.
+12. Grafana remains the raw observability dashboard. The React report UI is the AI RCA explanation and audit surface.
 
 For the local demo, `engine-skeleton/app/simulator.py` replays sanitized scenario files into the Compose observability stack, and `engine-skeleton/app/aiops_worker.py` queries Prometheus/Loki/Jaeger before building the `telemetry-contract.md` request. The triage service receives bounded normalized context, enriches the response with optional RCA/report fields, and exposes local report APIs for the React viewer.
 
@@ -131,6 +132,7 @@ Chosen: Option B. Platform owns observability plumbing, alert detection, evidenc
 | Evidence cleaning layer | Optional but recommended. CDO owns production storage/access/query bounds; AI Ops owns cleaning, curation criteria, schemas, sample processors, and RCA consumption. |
 | Real-time infra monitoring | Out of AI Ops scope. CDO/platform owns continuous metric collection, platform health dashboards, and alert rules; AI Ops consumes incident-scoped evidence for RCA. |
 | Dataset schema | RCAEval telemetry is primary. Supplemental deploy/ownership/runbook records are used where RCAEval lacks operational fields; logs/traces are supplemental only for selected cases that do not provide them. |
+| Feedback/retrain | Human feedback is audit metadata only for W11. Retrain trigger is a future design hook and must not auto-update production behavior. |
 | Deferred | Final AWS endpoint URL and live CDO observability backend are recorded after deployment smoke tests pass. |
 
 ## Related Documents

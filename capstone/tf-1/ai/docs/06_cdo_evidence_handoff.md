@@ -68,6 +68,7 @@ Ownership split:
 | RCA interpretation | AI Ops | Uses cleaned bounded evidence; does not own production raw telemetry store. |
 | Slack Block Kit rendering | CDO/platform | Injects raw AI response fields into the CDO-owned Slack template and handles interactive buttons. |
 | Jira personal assignment | CDO/platform | Shows AI suggestion and performs Jira assignment only after human confirmation. |
+| Human feedback/audit | CDO + AI Ops | Confirmation/correction events are audit metadata. Retrain trigger is design-only until enough reviewed feedback exists. |
 
 Minimal AI-cleaned/curated log fields:
 
@@ -297,6 +298,7 @@ CDO-hosted evidence must enforce:
 - audit log for evidence access
 - no remediation/write/restart/rollback/scale permissions
 - no direct Jira personal assignment without human confirmation
+- no automatic retraining or production behavior change from a single feedback event
 
 ## Contract References
 
@@ -316,4 +318,5 @@ CDO-hosted evidence must enforce:
 - CDO can show how TF1 is scoped to tenant/service/environment/time window.
 - CDO can show that logs are redacted and bounded.
 - CDO can show report URL, Slack Block Kit rendered from raw AI response fields, Jira `ticket_payload`, and optional assignee suggestion.
+- CDO can explain that engineer feedback is recorded for audit/future retrain design, not used to auto-change W11 behavior.
 - CDO can explain whether it chose evidence bundle, read-only proxy, or both.

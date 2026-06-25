@@ -152,6 +152,7 @@ Disallowed LLM outputs:
 | Explainability | Response includes evidence and root-cause summary. | Sample response fixtures. |
 | Auditability | Response includes deterministic `audit_id`; persistent store is design target. | Eval report and future audit store logs. |
 | Confidence gating | Low confidence maps to `INVESTIGATE` or `INSUFFICIENT_CONTEXT`. | Skeleton fixtures and eval report. |
+| Human feedback | Engineer confirmation/correction is audit metadata only; retrain trigger is design-only. | Future feedback endpoint or Jira/Slack callback export. |
 | No auto-remediation | Response actions are advisory only. | API contract action allowlist. |
 | Reproducibility | Same input produces same skeleton output. | Response fixtures. |
 | Cost control | Bedrock is optional and invoked only after detection/triage need exists. | Architecture docs and deployment config. |

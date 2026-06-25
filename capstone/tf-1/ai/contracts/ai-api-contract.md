@@ -261,6 +261,16 @@ W11 audit data is available through report JSON. W12 may expose audit lookup by 
 
 The audit response must not expose raw unbounded logs, secrets, tokens, or cross-tenant data.
 
+### Human Feedback And Retrain Trigger Design
+
+Human feedback is a design target, not a W11 built endpoint. CDO may collect whether an engineer confirmed or corrected the RCA in Slack/Jira and store it in the audit trail. A future W12 API may accept feedback events without changing `/v1/triage`.
+
+| Endpoint | Purpose | Notes |
+|---|---|---|
+| `POST /v1/incidents/{incident_id}/feedback` | Record human confirmation or correction for the RCA, owner suggestion, or recommended action. | Design-only for W11; must require `audit_id`, tenant scope, and authenticated caller. |
+
+Allowed feedback values should be limited to non-executable audit metadata such as `RCA_CONFIRMED`, `RCA_CORRECTED`, `OWNER_ACCEPTED`, and `OWNER_REJECTED`. Retrain trigger remains offline/design-only until enough reviewed feedback exists; it must not change production model behavior automatically during W11/W12 demos.
+
 ## Error Codes
 
 | Code | Meaning | Integration action |
@@ -301,6 +311,7 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
 | Slack rendering | CDO renders Slack Block Kit from raw response fields; AI does not return pre-rendered Slack text in the contract response. |
 | Jira assignment | AI may suggest `suggested_assignee_account_id` and `suggestion_reason` from configured Jira history/accountId mappings. CDO must require human confirmation before assigning Jira to a person. If no mapping exists, suggestion fields may be `null` with a queue/team reason. |
+| Human feedback | Engineer confirm/correct feedback is audit-trail metadata only for W11. Retrain trigger is a design-only future hook, not an automatic production update. |
 
 ## W11 Sign-Off
 
