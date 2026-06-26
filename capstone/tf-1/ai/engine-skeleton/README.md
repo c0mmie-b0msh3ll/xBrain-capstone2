@@ -174,6 +174,8 @@ For `agent_platform`, the AgentCore agent must return either tool requests or a 
 
 TF1 validates every returned tool name and tenant/service/environment/window scope before executing the local read-only tool registry. Agent final diagnoses must use existing classifications/statuses, confidence from `0.0` to `1.0`, non-empty evidence for `DIAGNOSED`, and known action IDs. Unknown action IDs are ignored; unsafe operational commands, Jira/Slack mutation, shell, PromQL, and LogQL are rejected and the response falls back to deterministic RCA.
 
+Action recommendations are catalog-gated and evidence-linked. The catalog covers missing context, noisy alerts, service down, latency/dependency timeout, recent deploy rollback consideration, resource saturation, disk pressure, queue/Kafka lag, auth failures, DNS/TLS/network errors, Kubernetes crash loops, rate-limit/throttling, and internal runbook review. AgentCore may search configured internal runbooks/known-error records through read-only tools, but runtime internet search is intentionally not allowed for incident recommendations.
+
 Mode and agent metrics exposed at `/metrics`:
 
 - `aiops_investigation_mode_selected_total{mode,source}`

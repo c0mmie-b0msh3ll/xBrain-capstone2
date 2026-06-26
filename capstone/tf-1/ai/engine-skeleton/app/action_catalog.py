@@ -88,6 +88,86 @@ ACTION_CATALOG: dict[str, dict[str, Any]] = {
         "approval_reason": "Rollback changes production state and must be approved by the owning team.",
         "scenario_tags": ["recent_deploy_correlation", "latency_degradation", "critical_service_down"],
     },
+    "resource_saturation_triage": {
+        "id": "resource_saturation_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check CPU, memory, thread, and connection-pool saturation before changing service capacity.",
+        "why": "Saturation evidence can explain latency, errors, or availability loss and should be verified before remediation.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["cpu_saturation", "memory_pressure", "connection_pool_exhaustion"],
+    },
+    "disk_pressure_triage": {
+        "id": "disk_pressure_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check disk usage, inode pressure, write errors, and log volume growth on the affected service.",
+        "why": "Disk pressure can cause write failures, pod restarts, and degraded availability without requiring immediate code rollback.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["disk_pressure"],
+    },
+    "queue_backlog_triage": {
+        "id": "queue_backlog_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Inspect queue lag, consumer health, retry rate, and downstream dependency latency.",
+        "why": "Queue backlog evidence usually needs consumer/dependency validation before scaling or replay decisions.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["queue_backlog", "kafka_lag"],
+    },
+    "auth_failure_triage": {
+        "id": "auth_failure_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check authentication provider health, token validation errors, credential rotation, and recent auth config changes.",
+        "why": "Authentication failures need identity-provider and config validation before user-impacting changes are made.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["auth_failure"],
+    },
+    "network_dns_triage": {
+        "id": "network_dns_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check DNS resolution, TLS/certificate validity, network policy, and upstream connectivity for the affected path.",
+        "why": "Network, DNS, or TLS symptoms often look like dependency failures and should be isolated before remediation.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["network_dns", "tls_certificate"],
+    },
+    "kubernetes_crashloop_triage": {
+        "id": "kubernetes_crashloop_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check pod restart count, crash-loop events, readiness failures, and recent container image or config changes.",
+        "why": "Crash-loop or readiness evidence should be confirmed from Kubernetes events before rollout or config actions.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["k8s_crashloop", "readiness_failure"],
+    },
+    "rate_limit_throttling_triage": {
+        "id": "rate_limit_throttling_triage",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Check throttling, 429 responses, quota limits, retry storms, and caller traffic changes.",
+        "why": "Rate-limit symptoms need quota and traffic validation before changing limits or clients.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["rate_limit", "throttling"],
+    },
+    "consult_internal_runbooks": {
+        "id": "consult_internal_runbooks",
+        "type": "RUNBOOK_CHECK",
+        "risk": "low",
+        "summary": "Review matching internal runbooks, known-error notes, or recent postmortems before choosing a remediation path.",
+        "why": "Internal operational knowledge is safer and more specific than generic public guidance.",
+        "requires_human_approval": False,
+        "approval_reason": None,
+        "scenario_tags": ["internal_docs", "known_error"],
+    },
 }
 
 
@@ -133,6 +213,7 @@ def candidate_ids_for(request: Any, decision: dict[str, Any], rca: dict[str, Any
         return ["observe_user_impact", "human_review_noisy_alert"]
     if classification == "critical_service_down":
         ids = ["service_down_runbook", "page_service_owner"]
+        ids.extend(signal_action_ids(request, rca))
         if request.recent_deploys:
             ids.append("consider_recent_deploy_rollback")
         return ids
@@ -140,11 +221,12 @@ def candidate_ids_for(request: Any, decision: dict[str, Any], rca: dict[str, Any
         ids = []
         if has_timeout_or_dependency_signal(request, rca):
             ids.append("dependency_timeout_triage")
+        ids.extend(signal_action_ids(request, rca))
         ids.append("latency_saturation_review")
         if request.recent_deploys:
             ids.append("consider_recent_deploy_rollback")
         return ids
-    return ["human_review_noisy_alert"]
+    return [*signal_action_ids(request, rca), "human_review_noisy_alert"]
 
 
 def allowed_risk(classification: str, confidence: float) -> str:
@@ -165,6 +247,54 @@ def has_timeout_or_dependency_signal(request: Any, rca: dict[str, Any]) -> bool:
     ]
     text = " ".join(text_parts).lower()
     return any(token in text for token in ["timeout", "redis", "database", "postgres", "mysql", "connection pool", "slow query"])
+
+
+def signal_action_ids(request: Any, rca: dict[str, Any]) -> list[str]:
+    text = signal_text(request, rca)
+    ids: list[str] = []
+    if any(token in text for token in ["cpu", "memory", "oom", "out of memory", "heap", "saturation", "connection pool", "connections exhausted"]):
+        ids.append("resource_saturation_triage")
+    if any(token in text for token in ["disk", "inode", "no space", "filesystem", "volume full"]):
+        ids.append("disk_pressure_triage")
+    if any(token in text for token in ["queue", "backlog", "lag", "consumer", "kafka", "sqs", "rabbitmq"]):
+        ids.append("queue_backlog_triage")
+    if any(token in text for token in ["auth", "oauth", "jwt", "token", "unauthorized", "forbidden", "401", "403", "credential"]):
+        ids.append("auth_failure_triage")
+    if any(token in text for token in ["dns", "tls", "certificate", "cert", "network", "connection refused", "connection reset", "egress"]):
+        ids.append("network_dns_triage")
+    if any(token in text for token in ["crashloop", "crash loop", "pod restart", "readiness", "liveness", "oomkilled", "imagepull"]):
+        ids.append("kubernetes_crashloop_triage")
+    if any(token in text for token in ["429", "rate limit", "ratelimit", "throttle", "throttling", "quota"]):
+        ids.append("rate_limit_throttling_triage")
+    if has_internal_docs(request):
+        ids.append("consult_internal_runbooks")
+    return dedupe(ids)
+
+
+def signal_text(request: Any, rca: dict[str, Any]) -> str:
+    parts = [
+        request.alert.title,
+        request.alert.description or "",
+        " ".join(metric.metric_name for metric in request.metrics),
+        " ".join(str(metric.labels or {}) for metric in request.metrics),
+        " ".join(log.message for log in request.logs),
+        " ".join(str(log.labels or {}) for log in request.logs),
+        " ".join(item.get("reason", "") for item in rca.get("anomaly_evidence", [])),
+        " ".join(reason for candidate in rca.get("rca_candidates", []) for reason in candidate.get("reasons", [])),
+    ]
+    return " ".join(parts).lower()
+
+
+def has_internal_docs(request: Any) -> bool:
+    return bool(request.ownership and request.ownership.runbooks)
+
+
+def dedupe(ids: list[str]) -> list[str]:
+    result: list[str] = []
+    for action_id in ids:
+        if action_id not in result:
+            result.append(action_id)
+    return result
 
 
 def build_evidence_refs(request: Any, decision: dict[str, Any], rca: dict[str, Any]) -> list[str]:
@@ -190,6 +320,18 @@ def evidence_refs_for_action(action_id: str, evidence_refs: list[str]) -> list[s
         preferred = ["logs[0]", "anomaly_evidence[0]", "ownership.runbooks[0]"]
     elif action_id == "attach_telemetry_context":
         preferred = ["alert"]
+    elif action_id in {
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "queue_backlog_triage",
+        "auth_failure_triage",
+        "network_dns_triage",
+        "kubernetes_crashloop_triage",
+        "rate_limit_throttling_triage",
+    }:
+        preferred = ["anomaly_evidence[0]", "logs[0]", "suspected_root_cause.evidence[0]", "ownership.runbooks[0]"]
+    elif action_id == "consult_internal_runbooks":
+        preferred = ["ownership.runbooks[0]", "suspected_root_cause.evidence[0]"]
 
     ordered = [ref for ref in preferred if ref in evidence_refs]
     ordered.extend(ref for ref in evidence_refs if ref not in ordered)

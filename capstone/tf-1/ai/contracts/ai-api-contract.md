@@ -194,6 +194,20 @@ Assignee suggestions are advisory only. CDO may show them in Slack, but a human 
 
 The API must not return auto-executing action types.
 
+Recommended action objects should be actionable enough for Slack/Jira rendering. When available, each action includes:
+
+- `id`: stable catalog action id.
+- `priority`: display/execution order for human responders.
+- `summary`: concise next step.
+- `why`: why this action matches the evidence.
+- `risk`: `low`, `medium`, or `high`.
+- `evidence_refs`: references back to response evidence fields.
+- `runbook_ref`: runbook URL/reference when available.
+- `requires_human_approval`: whether CDO must force explicit approval before action.
+- `approval_reason`: reason approval is required.
+
+Current action coverage includes missing context, noisy alerts, service down, latency/dependency timeout, recent deploy rollback consideration, resource saturation, disk pressure, queue/Kafka lag, auth failures, DNS/TLS/network errors, Kubernetes crash loops, rate-limit/throttling, and internal runbook review. All actions remain recommendations only.
+
 ### Jira And Slack Integration Requirements
 
 Jira and Slack are core consumers of this contract. The AI engine must return stable raw fields that CDO can use across the project for ticket creation and notification rendering.

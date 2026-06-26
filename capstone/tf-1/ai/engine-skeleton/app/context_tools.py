@@ -25,6 +25,8 @@ READ_ONLY_TOOL_NAMES = {
     "infer_causal_hints",
     "rank_rca_candidates",
     "get_jira_history",
+    "search_runbooks",
+    "search_known_errors",
 }
 
 
@@ -58,6 +60,8 @@ class ToolRegistry:
             "infer_causal_hints": self._infer_causal_hints,
             "rank_rca_candidates": self._rank_rca_candidates,
             "get_jira_history": self._get_jira_history,
+            "search_runbooks": self._search_runbooks,
+            "search_known_errors": self._search_known_errors,
         }
 
     @property
@@ -145,6 +149,14 @@ class ToolRegistry:
     def _get_jira_history(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> dict[str, Any]:
         return self.client.get_jira_history(scope.service, scope.environment, scope.tenant_id)
 
+    def _search_runbooks(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> list[dict[str, Any]]:
+        query = str(args.get("query") or "")
+        return self.client.search_runbooks(scope.service, query)
+
+    def _search_known_errors(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> list[dict[str, Any]]:
+        query = str(args.get("query") or "")
+        return self.client.search_known_errors(scope.service, scope.environment, scope.tenant_id, query)
+
 
 class ContextClient:
     def __init__(
@@ -156,6 +168,7 @@ class ContextClient:
         ownership_path: str | None = None,
         evidence_bundle_base_path: str | None = None,
         jira_history_path: str | None = None,
+        known_errors_path: str | None = None,
     ) -> None:
         self.prometheus_url = prometheus_url or os.getenv("PROMETHEUS_URL")
         self.loki_url = loki_url or os.getenv("LOKI_URL")
@@ -164,6 +177,7 @@ class ContextClient:
         self.ownership_path = ownership_path or os.getenv("OWNERSHIP_PATH")
         self.evidence_bundle_base_path = evidence_bundle_base_path or os.getenv("EVIDENCE_BUNDLE_BASE_PATH")
         self.jira_history_path = jira_history_path or os.getenv("JIRA_HISTORY_PATH")
+        self.known_errors_path = known_errors_path or os.getenv("KNOWN_ERRORS_PATH")
         self.timeout_seconds = int(os.getenv("AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS", os.getenv("LLM_TOOL_TIMEOUT_SECONDS", "3")))
 
     @property
@@ -356,6 +370,33 @@ class ContextClient:
             "source": "jira_history",
         }
 
+    def search_runbooks(self, service: str, query: str = "") -> list[dict[str, Any]]:
+        ownership = self.get_ownership(service)
+        runbooks = ownership.get("runbooks") if isinstance(ownership, dict) else []
+        if not isinstance(runbooks, list):
+            return []
+        return filter_docs(runbooks, query, default_source="ownership_runbook")[:5]
+
+    def search_known_errors(self, service: str, environment: str, tenant_id: str, query: str = "") -> list[dict[str, Any]]:
+        if not self.known_errors_path:
+            return []
+        records = load_json_file(self.known_errors_path)
+        candidates = records.get("known_errors") if isinstance(records, dict) and isinstance(records.get("known_errors"), list) else records
+        if not isinstance(candidates, list):
+            return []
+        scoped: list[dict[str, Any]] = []
+        for record in candidates:
+            if not isinstance(record, dict):
+                continue
+            if record.get("service") not in (None, service):
+                continue
+            if record.get("environment") not in (None, environment):
+                continue
+            if record.get("tenant_id") not in (None, tenant_id):
+                continue
+            scoped.append(record)
+        return filter_docs(scoped, query, default_source="known_errors")[:5]
+
 
 def scope_from_request(request: Any, max_window_minutes: int | None = None, log_limit: int | None = None) -> ToolScope:
     return ToolScope(
@@ -516,6 +557,28 @@ def find_jira_history_match(records: Any, service: str, environment: str, tenant
             continue
         return record
     return None
+
+
+def filter_docs(records: list[Any], query: str, default_source: str) -> list[dict[str, Any]]:
+    terms = [term for term in query.lower().split() if len(term) >= 3]
+    results: list[dict[str, Any]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        title = str(record.get("title") or record.get("summary") or record.get("name") or "")
+        excerpt = str(record.get("excerpt") or record.get("description") or record.get("notes") or "")
+        text = f"{title} {excerpt} {record.get('tags', '')}".lower()
+        if terms and not any(term in text for term in terms):
+            continue
+        results.append(
+            {
+                "title": title or "Untitled internal document",
+                "url": record.get("url") or record.get("ref"),
+                "excerpt": excerpt[:500],
+                "source": record.get("source") or default_source,
+            }
+        )
+    return results
 
 
 def service_from_trace_process(process: dict[str, Any]) -> str | None:

@@ -403,6 +403,145 @@ def test_low_confidence_blocks_medium_risk_actions() -> None:
     assert {action["risk"] for action in actions} == {"low"}
 
 
+@pytest.mark.parametrize(
+    ("signal", "expected_action_id"),
+    [
+        ("cpu utilization breached 95 percent and memory pressure is high", "resource_saturation_triage"),
+        ("disk filesystem no space left on device", "disk_pressure_triage"),
+        ("kafka consumer lag and queue backlog increasing", "queue_backlog_triage"),
+        ("oauth token validation returned 401 unauthorized", "auth_failure_triage"),
+        ("dns lookup failed with tls certificate error", "network_dns_triage"),
+        ("pod restart count increased and crashloopbackoff detected", "kubernetes_crashloop_triage"),
+        ("429 rate limit throttling from upstream quota", "rate_limit_throttling_triage"),
+    ],
+)
+def test_signal_specific_actions_are_selected(signal: str, expected_action_id: str) -> None:
+    body = metadata_only_triage_body()
+    body["metrics"] = [
+        {
+            "metric_name": signal.replace(" ", "_"),
+            "service": "checkout-api",
+            "unit": "count",
+            "points": [{"ts": "2026-06-24T09:00:00Z", "value": 1}],
+            "labels": {},
+        }
+    ]
+    body["logs"] = [
+        {
+            "service": "checkout-api",
+            "ts": "2026-06-24T09:00:00Z",
+            "level": "error",
+            "message": signal,
+            "labels": {},
+        }
+    ]
+    request = TriageRequest.model_validate(body)
+    decision = {
+        "classification": "general_investigation",
+        "confidence": 0.65,
+        "evidence": [signal],
+        "summary": "General investigation with specific operational signal.",
+    }
+    rca = {"anomaly_evidence": [{"reason": signal}], "rca_candidates": []}
+
+    actions = select_actions(request, decision, rca, None)
+
+    assert expected_action_id in {action["id"] for action in actions}
+    matched = [action for action in actions if action["id"] == expected_action_id][0]
+    assert matched["risk"] == "low"
+    assert matched["evidence_refs"]
+
+
+def test_internal_runbook_action_is_selected_when_runbook_exists() -> None:
+    body = metadata_only_triage_body()
+    body["metrics"] = [
+        {
+            "metric_name": "http_5xx_count",
+            "service": "checkout-api",
+            "unit": "count",
+            "points": [{"ts": "2026-06-24T09:00:00Z", "value": 12}],
+            "labels": {},
+        }
+    ]
+    body["ownership"] = {
+        "service": "checkout-api",
+        "owner_team": "payments-platform",
+        "jira_project": "PAY",
+        "runbooks": [{"title": "Checkout 5xx triage", "url": "runbook://checkout-5xx", "excerpt": "Review upstream and dependency errors."}],
+    }
+    request = TriageRequest.model_validate(body)
+    decision = {
+        "classification": "general_investigation",
+        "confidence": 0.65,
+        "evidence": ["5xx evidence exists."],
+        "summary": "General investigation with runbook context.",
+    }
+
+    actions = select_actions(request, decision, {"anomaly_evidence": []}, "runbook://checkout-5xx")
+
+    assert "consult_internal_runbooks" in {action["id"] for action in actions}
+
+
+def test_internal_document_tools_are_scoped_and_searchable(tmp_path) -> None:
+    ownership_path = tmp_path / "ownership.json"
+    known_errors_path = tmp_path / "known-errors.json"
+    ownership_path.write_text(
+        json.dumps(
+            {
+                "service": "checkout-api",
+                "owner_team": "payments-platform",
+                "runbooks": [
+                    {
+                        "title": "Database timeout triage",
+                        "url": "runbook://db-timeout",
+                        "excerpt": "Check database connection pool and slow queries.",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    known_errors_path.write_text(
+        json.dumps(
+            [
+                {
+                    "tenant_id": "tenant-a",
+                    "environment": "prod",
+                    "service": "checkout-api",
+                    "title": "Checkout database timeout known error",
+                    "url": "known-error://checkout-db-timeout",
+                    "description": "Recurring timeout when connection pool is exhausted.",
+                },
+                {
+                    "tenant_id": "tenant-b",
+                    "environment": "prod",
+                    "service": "checkout-api",
+                    "title": "Cross tenant item",
+                    "description": "Must not be returned.",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    registry = ToolRegistry(ContextClient(ownership_path=str(ownership_path), known_errors_path=str(known_errors_path)))
+    scope = ToolScope(
+        tenant_id="tenant-a",
+        environment="prod",
+        service="checkout-api",
+        started_at="2026-06-24T08:45:00Z",
+        received_at="2026-06-24T09:05:00Z",
+    )
+
+    runbooks = registry.execute("search_runbooks", {"query": "database"}, scope)["result"]
+    known_errors = registry.execute("search_known_errors", {"query": "timeout"}, scope)["result"]
+
+    assert runbooks[0]["url"] == "runbook://db-timeout"
+    assert known_errors[0]["url"] == "known-error://checkout-db-timeout"
+    assert len(known_errors) == 1
+    with pytest.raises(ToolScopeError):
+        registry.execute("search_known_errors", {"tenant_id": "tenant-b", "query": "timeout"}, scope)
+
+
 def test_llm_action_wording_falls_back_when_bedrock_disabled(monkeypatch) -> None:
     monkeypatch.delenv("ENABLE_BEDROCK_LLM", raising=False)
     monkeypatch.delenv("ENABLE_AGENTCORE_LLM", raising=False)

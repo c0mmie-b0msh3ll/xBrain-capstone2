@@ -291,7 +291,7 @@ Validation run:
 - docker compose -f docker-compose.observability.yml config --quiet
 
 Latest known result:
-- 42 passed
+- 51 passed
 ```
 
 ### A0X-30 - README / Handoff Documentation
@@ -436,4 +436,3 @@ These cannot be completed from the repo alone:
 | A0X-31 | Mark duplicate/link to A0X-27. |
 | A0X-32..A0X-34 | Paste evidence comments and move to Done if reviewer accepts. |
 | A0X-35 | Keep In Progress until CDO runs smoke test and confirms evidence hosting. |
-

@@ -508,6 +508,14 @@ page_service_owner
 dependency_timeout_triage
 latency_saturation_review
 consider_recent_deploy_rollback
+resource_saturation_triage
+disk_pressure_triage
+queue_backlog_triage
+auth_failure_triage
+network_dns_triage
+kubernetes_crashloop_triage
+rate_limit_throttling_triage
+consult_internal_runbooks
 ```
 
 Risk rules:
@@ -517,6 +525,56 @@ Risk rules:
 - medium-risk rollback consideration yêu cầu human approval.
 
 Trong `agent_platform`, `recommended_action_ids` từ agent chỉ là advisory. Engine vẫn gọi `select_actions()` và chỉ intersect với known catalog actions nếu phù hợp.
+
+## 14.1 Action Coverage Mở Rộng
+
+Current implementation đã mở rộng actionable suggestions để cover thêm các nhóm incident phổ biến:
+
+| Signal family | Action ID |
+|---|---|
+| CPU/memory/connection-pool saturation | `resource_saturation_triage` |
+| Disk/inode/filesystem pressure | `disk_pressure_triage` |
+| Queue backlog / Kafka lag / consumer lag | `queue_backlog_triage` |
+| Auth/OAuth/JWT/401/403 failures | `auth_failure_triage` |
+| DNS/TLS/certificate/network errors | `network_dns_triage` |
+| Kubernetes crash loop/readiness/liveness/pod restarts | `kubernetes_crashloop_triage` |
+| 429/rate limit/throttling/quota | `rate_limit_throttling_triage` |
+| Có internal runbook/known-error evidence | `consult_internal_runbooks` |
+
+Các action này vẫn giữ nguyên guardrail:
+
+- chỉ là recommendation,
+- có `risk`,
+- có `why`,
+- có `evidence_refs`,
+- dùng action type trong allowlist,
+- không execute remediation.
+
+## 14.2 Internal Documents Vs Internet Search
+
+Runtime incident triage **không cho LLM search internet tự do**.
+
+Lý do:
+
+- public internet advice có thể stale hoặc generic,
+- dễ prompt injection,
+- khó audit,
+- có thể mâu thuẫn internal runbook,
+- có thể gợi ý command unsafe.
+
+Thay vào đó, AgentCore chỉ được dùng bounded read-only internal tools:
+
+```text
+search_runbooks
+search_known_errors
+get_jira_history
+get_ownership
+```
+
+`search_runbooks` đọc runbook từ ownership/service catalog đã cấu hình.  
+`search_known_errors` đọc known-error/postmortem style records từ `KNOWN_ERRORS_PATH`, scoped theo tenant/service/environment.
+
+Internet/public docs chỉ nên dùng offline để con người curate thêm action catalog hoặc runbook, sau đó review và commit vào repo/config.
 
 ## 15. QA Và Confidence Adjustment
 
@@ -719,7 +777,7 @@ docker compose -f docker-compose.observability.yml config --quiet
 Latest known test status:
 
 ```text
-42 passed
+51 passed
 ```
 
 ## 21. Implementation Files
@@ -735,4 +793,3 @@ Important files:
 - `engine-skeleton/app/action_catalog.py`: catalog actions and risk gating.
 - `engine-skeleton/app/llm.py`: AgentCore calls for summary/action wording/assisted tools.
 - `engine-skeleton/app/observability.py`: Prometheus metrics, tracing, metadata-only logs.
-
