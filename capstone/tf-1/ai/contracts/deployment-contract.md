@@ -48,7 +48,7 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | Autoscale trigger 2 | Target request count 100 per task |
 | Scale-up cooldown | 60 seconds |
 | Scale-down cooldown | 300 seconds |
-| Load test input | W11 skeleton target: 30 triage requests/minute, p99 < 2 seconds |
+| Load test input | W11 target: 30 req/min (p99 < 2s). Target load W12: 300 req/min after autoscale scaling execution. |
 
 ## Configuration And Secrets
 
@@ -175,7 +175,7 @@ Abort and roll back if any of these occur during canary:
 |---|---|
 | Primary method | Revert ECS service to previous immutable image tag |
 | Secondary method | Roll back deployment pipeline release |
-| Target RTO | < 5 minutes for capstone |
+| Target RTO | < 60 seconds (by reverting ECS service task image tag) |
 | Data migration | None for skeleton; future persistent audit schema changes need ADR before freeze |
 
 ## Observability

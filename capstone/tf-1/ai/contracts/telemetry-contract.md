@@ -101,6 +101,12 @@ Recommended optional alert labels for evidence lookup:
 
 Metrics should cover at least 15 minutes before alert start and, when available, 5 minutes after alert start.
 
+### Signal SLA & Cost Estimation
+- **Frequency**: 60s
+- **Volume**: ~200 events/hr (per service metric stream)
+- **Retention**: 15 days
+- **Cost**: ~$1.50/month
+
 ```json
 {
   "metric_name": "http_latency_p95_ms",
@@ -124,6 +130,12 @@ Minimum useful metric types for TF1:
 ## Logs Window
 
 Logs should be sampled, not dumped raw. The context layer should provide relevant snippets around the alert window.
+
+### Signal SLA & Cost Estimation
+- **Frequency**: Event-driven / On-demand query per incident (up to 50 lines max)
+- **Volume**: ~1,000 log events/hr
+- **Retention**: 14 days
+- **Cost**: ~$3.00/month
 
 ```json
 {
@@ -170,6 +182,12 @@ Ownership boundary:
 
 Traces should be passed as bounded span summaries, not full raw trace exports. The context layer should include spans or trace summaries that are relevant to the incident service, dependencies, and alert window.
 
+### Signal SLA & Cost Estimation
+- **Frequency**: Event-driven / On-demand query per incident (span summaries only)
+- **Volume**: ~100 spans / incident triage (up to ~500 spans/hr)
+- **Retention**: 7 days
+- **Cost**: ~$2.00/month
+
 ```json
 {
   "trace_id": "trace-123",
@@ -194,6 +212,12 @@ Rules:
 
 ## Recent Deploys
 
+### Signal SLA & Cost Estimation
+- **Frequency**: On-demand query per deploy event
+- **Volume**: ~5-10 deploy events / day across 50 microservices
+- **Retention**: 30 days
+- **Cost**: ~$0.50/month
+
 ```json
 {
   "service": "checkout-api",
@@ -208,6 +232,12 @@ Rules:
 Required for deploy-related diagnosis. If not available, the context layer must pass an empty array and AI will lower confidence.
 
 ## Ownership And Runbook Docs
+
+### Signal SLA & Cost Estimation
+- **Frequency**: Low-frequency catalog updates
+- **Volume**: ~50 service registry metadata entries
+- **Retention**: Indefinite / 365 days
+- **Cost**: ~$0.10/month
 
 ```json
 {

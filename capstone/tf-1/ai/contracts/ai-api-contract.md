@@ -277,17 +277,18 @@ Allowed feedback values should be limited to non-executable audit metadata such 
 |---:|---|---|
 | 400 | Invalid schema or tenant mismatch | Do not retry until request fixed. |
 | 401 | Authentication failed | Refresh credentials and retry once. |
-| 429 | Rate limited | Exponential backoff and queue. |
+| 429 | Rate limited (>60 req/min/tenant) | Exponential backoff and queue. |
 | 500 | Unexpected AI error | Create fallback ticket with raw alert context. |
 | 503 | AI unavailable | Use rule-based fallback or queue retry. |
 
 ## SLA Targets
 
-| Metric | Target |
-|---|---:|
-| P99 latency | < 2 seconds for demo |
-| Availability | >= 99.5% design target |
-| Max payload size | 512 KB unless changed by platform constraints |
+| Metric | Target | Measurement Method / Notes |
+|---|---|---|
+| P99 latency | < 2 seconds for demo | Measured via API Gateway execution logs or FastAPI app metrics. |
+| Availability | >= 99.5% design target | Measured via CloudWatch 5-min error rate metric (successful requests vs total requests). |
+| Max payload size | 512 KB | Checked on ALB/API Gateway ingress configuration. |
+| Rate limit | 60 req/min/tenant | Enforced at ALB/API Gateway rate limiter; returns HTTP 429 when exceeded. |
 
 ## Safety Rules
 

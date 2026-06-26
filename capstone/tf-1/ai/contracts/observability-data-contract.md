@@ -92,7 +92,7 @@ AIOps needs bounded query/export capability:
 | Max default window | 15 minutes before alert and 5 minutes after alert. |
 | Max extended window | 60 minutes unless explicitly agreed. |
 | Max log snippets | Default 50 relevant lines per service per incident. |
-| Retention | At least enough for demo scenarios and baseline comparison. |
+| Retention | metrics 15d · logs 14d · traces 7d (with raw deploy/ownership metadata retained 30d). |
 | Auth | IAM/SigV4, service token, or platform-approved service auth. |
 | Isolation | A tenant-scoped query must not return other tenants' data. |
 
@@ -378,4 +378,4 @@ observability data contract
 | Jira assignee suggestion | Optional. AI may query bounded Jira history/accountId mapping and return a suggestion reason, but CDO must require human confirmation before assignment. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
 | Ownership/runbooks | RCAEval telemetry is primary for scenario evidence; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
-| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, and evidence retention long enough to replay all approved scenarios. |
+| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, with retention set to: metrics 15d (cost ~$1.50/mo) · logs 14d (cost ~$3.00/mo) · traces 7d (cost ~$2.00/mo). |
