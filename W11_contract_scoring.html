@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm điểm Hợp đồng — AIOps Capstone W11</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f9fc;
+  --surface:#fff;
+  --border:#dde3ed;
+  --ink:#0f1723;
+  --ink2:#3d4f63;
+  --muted:#7a8fa8;
+  --accent:#1a56db;
+  --s5-bg:#d1fae5;--s5-ink:#065f46;
+  --s4-bg:#dbeafe;--s4-ink:#1e3a8a;
+  --s3-bg:#fef3c7;--s3-ink:#78350f;
+  --s2-bg:#fee2e2;--s2-ink:#991b1b;
+  --fix-bg:#fffbf0;--fix-border:#d97706;
+}
+html{font-size:15px}
+body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:32px 0 24px}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.hdr h1{font-size:21px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.hdr p{font-size:13.5px;color:var(--ink2);max-width:560px}
+
+.matrix-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:24px 0 20px}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.matrix{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.matrix th{text-align:left;padding:6px 18px 6px 10px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.matrix td{padding:9px 18px 9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.matrix tr:last-child td{border-bottom:none}
+.team-name{font-weight:700;color:var(--ink)}
+.team-sub{font-size:11px;color:var(--muted);font-weight:400;display:block}
+.sc{display:inline-block;font-family:'Courier New',Courier,monospace;font-size:12px;font-weight:700;padding:2px 9px;min-width:46px;text-align:center}
+.sc.g{background:var(--s5-bg);color:var(--s5-ink)}
+.sc.b{background:var(--s4-bg);color:var(--s4-ink)}
+.sc.a{background:var(--s3-bg);color:var(--s3-ink)}
+.verdict{font-size:11px;font-weight:600;padding:2px 8px}
+.verdict.ok{background:var(--s5-bg);color:var(--s5-ink)}
+.verdict.cond{background:var(--s3-bg);color:var(--s3-ink)}
+
+.legend-wrap{padding:18px 0 16px;border-bottom:1px solid var(--border)}
+.dim-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:860px}
+@media(max-width:640px){.dim-grid{grid-template-columns:repeat(3,1fr)}}
+.dim-card{background:var(--surface);border:1px solid var(--border);padding:9px 11px}
+.dim-card .dk{font-family:'Courier New',Courier,monospace;font-size:11px;font-weight:800;color:var(--accent);margin-bottom:2px}
+.dim-card .dn{font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:1px}
+.dim-card .dd{font-size:10.5px;color:var(--muted);line-height:1.4}
+
+.tabs-wrap{padding:20px 0 0}
+.tab-bar{display:flex;border-bottom:2px solid var(--border)}
+.tb{font-size:13px;font-weight:600;padding:9px 22px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:var(--muted);transition:color .12s,border-color .12s}
+.tb:hover{color:var(--ink)}
+.tb.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tb .ts{font-family:'Courier New',Courier,monospace;font-size:10px;margin-left:6px;padding:1px 5px;vertical-align:middle}
+.tb.on .ts{background:var(--s5-bg);color:var(--s5-ink)}
+.tb.on[data-t="tf2"] .ts,.tb.on[data-t="tf3"] .ts{background:var(--s4-bg);color:var(--s4-ink)}
+
+.panel{display:none;padding:24px 0 48px}
+.panel.on{display:block}
+
+.cblock{margin-bottom:28px}
+.chead{display:flex;align-items:center;gap:12px;padding-bottom:9px;border-bottom:2px solid var(--border);margin-bottom:2px}
+.cname{font-size:14px;font-weight:800;color:var(--ink)}
+.cpill{font-family:'Courier New',Courier,monospace;font-size:13px;font-weight:700;padding:3px 10px}
+.cpill.g{background:var(--s5-bg);color:var(--s5-ink)}
+.cpill.b{background:var(--s4-bg);color:var(--s4-ink)}
+.cpill.a{background:var(--s3-bg);color:var(--s3-ink)}
+.cnote{margin-left:auto;font-size:11.5px;color:var(--muted);font-style:italic}
+.blocker-badge{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;background:var(--s2-bg);color:var(--s2-ink)}
+
+.dtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.dtbl thead th{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:5px 10px;border-bottom:1px solid var(--border);text-align:left}
+.dtbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.dtbl tbody tr:last-child td{border-bottom:none}
+.td-d{font-family:'Courier New',Courier,monospace;font-weight:800;font-size:12px;color:var(--accent);width:22px}
+.td-s{width:40px;text-align:center}
+.chip{display:inline-block;font-family:'Courier New',Courier,monospace;font-weight:700;font-size:12px;padding:2px 6px;min-width:28px;text-align:center}
+.chip.s5{background:var(--s5-bg);color:var(--s5-ink)}
+.chip.s4{background:var(--s4-bg);color:var(--s4-ink)}
+.chip.s3{background:var(--s3-bg);color:var(--s3-ink)}
+.chip.s2{background:var(--s2-bg);color:var(--s2-ink)}
+.td-state{color:var(--ink2);line-height:1.55;width:42%}
+.td-state .has{display:block}
+.td-state .gap{display:block;margin-top:4px;color:var(--s3-ink);font-size:12px;font-weight:600}
+.td-state .gap::before{content:'↳ ';color:var(--muted);font-weight:400}
+.td-fix{border-left:3px solid var(--fix-border);background:var(--fix-bg);color:#1c1000;line-height:1.55}
+.td-fix code{font-size:11px;background:#f0e8d0;padding:1px 4px;font-family:'Courier New',Courier,monospace}
+.td-fix.none{border-left:3px solid transparent;background:transparent;color:var(--muted);font-style:italic}
+.td-fix b{font-weight:700}
+.td-fix .blocker-inline{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;background:var(--s2-bg);color:var(--s2-ink);margin-left:4px}
+</style>
+</head>
+<body>
+
+<div class="hdr"><div class="wrap">
+  <span class="eyebrow">AIOps Capstone W11 · Đánh giá Hợp đồng · 2026-06-26</span>
+  <h1>Tài liệu Chấm điểm Hợp đồng</h1>
+  <p>Tiêu chí A–F, hiện trạng từng hợp đồng, và cách sửa nhanh cho cả 4 task force.</p>
+</div></div>
+
+<!-- Bảng điểm tổng -->
+<div class="matrix-wrap"><div class="wrap">
+  <div class="section-label">Điểm tổng quan</div>
+  <div style="overflow-x:auto">
+  <table class="matrix">
+    <thead><tr>
+      <th>Nhóm</th>
+      <th>Telemetry</th>
+      <th>AI API</th>
+      <th>Deployment</th>
+      <th>Tổng</th>
+      <th>Quyết định</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="team-name">TF1 Triage Hub</span><span class="team-sub">Alert hạ tầng → RCA tư vấn</span></td>
+        <td><span class="sc b">4.5</span></td>
+        <td><span class="sc g">4.85</span></td>
+        <td><span class="sc g">4.85</span></td>
+        <td><span class="sc g">4.7</span></td>
+        <td><span class="verdict ok">✅ Phê duyệt</span></td>
+      </tr>
+      <tr>
+        <td><span class="team-name">TF2 FinOps Watch</span><span class="team-sub">Phát hiện bất thường chi phí + kiểm soát</span></td>
+        <td><span class="sc g">4.7</span></td>
+        <td><span class="sc g">4.6</span></td>
+        <td><span class="sc b">4.0</span></td>
+        <td><span class="sc b">4.4</span></td>
+        <td><span class="verdict ok">✅ Phê duyệt</span></td>
+      </tr>
+      <tr>
+        <td><span class="team-name">TF3 Self-Heal Engine</span><span class="team-sub">Tự động khắc phục sự cố K8s</span></td>
+        <td><span class="sc g">4.6</span></td>
+        <td><span class="sc b">4.4</span></td>
+        <td><span class="sc b">4.0</span></td>
+        <td><span class="sc b">4.3</span></td>
+        <td><span class="verdict cond">⚠️ Có điều kiện</span></td>
+      </tr>
+      <tr>
+        <td><span class="team-name">TF4 Foresight Lens</span><span class="team-sub">Dự báo drift năng lực</span></td>
+        <td><span class="sc g">4.6</span></td>
+        <td><span class="sc b">4.5</span></td>
+        <td><span class="sc g">4.6</span></td>
+        <td><span class="sc g">4.6</span></td>
+        <td><span class="verdict ok">✅ Phê duyệt</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</div></div>
+
+<!-- Chú thích tiêu chí -->
+<div class="legend-wrap"><div class="wrap">
+  <div class="section-label" style="margin-bottom:12px">Tiêu chí chấm điểm</div>
+  <div class="dim-grid">
+    <div class="dim-card"><div class="dk">A</div><div class="dn">Đầy đủ</div><div class="dd">Có đủ các mục theo template yêu cầu</div></div>
+    <div class="dim-card"><div class="dk">B</div><div class="dn">Cụ thể</div><div class="dd">Có giá trị thật, không dùng placeholder</div></div>
+    <div class="dim-card"><div class="dk">C</div><div class="dn">Thực tế</div><div class="dd">Con số hợp lý, nhất quán nội bộ</div></div>
+    <div class="dim-card"><div class="dk">D</div><div class="dn">Khả thi</div><div class="dd">CDO có thể build trực tiếp từ tài liệu này</div></div>
+    <div class="dim-card"><div class="dk">E</div><div class="dn">Phù hợp TF</div><div class="dd">Đáp ứng đúng yêu cầu đặc thù của assignment</div></div>
+    <div class="dim-card"><div class="dk">F</div><div class="dn">Nhất quán</div><div class="dd">Field, version, SLA khớp nhau qua cả 3 tài liệu</div></div>
+  </div>
+</div></div>
+
+<!-- Tabs -->
+<div class="tabs-wrap"><div class="wrap">
+  <div class="tab-bar">
+    <button class="tb on" data-t="tf1" onclick="sw('tf1')">TF1 Triage Hub<span class="ts">4.7</span></button>
+    <button class="tb" data-t="tf2" onclick="sw('tf2')">TF2 FinOps Watch<span class="ts">4.4</span></button>
+    <button class="tb" data-t="tf3" onclick="sw('tf3')">TF3 Self-Heal<span class="ts">4.3</span></button>
+    <button class="tb" data-t="tf4" onclick="sw('tf4')">TF4 Foresight<span class="ts">4.6</span></button>
+  </div>
+</div></div>
+
+<!-- ═══════════════════ TF1 ═══════════════════ -->
+<div class="panel on" id="tf1"><div class="wrap">
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Telemetry Contract</span>
+      <span class="cpill b">4.5</span>
+      <span class="cnote">Context-bundle push · event-driven</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Có đủ envelope + 5 loại bằng chứng (metrics/logs/traces/deploys/ownership) + Datapack Mapping Table + trạng thái Context Sufficiency.</span><span class="gap">Không có ước tính chi phí; thiếu volume, frequency, retention SLA cho từng signal.</span></td>
+          <td class="td-fix">Thêm 1 block cho mỗi signal:<br><code>frequency: 60s · volume: ~200 events/hr · retention: 14 ngày · cost: ~$1.50/tháng</code></td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Giá trị thật, không template: <code>http_latency_p95_ms</code>, <code>"database timeout after 3000ms"</code>, span <code>status_code:"500"</code>.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Load 30 req/min và window 15+5 phút được ghi rõ và nhất quán.</span><span class="gap">Chi phí bỏ trống hoàn toàn. Retention = "at least enough for demo" — không có con số cụ thể.</span></td>
+          <td class="td-fix">Thay "at least enough for demo" bằng số ngày cụ thể (vd: <b>metrics 15d · logs 14d · traces 7d</b>). Thêm 1 dòng chi phí thô cho mỗi signal.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Mapping Table với 4 loại (direct/derived/defaulted/missing). Bảng Context Sufficiency định nghĩa hành vi INVESTIGATE vs INSUFFICIENT_CONTEXT cho từng trạng thái dữ liệu.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">K8s labels <code>cluster/namespace/suspected_dependency</code>; <code>recent_deploys[].rollback_ref</code>; <code>alert.source</code> enum — rất đặc thù cho TF1, không generic.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Tất cả 6 bundle field khớp 1:1 với AI API request body. <code>tenant_id</code>+<code>correlation_id</code> nhất quán. Giá trị SLA đồng nhau qua cả 3 tài liệu.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">AI API Contract</span>
+      <span class="cpill g">4.85</span>
+      <span class="cnote">POST /v1/triage · chỉ tư vấn, không tự hành động</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Headers + schema request/response + 5 mã lỗi + SLA + Safety Rules + Deterministic Skeleton + Reserved W12 interfaces — đầy đủ.</span><span class="gap">Mã 429 có nhưng không có ngưỡng rate-limit cụ thể theo tenant.</span></td>
+          <td class="td-fix">Thêm 1 con số cạnh 429: <code>60 req/min/tenant</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>confidence: 0.82</code>, enum 5 action, ví dụ JSON cả 2 chiều, bảng Input→Status→Classification. Không còn giá trị template nào.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">P99 &lt;2s, 99.5% availability, payload 512 KB — nhất quán qua các tài liệu.</span><span class="gap">Availability là "design target" nhưng không nêu cách đo. Rate-limit chưa có (xem A).</span></td>
+          <td class="td-fix">Ghi rõ cách đo 99.5% (vd: "CloudWatch 5-min error rate metric"). Thêm con số rate-limit.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Bảng lỗi map HTTP code → hành động CDO. 503 → fallback rule-based được định nghĩa. Deterministic Skeleton cho phép CDO tích hợp trước khi AI logic hoàn thiện.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>POST /v1/triage</code>; status <code>INVESTIGATE</code> cho logic từ chối; action chỉ là tư vấn; <code>evidence[]</code> chain cho explainability. Khớp đúng TF1 brief.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Request field = telemetry bundle field. SLA p99&lt;2s = load 30/min = abort p99&gt;2s. <code>audit_id</code> xuất hiện trong abort criteria.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Deployment Contract</span>
+      <span class="cpill g">4.85</span>
+      <span class="cnote">ECS Fargate · skeleton → per-CDO W12</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Compute + scaling + secrets + network + bảng endpoint per-CDO + canary + abort + rollback + health + observability. Đủ tất cả mục template.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">CPU 512/1024, mem 1024/2048; scale min2/max6; abort: <code>5xx&gt;1%</code>, <code>p99&gt;2s 5min</code>, <code>Missing audit_id</code>. Tất cả đều có con số.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">min2/max6, load 30 req/min nhất quán qua các tài liệu.</span><span class="gap">RTO &lt;5 phút khá lỏng. Không có target load W12 cụ thể.</span></td>
+          <td class="td-fix">Siết RTO về <b>&lt;60s</b> (chỉ cần revert image tag). Thêm: <code>Target load W12: 300 req/min sau autoscale</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">SG <code>tf1-ai-engine-sg</code> với ingress chỉ từ CDO; egress giới hạn CloudWatch/Secrets Manager/Bedrock VPCe; bảng endpoint per-CDO.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">"AI không bao giờ thực thi remediation"; tính toán RCA trước rồi tư vấn; event-driven sau alert. Skeleton → per-CDO W12 được giải thích rõ.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Fargate nhất quán với API; abort <code>Missing audit_id</code> khớp với API response schema; <code>EVIDENCE_API_*</code> env vars khớp observability doc.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div></div>
+
+<!-- ═══════════════════ TF2 ═══════════════════ -->
+<div class="panel" id="tf2"><div class="wrap">
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Telemetry Contract</span>
+      <span class="cpill g">4.7</span>
+      <span class="cnote">Cadence PULL · CUR + CE + CloudWatch</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">3 signal + 13 sub-contract: Schema Governance, Hybrid Ingestion, Business Context, Audit Chain, Telemetry Quality, PromQL, v.v.</span><span class="gap">Ước tính chi phí cho CUR và CloudWatch bị bỏ trống.</span></td>
+          <td class="td-fix">Thêm dòng chi phí: CUR → <code>~$X per TB Athena scan</code>; CloudWatch → <code>$0.01/1000 GetMetricData calls</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>BoxUsage:p3.2xlarge</code>, rate <code>$3.06/hr</code>, có Athena SQL query thật. Idempotency key regex: <code>tenant_id:YYYY-MM-DD</code>.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">CE: <code>$0.60/tháng</code>; frequency 1×/ngày lúc 02:00; retention 7d hot / 30–90d cold; volume dựa trên dataset thực (24,533 line items).</span><span class="gap">Chỉ CE có ước tính chi phí — CUR và CloudWatch bỏ trống.</span></td>
+          <td class="td-fix">Copy pattern chi phí từ CE sang CUR và CloudWatch. Mỗi signal 1 dòng là đủ.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Athena query đính kèm; Hybrid RAW_JSON (≤10 MB) / S3_POINTER cho CUR lớn; fallback CUR-only ở <code>confidence × 0.5</code>; Outage Recovery Matrix.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Cadence PULL đúng; 5 loại anomaly; Business Context loại bỏ 3 false-positive kinh điển (flash-sale / migration / load-test).</span><span class="gap">Dùng label <b>"Emit point"</b> — §4 TF2 yêu cầu <code>data_source</code> + <code>ingestion_method</code> cho hệ thống PULL.</span></td>
+          <td class="td-fix">Đổi tên header field: <b>"Emit point"</b> → <code>data_source: "AWS Cost Explorer API"</code> + <code>ingestion_method: "PULL"</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Tên field và format idempotency khớp với AI API.</span><span class="gap">Telemetry tự mô tả version <code>3.0.0</code>; AI API §10 tham chiếu <code>telemetry-contract.md v3.1.0</code>. Một trong hai sai.</span></td>
+          <td class="td-fix">Chọn 1 version. Nâng telemetry lên <code>v3.1.0</code> và cập nhật CHANGELOG. Find-and-replace toàn bộ version string qua 3 file.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">AI API Contract</span>
+      <span class="cpill g">4.6</span>
+      <span class="cnote">detect / decide / verify / rollback · engine có quyền hành động</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">7 endpoint + 11 mã lỗi + SigV4 + X-Idempotency-Key + X-Dry-Run-Mode + SLO + rate limit + Error Budget Lock theo môi trường.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>aws_cli_command</code> + <code>boto3_equivalent</code> cho từng action; bảng 3 case idempotency; Error Budget Lock: prod 1% / staging 10% / dev tắt.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has"><code>/detect</code> P99 &lt;300ms (không LLM) — hợp lý. Cost cap $50/tháng + circuit breaker có căn cứ.</span><span class="gap"><code>/decide</code> P99 &lt;500ms "bao gồm cả Bedrock LLM" — mâu thuẫn với SLO &lt;30s và PromQL Bedrock P99 &lt;10s. Ba con số khác nhau cho cùng 1 lời gọi.</span></td>
+          <td class="td-fix">Tách thành 2 path rõ ràng:<br><b>Compute path:</b> <code>P99 &lt;500ms</code><br><b>LLM path:</b> <code>P99 &lt;30s, hard timeout 45s</code><br>Xóa câu "500ms bao gồm LLM".</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Bảng lỗi: HTTP → internal code → scenario → hành động CDO. 503 → static fallback + boto3 rollback cache độc lập. Sequence diagram đính kèm.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Enum 5 loại anomaly; enum containment với giới hạn môi trường cứng; idempotency <code>tenant_id:YYYY-MM-DD</code> ngăn double-run trong cùng chu kỳ cost. Dashboard đôi.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Luồng detect → decide → verify nhất quán. Fallback 503 nhất quán.</span><span class="gap">Header version <code>v1.3.0</code> vs footer <code>v1.2.0</code>. <code>/decide</code> tham chiếu <code>deployment §4.3</code> — mục này không tồn tại.</span></td>
+          <td class="td-fix">Thống nhất version thành <code>v1.3.0</code> trên cả 3 file. Thay thế tham chiếu §4.3 bằng chính sách IAM viết inline (xem fix Deployment).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Deployment Contract</span>
+      <span class="cpill b">4.0</span>
+      <span class="cnote">ECS Fargate · batch theo lịch 1 lần/ngày</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Compute + scaling + secrets + network + topology + per-CDO + canary + rollback + health + observability + cost cap — đầy đủ.</span><span class="gap">Không có mục kiến trúc scheduled-batch. DLQ có trong telemetry §18 nhưng không có ở đây.</span></td>
+          <td class="td-fix">Thêm mục <b>"Kiến trúc Batch"</b>: EventBridge cron → Lambda → <code>POST /v1/detect</code> → SQS DLQ khi thất bại, <code>max_retry=3</code>, alarm dead-letter.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">CPU 1024/mem 2048; pattern ECR image URI; SG <code>tf-2-ai-engine-sg</code>; abort: <code>5xx&gt;1%</code>, <code>P99&gt;800ms</code>, <code>Bedrock throttle≥20%</code>. Tất cả có con số.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">RTO &lt;60s, cost cap $50/tháng có căn cứ.</span><span class="gap">Autoscale target 100 req/task + rate-limit 100 req/phút cho một job chạy <b>1 lần/ngày</b> — over-provision hàng trăm lần so với tải thực tế.</span></td>
+          <td class="td-fix">Bỏ RPS autoscale, thêm: <b>"AI Engine là HTTP API đồng bộ; CDO gọi 1×/ngày qua EventBridge; min=1 task là đủ."</b> Hoặc điều chỉnh về 5 req/phút phản ánh tải thực.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Sizing / network / SG / secrets / endpoint per-CDO rõ ràng và có thể build ngay.</span><span class="gap">"Giới hạn cứng tại IAM Permission Boundary — xem <code>deployment §4.3</code>" — <b>§4.3 không tồn tại</b>. Backstop an toàn quan trọng nhất bị tham chiếu nhưng chưa viết.</span></td>
+          <td class="td-fix">Viết policy ngay tại chỗ:<br><code>Deny ec2:StopInstances, ecs:StopTask, sagemaker:Stop*</code><br>Điều kiện: <code>resource tag environment IN {prod, prod-core, prod-payments}</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Multi-CDO topology; Bedrock cost cap; containment rules theo môi trường.</span><span class="gap">Pattern kiến trúc là HTTP service + ALB + RPS autoscale. Assignment TF2 là scheduled-batch — ALB không cần thiết cho pattern này.</span></td>
+          <td class="td-fix">Viết rõ: <b>"AI Engine là HTTP API nhẹ. CDO-side EventBridge gọi 1×/ngày. Không có traffic inbound liên tục. ALB internal, min-tasks=1, không có RPS autoscale rule."</b></td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Fargate nhất quán; <code>/health</code> nhất quán.</span><span class="gap">Tham chiếu lơ lửng §4.3 và Appendix B. Version drift: telemetry 3.0.0 vs 3.1.0 được tham chiếu ở đây.</span></td>
+          <td class="td-fix">Xóa toàn bộ tham chiếu §4.3 và Appendix B. Thống nhất về <code>v3.1.0</code> trên cả 3 file. Grep "§4.3" và "Appendix B" qua 3 file.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div></div>
+
+<!-- ═══════════════════ TF3 ═══════════════════ -->
+<div class="panel" id="tf3"><div class="wrap">
+
+  <div style="background:var(--s2-bg);border-left:4px solid var(--s2-ink);padding:10px 16px;margin-bottom:20px;font-size:13px;color:var(--s2-ink)">
+    <strong>⚠️ Phê duyệt có điều kiện:</strong> Deployment contract phải bổ sung RBAC K8s cho executor trước khi đóng băng. Engine tự hành động trên prod mà không có backstop này.
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Telemetry Contract</span>
+      <span class="cpill g">4.6</span>
+      <span class="cnote">12 K8s signal · PII ownership rõ ràng nhất trong 4 nhóm</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">12 signal, mỗi signal có đầy đủ SLA row: Frequency · Emit Point · Retention · Emit SLA · Volume SLA · Used For. DLQ + malformed alert. SQS backpressure.</span><span class="gap">Không có ước tính chi phí cho bất kỳ signal nào.</span></td>
+          <td class="td-fix">Thêm ước tính chi phí cho signal volume cao: <code>application_log_event ~$0.50/GB ingested</code>, <code>container_metric ~$0.01/1k metrics/tháng</code>. Thêm <code>version: v1.0</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Giá trị payload thật: OOM <code>Exit Code 137</code>, stack trace <code>NullPointerException...OrderService.java:102</code>. Enum 12 giá trị <code>signal_name</code>. SLA con số khác nhau theo loại signal.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Frequency (1min/15s/30s/1h), retention (hot 7–14d / cold 90d), Volume SLA (5–200 ev/s/tenant) được phân biệt rõ theo từng loại signal.</span><span class="gap">Chi phí bị bỏ trống hoàn toàn.</span></td>
+          <td class="td-fix">Fix giống mục A — ước tính chi phí theo signal giải quyết cả A lẫn C.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Emit point theo signal (Prometheus / OTel / Fluentd / Kubelet / cAdvisor). Nơi scrub PII được đặt tên cụ thể. DLQ routing định nghĩa. Diagram topology SQS forwarder.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Mỗi trong 12 signal map trực tiếp sang 1 remediation: <code>pod_oom_event</code>→PATCH_MEMORY, <code>container_restart_count</code>→ROLLOUT_UNDO, <code>secret_expiry_warning</code>→ROTATE_SECRET.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Enum <code>signal_name</code> khớp <code>telemetry_window</code> của AI API. <code>tenant_id</code>/timestamps nhất quán qua cả 3 tài liệu.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">AI API Contract</span>
+      <span class="cpill b">4.4</span>
+      <span class="cnote">detect / decide / verify · urgent (K8s trực tiếp) vs deferred (GitOps)</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">detect / decide / verify + headers + schema 2 chiều + SLA per-endpoint + throughput per-endpoint + mã lỗi + điều kiện fallback + versioning.</span><span class="gap">Thiếu 403 (cross-tenant); 500 và 503 bị gộp chung một mã.</span></td>
+          <td class="td-fix">Thêm <code>403 Forbidden</code>: "X-Tenant-Id không khớp signal_window[].tenant_id". Tách 503 (upstream không khả dụng) ra khỏi 500 (lỗi nội bộ).</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Enum <code>action_plan[].action</code> 5 giá trị; <code>blast_radius_config</code>; <code>verify_policy.success_conditions</code> có thể đo được.</span><span class="gap"><code>DecideRequest.anomaly_context</code> được type là free-form <code>{type: object}</code>. DetectResponse đã có schema đầy đủ — chỉ cần copy sang.</span></td>
+          <td class="td-fix">Copy schema <code>anomaly_context</code> từ <code>DetectResponse</code> vào <code>DecideRequest</code> dưới dạng <code>$ref</code> hoặc inline. Làm 5 phút.</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>/detect &lt;300ms</code> (không LLM); <code>/decide &lt;3000ms</code> (LLM, fallback &lt;500ms); <code>/verify &lt;500ms</code>. SLA đúng theo từng endpoint, không tự mâu thuẫn — khác TF2.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Hướng dẫn executor urgent (K8s API trực tiếp, RTO &lt;60s) vs deferred (GitOps PR, 2–5 phút) rất rõ ràng.</span><span class="gap"><code>next_action=ROLLBACK</code> trong <code>/verify</code> response không có rollback plan và không capture trạng thái trước đó. CDO không biết revert về đâu.</span></td>
+          <td class="td-fix">Thêm field <code>rollback_snapshot</code> vào response <code>/decide</code>: <code>{"memory_limit_mib": 512, "replica_count": 2, "image_tag": "v1.4.2"}</code>. Tham chiếu field này trong path ROLLBACK của <code>/verify</code>.</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Vòng lặp detect → decide → verify; <code>idempotency_key</code> + <code>dry_run_mode</code> + <code>correlation_id</code> đều required; <code>blast_radius_config</code>; 2 path urgent/deferred.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Luồng nhất quán. Fallback 503 nhất quán.</span><span class="gap">Deployment abort <code>p99 &gt; 800ms</code> mâu thuẫn với SLA <code>/decide</code> &lt;3000ms. Mọi lời gọi LLM (~2500ms) sẽ vượt 800ms và kích hoạt rollback giả.</span></td>
+          <td class="td-fix">Đặt abort <b>riêng theo endpoint</b> trong deployment doc:<br><code>detect abort: p99 &gt; 800ms</code><br><code>decide abort: p99 &gt; 3500ms</code><br><code>verify abort: p99 &gt; 1000ms</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Deployment Contract</span>
+      <span class="cpill b">4.0</span>
+      <span class="cnote">EKS in-cluster · tách brain/hands</span>
+      <span class="blocker-badge">⛔ Phải sửa trước khi ký</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">EKS + HPA + IRSA policy JSON + NetworkPolicy + DynamoDB idempotency lock + S3 Object Lock 90d + rollback + probes + observability + Offline Sim Mode.</span><span class="gap">⛔ Không có K8s ServiceAccount + RBAC least-privilege cho CDO Controller (executor). Đây là yêu cầu cứng §4 của TF3.</span></td>
+          <td class="td-fix"><b>Blocker bắt buộc sửa trước freeze:</b><span class="blocker-inline">⛔</span><br>Thêm <code>ServiceAccount: tf3-cdo-controller</code> + <code>Role</code>: verbs <code>[get, patch]</code> trên <code>deployments</code>; <code>[patch]</code> trên <code>pods</code>; <code>[create,delete]</code> trên <code>secrets</code> (chỉ rotate). Tường minh <b>deny</b>: delete deployment/namespace, mọi verb trên kube-system, scale về 0.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">IRSA policy JSON (DynamoDB/S3/Bedrock + ARN); Forbidden list (<code>iam:*</code>/<code>ec2:*</code>/<code>eks:*</code>/kubeconfig); NetworkPolicy egress chỉ đến 443 VPCe.</span><span class="gap">Idempotency lock mô tả check-then-write chứ không phải atomic conditional write — có thể xảy ra race TOCTOU khi có concurrent requests.</span></td>
+          <td class="td-fix">Ghi rõ lời gọi DynamoDB: <code>PutItem</code> với <code>ConditionExpression: "attribute_not_exists(lock_key)"</code>. Một câu là giải quyết xong.</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Sizing tài nguyên hợp lý; RTO &lt;60s cho urgent path; cost cap $50/ngày.</span><span class="gap">Abort p99 &gt;800ms mâu thuẫn với <code>/decide</code> &lt;3000ms (cùng vấn đề như AI API F).</span></td>
+          <td class="td-fix">Áp dụng abort per-endpoint (cùng fix với AI API F ở trên).</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Tách brain/hands rõ ràng; IRSA/NetworkPolicy/probes/Offline Sim đầy đủ và có thể build.</span><span class="gap">Không có RBAC manifest → CDO phải tự đoán permission cần thiết cho controller khi thực thi hành động.</span></td>
+          <td class="td-fix">Cung cấp spec Role/RoleBinding từ fix mục A ở trên. CDO copy thẳng vào cluster bootstrap.</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">EKS in-cluster; AI Engine bị cấm tường minh khỏi K8s API/kubeconfig; S3 Object Lock Compliance 90d; Offline Simulation Mode trên dataset tĩnh. Đủ các yêu cầu đặc thù TF3.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s3">3</span></td>
+          <td class="td-state"><span class="has">Port/path/health/ready nhất quán.</span><span class="gap">Abort drift (800ms deploy vs 3000ms API). Scope idempotency lock: deployment chỉ nói <code>/decide</code>; API contract nói tất cả endpoint.</span></td>
+          <td class="td-fix">Fix abort per-endpoint (xem AI API F). Căn chỉnh scope idempotency: chỉ áp lock cho <code>/decide</code> (endpoint hành động) — đây là cách hiểu đúng, chỉ cần khớp giữa 2 tài liệu.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div></div>
+
+<!-- ═══════════════════ TF4 ═══════════════════ -->
+<div class="panel" id="tf4"><div class="wrap">
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Telemetry Contract</span>
+      <span class="cpill g">4.6</span>
+      <span class="cnote">Nhóm duy nhất có ước tính chi phí trên mọi signal · v1.0 nhất quán</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">7 signal, mỗi signal có ước tính chi phí (điểm khác biệt so với 3 nhóm kia). Version v1.0 nhất quán. Ghi chú baseline coverage.</span><span class="gap">Signal 3 (<code>active_connections</code>) thiếu dòng retention. PII denylist chỉ có email/phone/name — quá generic.</span></td>
+          <td class="td-fix">Thêm dòng retention cho Signal 3. Mở rộng PII denylist với định danh tài chính: <code>transaction_id, account_id, card_pan, user_id</code>. Ghi rõ CDO ingestion là điểm thực thi.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Payload JSON thật theo domain: <code>payment-gw</code> / <code>fraud-detector</code> / <code>ledger</code>. Cardinality model được giải thích: 3M time-series, đỉnh 50k/s, sub-second tier-1.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Frequency 1 phút, retention 90d, emit SLA &lt;60s, chi phí ~$3.5/tháng (Timestream nén). Các con số có căn cứ.</span><span class="gap">Chi phí $3.5/tháng đặt ngay cạnh "đỉnh 50k/s" — gây hiểu nhầm như thể $3.5 đủ cho 50k/s (thực ra đó là chi phí demo scope).</span></td>
+          <td class="td-fix">Thêm chú thích: <code>"$3.5/tháng = demo scope (vài chục/giây). Ở ceiling thiết kế 50k/s, ước tính: $X/tháng (Timestream ~$0.036/GB ingested)."</code></td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Emit point theo signal (CloudWatch / ALB / RDS / SQS / ElastiCache). Quy tắc Data Alignment + Imputation (forward-fill / zero-fill / reject-if-gap). Ghi chú <code>api_latency</code> là leading indicator 15–30 phút trước khi breach SLO.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">50k/s peak ✓; TSDB ✓; retention ≥90d ✓; <code>service_id</code>+<code>metric_type</code> required ✓. <code>api_latency</code> là leading indicator — rất domain-aware.</span><span class="gap">PII denylist bỏ sót định danh tài chính trong domain payment/fraud/ledger. <code>transaction_id</code>, <code>account_id</code>, <code>card_pan</code>, <code>user_id</code> đều vắng mặt.</span></td>
+          <td class="td-fix">Mở rộng mục denylist với các item đặc thù domain. Dù metric value là số (rủi ro thấp), đây là yêu cầu bắt buộc cho PCI/SOC2. Chỉ cần 1 bullet list.</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>metric_type</code>/<code>service_id</code>/<code>tenant_id</code> khớp chính xác với <code>signal_window</code> của AI API. Version v1.0 nhất quán qua cả 3 file. Không phát hiện drift.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">AI API Contract</span>
+      <span class="cpill b">4.5</span>
+      <span class="cnote">POST /v1/predict · thống kê thuần (không LLM) · chỉ khuyến nghị</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has"><code>/v1/predict</code> + headers + request (window ≥120 phút) + response + Audit Log Schema (6 field + SHA-256 input hash) + SLA + mã lỗi + versioning.</span><span class="gap">Thiếu 403 (truy cập cross-tenant).</span></td>
+          <td class="td-fix">Thêm <code>403 Forbidden</code>: "Tenant ID trong header không khớp signal_window tenant." Một dòng trong bảng lỗi.</td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Enum <code>action_verb</code>: <code>[SCALE_UP, INVESTIGATE]</code>; gating <code>confidence</code>; <code>evidence_link</code>; Audit Log 6 field; ví dụ 2 chiều.</span><span class="gap">Không có JSON Schema chính thức (<code>$schema</code>). <code>recommendation.from_to</code> là free-text: <code>"3 tasks -&gt; 5 tasks"</code> — CDO không thể parse con số cụ thể để tự động hóa.</span></td>
+          <td class="td-fix">Cấu trúc hóa <code>from_to</code>: <code>{"from_count": 3, "to_count": 5, "resource": "ECS tasks"}</code>. Thêm <code>"$schema": "http://json-schema.org/draft-07/schema#"</code> vào schema response.</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">P99 &lt;500ms — đạt được với EWMA/STL thống kê (không LLM). 100 RPS, 99.5% availability, rate-limit 600/phút/tenant + 6000 global. Không tự mâu thuẫn.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Yêu cầu window ≥120 phút rõ ràng. Bảng fallback 503. Ghi chú W11 mock = W12 real cùng schema (CDO không cần đổi code).</span><span class="gap"><code>from_to</code> free-text buộc CDO phải parse ngôn ngữ tự nhiên để biết scale bao nhiêu task. Ngăn tự động hóa.</span></td>
+          <td class="td-fix">Fix giống B — <code>from_count</code>/<code>to_count</code>/<code>resource</code> có cấu trúc giúp CDO tự động hóa dễ dàng.</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Endpoint duy nhất <code>/v1/predict</code>: time-series window → capacity drift + khuyến nghị. <code>INVESTIGATE</code> cho path từ chối khi confidence thấp. Không LLM — đúng với approach thống kê TF4.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Field <code>signal_window</code> khớp telemetry; P99 &lt;500ms &lt; abort 800ms (không có rollback giả như TF3); <code>audit_id</code> trong response khớp audit trail deployment. Version v1.0 nhất quán.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cblock">
+    <div class="chead">
+      <span class="cname">Deployment Contract</span>
+      <span class="cpill g">4.6</span>
+      <span class="cnote">ECS Fargate · Serving (thật) vs Training (chỉ thiết kế)</span>
+    </div>
+    <table class="dtbl">
+      <thead><tr><th>TC</th><th>Điểm</th><th>Hiện trạng</th><th>Cách sửa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="td-d">A</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Compute + FinOps CB + scaling + secrets + S3 KMS baseline + network + topology + mục Training Topology (chỉ thiết kế) + per-CDO + canary + rollback + health + observability.</span><span class="gap">Training topology chỉ có compute (SageMaker/Batch). Thiếu: model registry, tiêu chí promotion, trigger retrain — §4 yêu cầu dù chỉ là thiết kế.</span></td>
+          <td class="td-fix">Bổ sung 3 dòng vào mục training topology:<br>• <b>Trigger:</b> drift score &gt; 0.15 hoặc lịch hằng tuần<br>• <b>Registry:</b> S3 versioned prefix <code>s3://tf4-models/{version}/</code><br>• <b>Promotion:</b> MAPE &lt; 12% trên holdout → swap env var <code>serving_model_path</code></td>
+        </tr>
+        <tr>
+          <td class="td-d">B</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">CPU 512/mem 1024; min2/max4; abort: <b>"Capacity Exhaustion sai lệch &gt;15%"</b> — tiêu chí đặc thù theo domain. Budget $200/tháng.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">C</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Sizing phù hợp cho engine thống kê (không GPU). RTO &lt;60s. Budget cap $200/tháng.</span><span class="gap">Cost CB đặt <code>Desired_Count=0</code> khi đạt $200 — tắt engine dự báo đúng lúc traffic cao nhất (Black Friday), lúc cần nhất. Endpoint chết khiến CDO không trigger được fallback sạch.</span></td>
+          <td class="td-fix">Đổi: <code>Desired_Count=0</code> → <code>Desired_Count=min(1)</code>. Thêm CloudWatch alarm ở 80% budget ($160) làm cảnh báo sớm. Giữ $200 là ngưỡng alert, không phải kill switch.</td>
+        </tr>
+        <tr>
+          <td class="td-d">D</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Compute / scale / network / S3 baseline / health checks / rollback / endpoint per-CDO đầy đủ và có thể build. Training chỉ là thiết kế — CDO không được yêu cầu implement.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">E</td><td class="td-s"><span class="chip s5">5</span></td>
+          <td class="td-state"><span class="has">Tách Serving vs Training ✓; xác định đúng không cần Bedrock secret (engine thống kê); 3 CDO service (Payment/Fraud/Ledger); tiêu chí abort đặc thù domain.</span></td>
+          <td class="td-fix none">—</td>
+        </tr>
+        <tr>
+          <td class="td-d">F</td><td class="td-s"><span class="chip s4">4</span></td>
+          <td class="td-state"><span class="has">Fargate / không-LLM / abort-800ms / vòng đời audit nhất quán. S3 baseline khớp thiết kế stateless của API.</span><span class="gap"><code>Desired_Count=0</code> cost CB vs SLA availability 99.5% — mâu thuẫn nhẹ. Khi budget đạt $200, availability về 0.</span></td>
+          <td class="td-fix">Fix C (scale-to-min=1) giải quyết luôn điểm này — SLA availability được giữ trong khi alarm budget vẫn kích hoạt.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div></div>
+
+<script>
+function sw(t) {
+  document.querySelectorAll('.tb').forEach(function(b){ b.classList.remove('on'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+  document.querySelector('[data-t="'+t+'"]').classList.add('on');
+  document.getElementById(t).classList.add('on');
+}
+</script>
+</body>
+</html>

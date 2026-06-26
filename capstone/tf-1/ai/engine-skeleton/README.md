@@ -84,9 +84,29 @@ python -m app.aiops_worker --offline-scenario --scenario latency-degradation --s
 
 If `SLACK_WEBHOOK_URL` is not set, the worker prints `slack_dry_run` and does not send anything.
 
+## Investigation Modes
+
+`/v1/triage` keeps the same request and response contract, but the engine now records the selected investigation path in `llm_metadata.investigation_mode` and `llm_metadata.mode_selection`.
+
+- `deterministic_only`: context enrichment, deterministic RCA/classification, Jira history read-only lookup, QA, and catalog actions. No AgentCore summary or action wording calls are made.
+- `agent_assisted`: deterministic RCA remains primary, with the existing AgentCore bounded tool proposal loop used to enrich missing evidence before deterministic reclassification.
+- `agent_platform`: AgentCore Runtime is the investigator for platform demos. The TF1 engine still owns tool allowlisting, tenant/service/environment/window validation, read-only tool execution, final policy validation, action catalog filtering, and deterministic fallback.
+
+Mode selection defaults to `auto`:
+
+```bash
+AIOPS_INVESTIGATION_MODE=auto|deterministic_only|agent_assisted|agent_platform
+AIOPS_ASSISTED_COMPLEXITY_THRESHOLD=3
+AIOPS_AGENT_COMPLEXITY_THRESHOLD=6
+AIOPS_AGENT_MAX_ITERATIONS=2
+AIOPS_AGENT_MAX_TOOL_CALLS=5
+```
+
+Auto mode scores missing context, low deterministic confidence, ambiguous RCA candidates, insufficient-context/investigate status, dependency or causal hints, high-severity sparse incidents, and missing/out-of-scope evidence bundles. If AgentCore is disabled, auto mode returns `deterministic_only` and records the mode it would have planned in `mode_selection.planned_mode`.
+
 ## Connect AgentCore LLM
 
-The triage API can optionally call Amazon Bedrock AgentCore Runtime for investigator summaries, catalog action wording, and bounded tool-call investigation. It still runs deterministic RCA first, sends only bounded evidence to the agent, executes only TF1 allowlisted read-only tools, and falls back to deterministic RCA if AgentCore is disabled or errors.
+The triage API can optionally call Amazon Bedrock AgentCore Runtime for assisted summaries/action wording and for the full `agent_platform` investigator loop. It still runs deterministic RCA first, sends only bounded evidence to the agent, executes only TF1 allowlisted read-only tools, and falls back to deterministic RCA if AgentCore is disabled, slow, malformed, or policy-invalid.
 
 Required env:
 
@@ -110,7 +130,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8081
 
 The runtime IAM principal needs `bedrock-agentcore:InvokeAgentRuntime` on the configured AgentCore runtime. The local machine has AWS CLI access to the project AWS account, so local non-Docker runs can use that profile directly. Docker runs need credentials provided separately through your normal AWS credential mechanism; the Compose file only passes region/env values.
 
-AgentCore payload contract expected by TF1:
+AgentCore summary/action payload contract expected by TF1:
 
 ```json
 {
@@ -126,7 +146,40 @@ For tool investigation, the AgentCore agent must return strict JSON:
 {"tool_calls": [{"name": "get_logs", "args": {"limit": 10}}]}
 ```
 
-TF1 validates every returned tool name and tenant/service/environment/window scope before executing the local read-only tool registry.
+For `agent_platform`, the AgentCore agent must return either tool requests or a final diagnosis:
+
+```json
+{
+  "type": "tool_requests",
+  "thought_summary": "Need logs and deploy correlation.",
+  "tool_calls": [
+    {"name": "get_logs", "args": {"limit": 10}},
+    {"name": "get_recent_deploys", "args": {}}
+  ]
+}
+```
+
+```json
+{
+  "type": "final_diagnosis",
+  "classification": "latency_degradation",
+  "status": "DIAGNOSED",
+  "confidence": 0.78,
+  "summary": "payment-api latency is likely tied to dependency timeout signals.",
+  "evidence": ["Representative log: database timeout after 3000ms"],
+  "recommended_action_ids": ["dependency_timeout_triage"],
+  "qa": {"passed": true, "gaps": []}
+}
+```
+
+TF1 validates every returned tool name and tenant/service/environment/window scope before executing the local read-only tool registry. Agent final diagnoses must use existing classifications/statuses, confidence from `0.0` to `1.0`, non-empty evidence for `DIAGNOSED`, and known action IDs. Unknown action IDs are ignored; unsafe operational commands, Jira/Slack mutation, shell, PromQL, and LogQL are rejected and the response falls back to deterministic RCA.
+
+Mode and agent metrics exposed at `/metrics`:
+
+- `aiops_investigation_mode_selected_total{mode,source}`
+- `aiops_agent_iterations_total{result}`
+- `aiops_agent_tool_requests_total{tool,status}`
+- `aiops_agent_fallback_total{reason}`
 
 Useful model discovery commands:
 

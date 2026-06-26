@@ -20,12 +20,10 @@ CDO/platform invokes this API after it detects an alert/anomaly/incident and has
 
 ## Authentication
 
-W11 contract assumption:
-
-- The CDO/platform incident integration layer calls AI over private network or protected API Gateway.
-- Each request includes `X-Tenant-Id` and `X-Correlation-Id`.
-- Production design should use IAM SigV4 or service-to-service JWT.
-- Capstone demo may use a scoped bearer token stored in platform secret management if IAM/JWT is not ready by deployment freeze.
+The authentication mechanism for the TF1 Triage Hub is finalized in [Deployment Contract](file:///home/huyvu/test/deployment-contract.md).
+- **Capstone Demo**: Scoped Bearer Token authentication via the `Authorization: Bearer <TOKEN>` header, with tokens mapped to tenants in AWS Secrets Manager.
+- **Production**: Service-to-service JWT or IAM SigV4.
+- Each request must also include `X-Tenant-Id` and `X-Correlation-Id` headers.
 
 ## Endpoint: `GET /healthz`
 
@@ -58,10 +56,15 @@ The AI API itself is not a raw telemetry API. CDO may pass evidence inline, pass
 ### Request Headers
 
 | Header | Required | Notes |
-|---|---:|---|
-| `X-Tenant-Id` | yes | Must match request body `tenant_id`. |
+|---|---|---|
+| `X-Tenant-Id` | yes | Tenant ID representing the owner of the incident scope. |
 | `X-Correlation-Id` | yes | End-to-end workflow trace id. |
-| `Authorization` | yes | Auth scheme finalized in Deployment Contract. |
+| `Authorization` | yes | Bearer Token: `Bearer <TOKEN>` (as defined in Deployment Contract). |
+
+To protect tenant isolation and clarify client errors, the service checks request validation in the following strict order:
+1. **Authentication Check (`401 Unauthorized`)**: Extract the Bearer Token from the `Authorization` header. Parse the token which must follow the format `<tenant_id>.<random_secret>`. Fetch the secret from Secrets Manager at `tf1/ai-engine/tenant-{tenant_id}/auth-token`. If the token format is invalid, the secret is not found, or the token does not match the retrieved secret, reject with `401 Unauthorized`.
+2. **Tenant Scope Check (`403 Forbidden`)**: Compare the `<tenant_id>` parsed from the token with the `X-Tenant-Id` header. If they do not match, reject with `403 Forbidden`.
+3. **Consistency Check (`400 Bad Request`)**: Compare `X-Tenant-Id` header with the request body `tenant_id`. If they do not match, or if the request body is missing required fields, reject with `400 Bad Request`.
 
 ### Request Body
 
@@ -72,6 +75,8 @@ The AI API itself is not a raw telemetry API. CDO may pass evidence inline, pass
   "incident_id": "inc-001",
   "environment": "sandbox",
   "received_at": "2026-06-22T08:05:00Z",
+  "first_acknowledged_at": "2026-06-22T08:06:00Z",
+  "resolved_at": "2026-06-22T08:15:00Z",
   "alert": {
     "alert_id": "alert-001",
     "source": "synthetic-pack",
@@ -247,7 +252,7 @@ The W11 contract returns `ticket_payload` plus optional assignee suggestion fiel
 
 | Endpoint | Purpose | Notes |
 |---|---|---|
-| `PATCH /v1/incidents/{incident_id}/lifecycle` | Update incident lifecycle metadata when Jira status changes or a human closes the ticket. | Optional W12 extension; caller must provide `audit_id` or Jira issue key. |
+| `PATCH /v1/incidents/{incident_id}/lifecycle` | Update incident lifecycle metadata when Jira status changes or a human closes the ticket. | Optional W12 extension. Body fields: `status` (enum: `OPEN`, `ACKNOWLEDGED`, `IN_REVIEW`, `RESOLVED`, `CLOSED`), `first_acknowledged_at` (RFC3339 timestamp), and `resolved_at` (RFC3339 timestamp). |
 
 Accepted lifecycle states should be limited to non-destructive workflow metadata such as `OPEN`, `ACKNOWLEDGED`, `IN_REVIEW`, `RESOLVED`, and `CLOSED`. Jira remains the source of truth for Jira issue status; AI stores only audit/report metadata.
 
@@ -261,24 +266,46 @@ W11 audit data is available through report JSON. W12 may expose audit lookup by 
 
 The audit response must not expose raw unbounded logs, secrets, tokens, or cross-tenant data.
 
+### Human Feedback And Retrain Trigger Design
+
+Human feedback is a design target, not a W11 built endpoint. CDO may collect whether an engineer confirmed or corrected the RCA in Slack/Jira and store it in the audit trail. A future W12 API may accept feedback events without changing `/v1/triage`.
+
+| Endpoint | Purpose | Notes |
+|---|---|---|
+| `POST /v1/incidents/{incident_id}/feedback` | Record human confirmation or correction for the RCA, owner suggestion, or recommended action. | Design-only for W11; must require `audit_id`, tenant scope, and authenticated caller. |
+
+Allowed feedback values should be limited to non-executable audit metadata such as `RCA_CONFIRMED`, `RCA_CORRECTED`, `OWNER_ACCEPTED`, and `OWNER_REJECTED`. Retrain trigger remains offline/design-only until enough reviewed feedback exists; it must not change production model behavior automatically during W11/W12 demos.
+
 ## Error Codes
+
+Every rejected or failed request (4xx and 5xx paths) MUST generate a unique `audit_id` and write an audit record to the log/audit trail detailing the cause of failure (e.g., validation failure details, authentication failure, rate limit breach, or stack trace for 500s).
+
+The error response body schema must be:
+```json
+{
+  "error_code": "STRING (e.g. AUTH_FAILED, TENANT_MISMATCH, VALIDATION_ERROR, RATE_LIMITED, AI_ERROR)",
+  "message": "STRING (Human readable message)",
+  "timestamp": "RFC3339 timestamp",
+  "audit_id": "STRING (audit-err-XXX)"
+}
+```
 
 | Code | Meaning | Integration action |
 |---:|---|---|
-| 400 | Invalid schema or tenant mismatch | Do not retry until request fixed. |
-| 401 | Authentication failed | Refresh credentials and retry once. |
-| 429 | Rate limited after 60 requests/minute/tenant for W11 demo capacity | Exponential backoff and queue. |
+| 400 | Invalid schema or tenant mismatch (body tenant_id != X-Tenant-Id header) | Do not retry until request fixed. |
+| 401 | Authentication failed (token missing or invalid) | Refresh credentials and retry once. |
+| 403 | Forbidden (token scope mismatch with X-Tenant-Id) | Do not retry. Contact administrator. |
+| 429 | Rate limited | Exponential backoff and queue. |
 | 500 | Unexpected AI error | Create fallback ticket with raw alert context. |
 | 503 | AI unavailable | Use rule-based fallback or queue retry. |
 
 ## SLA Targets
 
-| Metric | Target | Measurement |
-|---|---:|---|
-| P99 latency | < 2 seconds for demo | Measured over 5-minute windows at the API ingress or service metrics endpoint. |
-| Availability | >= 99.5% design target | Measured from 5-minute request/error-rate metrics: successful `/healthz` plus non-5xx `/v1/triage` responses divided by total eligible requests. |
-| Rate limit | 60 requests/minute/tenant for W11 demo capacity | Measured by tenant-scoped ingress or app counter; excess returns `429`. |
-| Max payload size | 512 KB unless changed by platform constraints | Enforced before RCA/LLM processing. |
+| Metric | Target |
+|---|---:|
+| P99 latency | < 2 seconds for demo |
+| Availability | >= 99.5% design target |
+| Max payload size | 512 KB unless changed by platform constraints |
 
 ## Safety Rules
 
@@ -291,7 +318,7 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 
 | Item | W11 decision |
 |---|---|
-| Auth for W11 demo | Private network or protected gateway plus scoped bearer token fallback. IAM SigV4 or service-to-service JWT remains the production-preferred mechanism. |
+| Auth for W11 demo | Scoped Bearer Token authentication via the `Authorization: Bearer <tenant_id>.<random_secret>` header (finalized). Token secrets are stored at `tf1/ai-engine/tenant-{tenant_id}/auth-token` in Secrets Manager. |
 | Slack/Jira ownership | AI response includes raw diagnosis fields, `ticket_payload`, and optional assignee suggestion fields. CDO owns Slack Block Kit rendering, Jira issue creation, and human-confirmed personal assignment. |
 | Payload limit | Keep request and response payloads at 512 KB for W11. Larger logs/traces are hosted as bounded evidence bundles or evidence URIs, not inlined into `/v1/triage`. |
 | Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract and approved Jira history access. |
@@ -302,6 +329,7 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
 | Slack rendering | CDO renders Slack Block Kit from raw response fields; AI does not return pre-rendered Slack text in the contract response. |
 | Jira assignment | AI may suggest `suggested_assignee_account_id` and `suggestion_reason` from configured Jira history/accountId mappings. CDO must require human confirmation before assigning Jira to a person. If no mapping exists, suggestion fields may be `null` with a queue/team reason. |
+| Human feedback | Engineer confirm/correct feedback is audit-trail metadata only for W11. Retrain trigger is a design-only future hook, not an automatic production update. |
 
 ## W11 Sign-Off
 

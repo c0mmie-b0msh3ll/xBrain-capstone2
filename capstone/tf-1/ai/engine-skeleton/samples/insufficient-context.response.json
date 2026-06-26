@@ -12,28 +12,77 @@
   },
   "recommended_actions": [
     {
+      "id": "attach_telemetry_context",
       "type": "ESCALATE_OWNER",
       "priority": 1,
-      "summary": "Ask the AIOps context layer to attach metrics, logs, recent deploys, and ownership context before diagnosis.",
-      "runbook_ref": null
+      "summary": "Ask the AIOps context layer to attach metrics, logs, recent deploys, ownership, and runbook context before diagnosis.",
+      "runbook_ref": null,
+      "risk": "low",
+      "why": "The alert does not include enough bounded telemetry to support a safe root-cause recommendation.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
     }
   ],
   "ticket_payload": {
     "project": "OPS",
     "summary": "[medium] billing-api insufficient_context",
     "description": "Alert metadata was provided, but supporting metrics, logs, deploys, and ownership context are missing. Evidence: No supporting telemetry context was included with the alert.",
-    "labels": ["ai-triage", "tenant-a", "billing-api", "insufficient_context"],
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "billing-api",
+      "insufficient_context"
+    ],
     "fields": {
       "confidence": 0.25,
       "owner_team": null,
       "correlation_id": "corr-insufficient-001",
       "audit_id": "audit-1a2499464085",
-      "status": "INSUFFICIENT_CONTEXT"
+      "status": "INSUFFICIENT_CONTEXT",
+      "suggested_assignee_account_id": null,
+      "suggestion_reason": "No Jira accountId history mapping is configured yet; route to billing-api for human confirmation."
     }
   },
-  "slack_payload": {
-    "channel": "#oncall",
-    "text": "billing-api: insufficient_context (INSUFFICIENT_CONTEXT, confidence 0.25). Audit: audit-1a2499464085."
+  "suggested_assignee_account_id": null,
+  "suggestion_reason": "No Jira accountId history mapping is configured yet; route to billing-api for human confirmation.",
+  "audit_id": "audit-1a2499464085",
+  "anomaly_evidence": [],
+  "service_topology": {
+    "root_service": "billing-api",
+    "nodes": [
+      "billing-api"
+    ],
+    "edges": []
   },
-  "audit_id": "audit-1a2499464085"
+  "rca_candidates": [
+    {
+      "rank": 1,
+      "service": "billing-api",
+      "score": 0.25,
+      "confidence": 0.25,
+      "reasons": [
+        "Alerted service is the only available RCA anchor."
+      ]
+    }
+  ],
+  "causal_hints": [],
+  "investigation_summary": "Deterministic investigator summary: billing-api produced 0 anomaly evidence item(s). Top RCA candidate is billing-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "llm_metadata": {
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": [],
+      "fallback": false
+    },
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    }
+  }
 }

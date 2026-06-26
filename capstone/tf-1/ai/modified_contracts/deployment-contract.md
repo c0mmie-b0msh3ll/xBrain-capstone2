@@ -9,7 +9,7 @@ Reviewers: AI Lead, CDO Leads, reviewer panel
 
 Define how the TF1 AIOps triage engine artifact is packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to deploy the engine on their own platform while preserving one stable AI API and telemetry boundary.
 
-The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own EKS platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
+The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
 
 The AI engine is an event-driven triage compute service. Customer applications emit telemetry into the customer's observability stack; Platform/DevOps provides alert detection and bounded access to that metrics/logs/traces evidence. CDO/platform calls the AI Ops endpoint when an alert/anomaly/incident needs triage. The AIOps app performs validation, normalization, bounded context enrichment, RCA scoring, and optional synthesis after invocation.
 
@@ -31,68 +31,59 @@ The AI engine is an event-driven triage compute service. Customer applications e
 
 | Aspect | Configuration |
 |---|---|
-| Target | EKS `Deployment` behind an internal Kubernetes `Service` and private ingress/internal ALB |
+| Target | ECS Fargate service behind an internal ALB, or equivalent CDO platform runtime |
 | Region | `us-east-1` for capstone scope |
-| Cluster | CDO-owned EKS cluster, namespace `tf1-aiops` unless the CDO platform provides an equivalent namespace |
+| Cluster | `tf-1-aiops-cluster` or CDO platform equivalent |
 | Service name | `tf1-ai-triage-engine` or CDO platform equivalent |
 | Image source | AI-provided ECR image URI plus immutable image tag/digest per release |
-| CPU request/limit per pod | 500m request / 1000m limit for skeleton; 1000m request / 2000m limit if LLM calls are enabled |
-| Memory request/limit per pod | 1 GiB request / 2 GiB limit for skeleton; 2 GiB request / 4 GiB limit if LLM calls are enabled |
+| CPU per task | 512 CPU units for skeleton, 1024 CPU units if LLM calls are enabled |
+| Memory per task | 1024 MB for skeleton, 2048 MB if LLM calls are enabled |
 
 ## Scaling
 
 | Aspect | Value |
 |---|---|
 | Replicas | min 2, max 6 |
-| Autoscale trigger 1 | HPA target CPU 70% |
-| Autoscale trigger 2 | Request rate target 100 requests/minute/pod when ingress or custom metrics are available |
+| Autoscale trigger 1 | Target CPU 70% |
+| Autoscale trigger 2 | Target request count 100 per task |
 | Scale-up cooldown | 60 seconds |
 | Scale-down cooldown | 300 seconds |
 | Load test input | W11 skeleton target: 30 triage requests/minute, p99 < 2 seconds |
-| W12 target load | 300 triage requests/minute after autoscaling, p99 < 2 seconds for bounded payloads |
 
 ## Configuration And Secrets
 
 | Name | Type | Source | Notes |
 |---|---|---|---|
-| `APP_ENV` | env var | Kubernetes Deployment or ConfigMap | `sandbox`, `staging`, or `prod` |
-| `LOG_LEVEL` | env var | Kubernetes Deployment or ConfigMap | Default `INFO` |
-| `AI_MODE` | env var | Kubernetes Deployment or ConfigMap | `rules` for skeleton; `hybrid` when optional Bedrock synthesis is enabled |
-| `BEDROCK_MODEL_ID` | env var | Kubernetes Deployment or ConfigMap | Required only when `AI_MODE=hybrid` |
-| `AWS_REGION` | env var | Kubernetes Deployment or ConfigMap | `us-east-1` |
-| `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
+| `APP_ENV` | env var | ECS task definition | `sandbox`, `staging`, or `prod` |
+| `LOG_LEVEL` | env var | ECS task definition | Default `INFO` |
+| `AI_MODE` | env var | ECS task definition | `rules` for skeleton; `hybrid` when optional Bedrock synthesis is enabled |
+| `BEDROCK_MODEL_ID` | env var | ECS task definition | Required only when `AI_MODE=hybrid` |
+| `AWS_REGION` | env var | ECS task definition | `us-east-1` |
+| `TENANT_AUTH_TOKENS` | secret | AWS Secrets Manager `tf1/ai-engine/tenant-{tenant_id}/auth-token` | Capstone Demo: Scoped bearer token per tenant. Token format: `<tenant_id>.<random_secret>`. |
 | `SLACK_SIGNING_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if W12 Slack two-way endpoints are enabled |
 | `EVIDENCE_API_BASE_URL` | env var | CDO platform config | Required only if AI follow-up evidence lookup is enabled. Points to a CDO/platform-approved bounded access endpoint for the customer's observability/evidence layer, not directly to customer applications. |
 | `EVIDENCE_API_AUTH_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if `EVIDENCE_API_BASE_URL` is set. |
-| `EVIDENCE_API_TIMEOUT_SECONDS` | env var | Kubernetes Deployment or ConfigMap | Optional; default target 2-5 seconds for bounded incident windows. |
-| `EVIDENCE_API_MAX_WINDOW_MINUTES` | env var | Kubernetes Deployment or ConfigMap | Optional; default max 60 minutes unless approved. |
+| `EVIDENCE_API_TIMEOUT_SECONDS` | env var | ECS task definition | Optional; default target 2-5 seconds for bounded incident windows. |
+| `EVIDENCE_API_MAX_WINDOW_MINUTES` | env var | ECS task definition | Optional; default max 60 minutes unless approved. |
 
-No long-lived AWS access keys are stored in the service. Production AWS access uses IRSA with a scoped Kubernetes `ServiceAccount` and IAM role.
+No long-lived AWS access keys are stored in the service. Production AWS access uses task roles and scoped IAM policies.
 
 ## Networking
 
 | Aspect | Configuration |
 |---|---|
 | Subnet type | Private subnets |
-| Load balancer | Internal ALB or private ingress controller only |
-| Kubernetes service | ClusterIP service `tf1-ai-triage-engine` on port `8080` |
-| Security group | `tf1-ai-engine-sg` or CDO EKS equivalent security group policy |
-| Ingress | Allow only approved CDO/platform incident integration or context services on port `8080` or ingress listener port |
-| Egress | AWS service endpoints required for CloudWatch or Loki, Secrets Manager, Bedrock if enabled, and bounded evidence APIs |
+| Load balancer | Internal ALB only |
+| Security group | `tf1-ai-engine-sg` |
+| Ingress | Allow only approved CDO/platform incident integration or context services on port `8080` or ALB listener port |
+| Egress | AWS service endpoints required for CloudWatch, Secrets Manager, and Bedrock if enabled |
 | DNS | Private hosted zone record such as `https://ai-engine.tf1.internal` |
-
-Kubernetes runtime requirements:
-
-- Namespace: `tf1-aiops`.
-- ServiceAccount: `tf1-ai-triage-engine` annotated for IRSA when AWS APIs are needed.
-- RBAC: no permission to mutate customer workloads, namespaces, deployments, pods, configmaps, or secrets. The AI engine is not a Kubernetes remediation controller.
-- NetworkPolicy: allow ingress only from approved CDO integration/context services; allow egress only to approved AWS endpoints, observability backends, Bedrock when enabled, and bounded evidence APIs.
 
 ## Observability Stack Dependency
 
 | Responsibility | Owner | Notes |
 |---|---|---|
-| Deploy metrics/logs/traces backend | Platform/DevOps | Prometheus, Grafana, Loki, Jaeger, and OpenTelemetry in the CDO EKS observability stack. |
+| Deploy metrics/logs/traces backend | Platform/DevOps | Prometheus/Grafana/Loki/CloudWatch/OpenTelemetry mix to be finalized. |
 | Preserve required metadata | Platform/DevOps + app emitters | `tenant_id`, `service`, `environment`, `timestamp`, labels. |
 | Provide bounded query/export path | Platform/DevOps | Query by tenant/service/env/time window. |
 | Detect alerts/incidents | Platform/DevOps | Monitoring, alert rules, incident event generation, and initial push to AI Ops. |
@@ -106,29 +97,27 @@ graph TB
 
     subgraph "CDO platform 1"
         subgraph "Private subnets"
-            ALB1[Internal ALB or private ingress]
-            SVC1[Kubernetes Service]
-            POD1[AI engine pods]
-            ALB1 --> SVC1 --> POD1
+            ALB1[Internal ALB or platform ingress]
+            ECS1[AI engine instance]
+            ALB1 --> ECS1
         end
         SM1[Secrets Manager]
-        OBS1[Prometheus/Loki/Jaeger]
-        POD1 --> SM1
-        POD1 --> OBS1
+        CW1[Logs and metrics]
+        ECS1 --> SM1
+        ECS1 --> CW1
     end
 
     subgraph "CDO platform 2"
-        ALB2[Internal ALB or private ingress]
-        SVC2[Kubernetes Service]
-        POD2[AI engine pods]
-        ALB2 --> SVC2 --> POD2
+        ALB2[Internal ALB or platform ingress]
+        ECS2[AI engine instance]
+        ALB2 --> ECS2
     end
 
     Bedrock[AWS Bedrock, optional synthesis after compute RCA]
-    AI -. ships artifact .-> POD1
-    AI -. ships artifact .-> POD2
-    POD1 --> Bedrock
-    POD2 --> Bedrock
+    AI -. ships artifact .-> ECS1
+    AI -. ships artifact .-> ECS2
+    ECS1 --> Bedrock
+    ECS2 --> Bedrock
 
     subgraph "CDO/AIOps Integration"
         DET[CDO alert trigger and context aggregation]
@@ -137,8 +126,8 @@ graph TB
     end
     DET --> ALB1
     DET --> ALB2
-    POD1 -. bounded read-only evidence lookup .-> EVD
-    POD2 -. bounded read-only evidence lookup .-> EVD
+    ECS1 -. bounded read-only evidence lookup .-> EVD
+    ECS2 -. bounded read-only evidence lookup .-> EVD
     INT --> ALB1
     INT --> ALB2
 ```
@@ -147,11 +136,11 @@ graph TB
 
 Each CDO team deploys the same AI engine artifact behind its own private endpoint. The CDO-hosted instance must preserve the API paths, request/response schema, tenant isolation, auth boundary, health check, and rollback behavior defined in this contract.
 
-| Platform | Endpoint URL | Auth draft | Notes |
+| Platform | Endpoint URL | Auth mechanism | Notes |
 |---|---|---|---|
-| CDO platform 1 | `https://ai-engine.cdo-1.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for one CDO team. |
-| CDO platform 2 | `https://ai-engine.cdo-2.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for the second CDO team. |
-| Bootstrap/demo | `https://snpmtcwpys.us-east-1.awsapprunner.com` | Scoped bearer token fallback | Temporary W11 endpoint for early integration and mentor smoke tests only. |
+| CDO platform 1 | `https://ai-engine.cdo-1.tf1.internal` or equivalent | Scoped Bearer Token for demo; JWT/SigV4 for prod | Final W12 hosting target for one CDO team. |
+| CDO platform 2 | `https://ai-engine.cdo-2.tf1.internal` or equivalent | Scoped Bearer Token for demo; JWT/SigV4 for prod | Final W12 hosting target for the second CDO team. |
+| Bootstrap/demo | `https://snpmtcwpys.us-east-1.awsapprunner.com` | Scoped Bearer Token | Temporary W11 endpoint for early integration and mentor smoke tests only. |
 
 ## Health Check
 
@@ -178,48 +167,50 @@ Abort and roll back if any of these occur during canary:
 - 5xx error rate > 1%.
 - P99 latency > 2 seconds for 5 consecutive minutes.
 - Tenant mismatch or schema validation failures caused by the new release.
-- Missing `audit_id` in any successful triage response.
+- Missing `audit_id` in any triage response (both successful and failed 4xx/5xx responses).
 
 ## Rollback
 
 | Aspect | Value |
 |---|---|
-| Primary method | `kubectl rollout undo deployment/tf1-ai-triage-engine` or revert Helm/Kustomize image tag to previous immutable digest |
+| Primary method | Revert ECS service to previous immutable image tag |
 | Secondary method | Roll back deployment pipeline release |
-| Target RTO | < 60 seconds for capstone rollback when only the image tag/digest changes |
+| Target RTO | < 5 minutes for capstone |
 | Data migration | None for skeleton; future persistent audit schema changes need ADR before freeze |
 
 ## Observability
 
 | Aspect | Configuration |
 |---|---|
-| Logs | Structured JSON logs to Loki or CloudWatch Logs, 14-day capstone retention |
-| Metrics | Prometheus metrics for request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures, and rate limiting |
-| Traces | Accept and propagate `X-Correlation-Id`; export OpenTelemetry traces to the CDO Jaeger/OTel stack when enabled |
-| Audit | Every successful triage response includes `audit_id`; persistent audit store is design target |
+| Logs | Structured JSON logs to CloudWatch Logs, 14-day capstone retention |
+| Metrics | Request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures |
+| Traces | Accept and propagate `X-Correlation-Id`; OpenTelemetry recommended for the AIOps platform |
+| Audit | Every triage response (successful or failed 4xx/5xx) includes a unique `audit_id` generated at the request start. Failure audits include error details. |
 
 ## Failure Modes And Response
 
 | Failure | Detection | Response |
 |---|---|---|
-| Pod crash | Kubernetes liveness/readiness probes | Restart pod and route traffic only to ready pods |
-| AI unavailable | Ingress/service 5xx or 503 | CDO/platform integration queues retry or creates fallback ticket |
+| Task crash | ECS health check | Auto-restart task |
+| AI unavailable | ALB/ECS 5xx or 503 | CDO/platform integration queues retry or creates fallback ticket |
 | Bedrock throttling | App metric after optional LLM synthesis is enabled | Fall back to compute-only response |
-| Alert storm or request burst | Rate-limit metrics, backlog age, or platform retry depth | Apply bounded retry/backpressure and preserve idempotency by `correlation_id`. |
-| Tenant mismatch | API validation | Return `400`; caller must fix request |
+| Alert storm or request burst | Rate-limit metrics, backlog age, or platform retry depth | Apply bounded retry/backpressure and preserve idempotency by `incident_id`. |
+| Invalid Token / Auth fail | API validation | Return `401 Unauthorized`; logs generated with error `audit_id`. |
+| Tenant mismatch (Scope) | API validation | Return `403 Forbidden` (token tenant scope doesn't match `X-Tenant-Id`); logs generated with error `audit_id`. |
+| Tenant mismatch (Body) | API validation | Return `400 Bad Request` (body `tenant_id` doesn't match `X-Tenant-Id`); logs generated with error `audit_id`. |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 
 ## W11 Decisions And Deferred Items
 
 | Item | W11 decision |
 |---|---|
-| Demo auth | Use private networking or protected gateway. Scoped bearer token is allowed as a capstone fallback; IAM SigV4 or service-to-service JWT is preferred when CDO infra supports it. |
-| Load target | 30 triage requests/minute for W11 skeleton validation and 300 triage requests/minute for W12 after HPA/autoscaling, p99 < 2 seconds on bounded payloads. |
-| Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. Production design target is object storage or DynamoDB/Postgres with report metadata. |
+| Demo auth | Finalized for capstone demo: Scoped Bearer Token authentication via the `Authorization: Bearer <tenant_id>.<random_secret>` header. Token value is parsed to extract `tenant_id`, and validated against the secret stored at `tf1/ai-engine/tenant-{tenant_id}/auth-token` in Secrets Manager. |
+| Load target | 30 triage requests/minute for skeleton validation, p99 < 2 seconds on bounded payloads. |
+| Audit storage | Every transaction (including 400/401/403/429/500/503 errors) must generate an `audit_id` and write to the audit logs. Local JSON/report store is accepted for W11. |
 | Bootstrap endpoint evidence | The W11 App Runner endpoint is recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
-| Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own EKS platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
-| Production auth finalization | Before W12 integration, AI and CDO must choose either IAM SigV4 or service-to-service JWT for the CDO-hosted engine. `SERVICE_AUTH_TOKEN` remains a demo fallback only. |
-| W12 burst behavior | The deployment must support bounded retries, rate limiting, and idempotent replay for alert storms. Platform-specific buffering is allowed but must stay behind the same API contract. |
+| Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
+| Production auth finalization | Before W12 integration, AI and CDO must transition from bearer token to service-to-service JWT or IAM SigV4 for the CDO-hosted engine. |
+| W12 burst behavior | The deployment must support bounded retries, rate limiting, and idempotent replay by `incident_id` for alert storms. Platform-specific buffering is allowed but must stay behind the same API contract. |
 | Alert delivery model | CDO/platform pushes alerts/incidents to the AI endpoint. AI Ops must not depend on continuous polling to discover incidents. |
 | Evidence cleaning layer | Optional but recommended. CDO/platform owns production storage, retention, auth, and query API; AI Ops owns cleaning, normalization, curation criteria, and RCA consumption behavior. |
 | Follow-up evidence API | Optional W12 integration. If enabled, CDO exposes bounded read-only evidence endpoints and sets `EVIDENCE_API_BASE_URL`; otherwise CDO sends evidence inline or via precomputed bundle. |

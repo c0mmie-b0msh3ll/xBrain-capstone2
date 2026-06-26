@@ -9,12 +9,15 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.action_catalog import select_actions
+from app.agent_runtime import run_agent_platform
 from app.aiops_worker import build_report, build_triage_request, detect_incident, offline_raw_observability, process_sqs_message
-from app.context_tools import ToolRegistry, ToolScope, ToolScopeError
+from app.context_tools import ContextClient, ToolRegistry, ToolScope, ToolScopeError
 from app.incident_seed import IncidentSeed, build_triage_request_from_seed
+from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
-from app.main import MetricPoint, MetricSeries, TriageRequest, app
-from app.rca import detect_metric_anomalies, infer_causal_hints
+from app.main import MetricPoint, MetricSeries, TriageRequest, app, classify
+from app.observability import sanitize_log_fields
+from app.rca import analyze_request, detect_metric_anomalies, infer_causal_hints
 from app.report_store import write_report
 
 
@@ -102,6 +105,254 @@ def test_sample_contract_responses_still_match() -> None:
             headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
         )
         assert response.status_code == 200
+        payload = response.json()
+        assert "slack_payload" not in payload
+        assert "ticket_payload" in payload
+        assert "suggested_assignee_account_id" in payload
+        assert "suggestion_reason" in payload
+
+    for response_path in sorted(Path("samples").glob("*.response.json")):
+        payload = json.loads(response_path.read_text(encoding="utf-8"))
+        assert "slack_payload" not in payload
+
+
+def test_metrics_endpoint_exposes_triage_engine_metrics() -> None:
+    payload = post_sample("latency-degradation")
+    response = TestClient(app).get("/metrics")
+    body = response.text
+
+    assert payload["status"] == "DIAGNOSED"
+    assert response.status_code == 200
+    assert "aiops_triage_requests_total" in body
+    assert 'classification="latency_degradation"' in body
+    assert "aiops_context_enrichment_result_total" in body
+    assert "aiops_investigation_mode_selected_total" in body
+
+
+def test_router_chooses_deterministic_for_low_complexity(monkeypatch) -> None:
+    monkeypatch.delenv("AIOPS_INVESTIGATION_MODE", raising=False)
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    selection = select_investigation_mode(request, decision, rca, agentcore_enabled=True)
+
+    assert selection.selected_mode == "deterministic_only"
+    assert selection.metadata()["selected_mode"] == "deterministic_only"
+
+
+def test_router_chooses_assisted_for_medium_complexity(monkeypatch) -> None:
+    monkeypatch.delenv("AIOPS_INVESTIGATION_MODE", raising=False)
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    body = request.model_dump(mode="json")
+    body["traces"] = []
+    body["recent_deploys"] = []
+    body["ownership"] = None
+    request = TriageRequest.model_validate(body)
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    selection = select_investigation_mode(request, decision, rca, agentcore_enabled=True)
+
+    assert selection.selected_mode == "agent_assisted"
+    assert "missing_traces" in selection.reasons
+
+
+def test_router_chooses_platform_for_high_complexity(monkeypatch) -> None:
+    monkeypatch.delenv("AIOPS_INVESTIGATION_MODE", raising=False)
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    selection = select_investigation_mode(request, decision, rca, agentcore_enabled=True)
+
+    assert selection.selected_mode == "agent_platform"
+    assert selection.complexity_score >= 6
+
+
+def test_forced_investigation_mode_overrides_auto(monkeypatch) -> None:
+    monkeypatch.setenv("AIOPS_INVESTIGATION_MODE", "agent_assisted")
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    selection = select_investigation_mode(request, decision, rca, agentcore_enabled=False)
+
+    assert selection.source == "env"
+    assert selection.selected_mode == "agent_assisted"
+    assert selection.planned_mode == "agent_platform"
+
+
+def test_agentcore_disabled_selects_deterministic_with_planned_mode(monkeypatch) -> None:
+    monkeypatch.delenv("AIOPS_INVESTIGATION_MODE", raising=False)
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    selection = select_investigation_mode(request, decision, rca, agentcore_enabled=False)
+
+    assert selection.selected_mode == "deterministic_only"
+    assert selection.planned_mode == "agent_platform"
+    assert selection.metadata()["agentcore_enabled"] is False
+
+
+def test_agent_platform_tool_loop_executes_allowed_tool_and_finalizes(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_AGENTCORE_LLM", "true")
+    monkeypatch.setenv("AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1")
+    responses = iter(
+        [
+            json.dumps({"type": "tool_requests", "thought_summary": "Need logs.", "tool_calls": [{"name": "get_logs", "args": {"limit": 1}}]}),
+            json.dumps(
+                {
+                    "type": "final_diagnosis",
+                    "classification": "latency_degradation",
+                    "status": "DIAGNOSED",
+                    "confidence": 0.78,
+                    "summary": "checkout-api latency is likely tied to dependency timeout signals.",
+                    "evidence": ["Representative log: database timeout after 3000ms"],
+                    "recommended_action_ids": ["dependency_timeout_triage"],
+                    "qa": {"passed": True, "gaps": []},
+                }
+            ),
+        ]
+    )
+    monkeypatch.setattr("app.agent_runtime.invoke_agentcore_investigator", lambda *args, **kwargs: next(responses))
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    enriched, rerun_rca, final_decision, metadata, advisory_ids = run_agent_platform(request, decision, rca, ToolRegistry(FakeContextClient()))
+
+    assert enriched.logs
+    assert rerun_rca["anomaly_evidence"]
+    assert final_decision["classification"] == "latency_degradation"
+    assert metadata["tool_calls"][0]["status"] == "ok"
+    assert advisory_ids == ["dependency_timeout_triage"]
+
+
+def test_agent_platform_blocks_disallowed_tool_and_continues(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_AGENTCORE_LLM", "true")
+    monkeypatch.setenv("AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1")
+    responses = iter(
+        [
+            json.dumps({"type": "tool_requests", "tool_calls": [{"name": "delete_service", "args": {}}]}),
+            json.dumps(
+                {
+                    "type": "final_diagnosis",
+                    "classification": "general_investigation",
+                    "status": "INVESTIGATE",
+                    "confidence": 0.55,
+                    "summary": "Evidence remains ambiguous after blocked unsafe tool request.",
+                    "evidence": ["No allowed tool evidence changed the baseline."],
+                    "recommended_action_ids": ["human_review_noisy_alert"],
+                }
+            ),
+        ]
+    )
+    monkeypatch.setattr("app.agent_runtime.invoke_agentcore_investigator", lambda *args, **kwargs: next(responses))
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    _, _, final_decision, metadata, advisory_ids = run_agent_platform(request, decision, rca, ToolRegistry(FakeContextClient()))
+
+    assert final_decision["classification"] == "general_investigation"
+    assert metadata["tool_calls"][0]["status"] == "blocked"
+    assert advisory_ids == ["human_review_noisy_alert"]
+
+
+def test_agent_platform_malformed_json_falls_back_deterministic(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_AGENTCORE_LLM", "true")
+    monkeypatch.setenv("AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1")
+    monkeypatch.setattr("app.agent_runtime.invoke_agentcore_investigator", lambda *args, **kwargs: "{not-json")
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    _, _, final_decision, metadata, advisory_ids = run_agent_platform(request, decision, rca, ToolRegistry(FakeContextClient()))
+
+    assert final_decision == decision
+    assert metadata["fallback"] is True
+    assert metadata["fallback_reason"] == "malformed_agent_json"
+    assert advisory_ids == []
+
+
+def test_agent_platform_invalid_final_diagnosis_falls_back(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_AGENTCORE_LLM", "true")
+    monkeypatch.setenv("AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/tf1")
+    monkeypatch.setattr(
+        "app.agent_runtime.invoke_agentcore_investigator",
+        lambda *args, **kwargs: json.dumps(
+            {
+                "type": "final_diagnosis",
+                "classification": "made_up",
+                "status": "DIAGNOSED",
+                "confidence": 2.0,
+                "summary": "bad",
+                "evidence": ["bad"],
+            }
+        ),
+    )
+    request = TriageRequest.model_validate(json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    _, _, final_decision, metadata, _ = run_agent_platform(request, decision, rca, ToolRegistry(FakeContextClient()))
+
+    assert final_decision == decision
+    assert metadata["fallback"] is True
+    assert metadata["fallback_reason"] == "invalid_final_diagnosis"
+
+
+def test_triage_metadata_contains_mode_selection_for_simple_request() -> None:
+    payload = post_sample("latency-degradation")
+
+    assert payload["llm_metadata"]["investigation_mode"] == "deterministic_only"
+    assert payload["llm_metadata"]["mode_selection"]["selected_mode"] == "deterministic_only"
+    assert payload["llm_metadata"]["action_wording"]["skipped_reason"] == "deterministic_only_mode"
+
+
+def test_missing_context_routes_to_agent_platform_when_agentcore_enabled(monkeypatch) -> None:
+    monkeypatch.setattr("app.main.agent_platform_enabled", lambda: True)
+    monkeypatch.setattr(
+        "app.main.run_agent_platform",
+        lambda request, decision, rca: (request, rca, decision, {"enabled": True, "fallback": True, "fallback_reason": "mocked"}, []),
+    )
+    body = json.loads(Path("samples/insufficient-context.request.json").read_text(encoding="utf-8"))
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["llm_metadata"]["investigation_mode"] == "agent_platform"
+    assert payload["llm_metadata"]["mode_selection"]["planned_mode"] == "agent_platform"
+
+
+def test_metadata_log_policy_omits_raw_evidence_fields() -> None:
+    fields = sanitize_log_fields(
+        {
+            "audit_id": "audit-001",
+            "tenant_id": "tenant-a",
+            "stage": "completed",
+            "status": "DIAGNOSED",
+            "raw_evidence": "database password and customer payload",
+            "message": "full customer log line",
+        }
+    )
+
+    assert fields == {"audit_id": "audit-001", "tenant_id": "tenant-a", "stage": "completed", "status": "DIAGNOSED"}
+
+
+def test_qa_budget_degrades_confidence_and_records_metadata(monkeypatch) -> None:
+    monkeypatch.setenv("AIOPS_LLM_MAX_TOKENS_PER_INCIDENT", "1")
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["confidence"] < 0.82
+    assert payload["llm_metadata"]["qa"]["result"] == "budget_exceeded"
 
 
 def test_latency_database_timeout_selects_dependency_action() -> None:
@@ -232,6 +483,190 @@ def test_incident_seed_builds_bounded_triage_request_from_registry() -> None:
     assert request.logs[0].message == "database timeout after 3000ms"
 
 
+def test_incident_seed_ingests_local_evidence_bundle(tmp_path) -> None:
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "tf1.evidence_bundle.v1",
+                "tenant_id": "tenant-a",
+                "environment": "prod",
+                "service": "checkout-api",
+                "metrics": [
+                    {
+                        "metric_name": "http_latency_p95_ms",
+                        "service": "checkout-api",
+                        "unit": "ms",
+                        "points": [{"ts": "2026-06-24T09:00:00Z", "value": 1500}],
+                    }
+                ],
+                "logs": [
+                    {
+                        "service": "checkout-api",
+                        "ts": "2026-06-24T09:00:30Z",
+                        "level": "error",
+                        "message": "redis timeout",
+                    }
+                ],
+                "traces": [
+                    {
+                        "trace_id": "trace-001",
+                        "service": "checkout-api",
+                        "root_span": "POST /checkout",
+                        "duration_ms": 3100,
+                        "status": "error",
+                        "bottleneck_service": "redis",
+                    }
+                ],
+                "deploy_events": [
+                    {
+                        "service": "checkout-api",
+                        "version": "sha-002",
+                        "deployed_at": "2026-06-24T08:55:00Z",
+                    }
+                ],
+                "ownership": {
+                    "service": "checkout-api",
+                    "owner_team": "payments-platform",
+                    "jira_project": "PAY",
+                },
+                "runbooks": [{"title": "Redis timeout", "url": "runbook://redis-timeout"}],
+                "data_lineage": {"primary_dataset": "synthetic"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    seed = base_seed(labels={"evidence_uri": "bundle.json"})
+    registry = ToolRegistry(ContextClient(evidence_bundle_base_path=str(tmp_path)))
+
+    body = build_triage_request_from_seed(seed, registry)
+    request = TriageRequest.model_validate(body)
+
+    assert request.metrics[0].metric_name == "http_latency_p95_ms"
+    assert request.logs[0].message == "redis timeout"
+    assert request.traces[0].operation == "POST /checkout"
+    assert request.recent_deploys[0].version == "sha-002"
+    assert request.ownership and request.ownership.runbooks[0].url == "runbook://redis-timeout"
+    assert request.alert.labels["evidence_uri_status"] == "loaded"
+    assert request.alert.labels["evidence_data_lineage"]["primary_dataset"] == "synthetic"
+
+
+def test_triage_enriches_alert_metadata_first_request_from_registry(monkeypatch) -> None:
+    monkeypatch.setattr("app.context_enrichment.ToolRegistry", lambda: ToolRegistry(FakeContextClient()))
+    body = metadata_only_triage_body()
+
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "DIAGNOSED"
+    assert payload["classification"] == "latency_degradation"
+    assert payload["ticket_payload"]["project"] == "PAY"
+    assert any(item["metric_name"] == "http_latency_p95_ms" for item in payload["anomaly_evidence"])
+
+
+def test_triage_preserves_inline_evidence_when_evidence_uri_is_present(monkeypatch) -> None:
+    monkeypatch.setattr("app.context_enrichment.ToolRegistry", lambda: ToolRegistry(BundleAndToolContextClient()))
+    body = metadata_only_triage_body(labels={"evidence_uri": "bundle.json"})
+    body["metrics"] = [
+        {
+            "metric_name": "http_latency_p95_ms",
+            "service": "checkout-api",
+            "unit": "ms",
+            "points": [{"ts": "2026-06-24T09:00:00Z", "value": 1700}],
+            "labels": {"source": "inline"},
+        }
+    ]
+
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    reasons = [item["reason"] for item in payload["anomaly_evidence"]]
+    assert any("1700ms" in reason for reason in reasons)
+    assert not any("2400ms" in reason for reason in reasons)
+    assert payload["status"] == "DIAGNOSED"
+
+
+def test_triage_missing_evidence_bundle_falls_back_to_scoped_tools(monkeypatch) -> None:
+    monkeypatch.setattr("app.context_enrichment.ToolRegistry", lambda: ToolRegistry(FakeContextClient()))
+    body = metadata_only_triage_body(labels={"evidence_uri": "missing.json"})
+
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "DIAGNOSED"
+    assert payload["classification"] == "latency_degradation"
+
+
+def test_out_of_scope_evidence_bundle_falls_back_to_scoped_tools(tmp_path, monkeypatch) -> None:
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(
+        json.dumps(
+            {
+                "tenant_id": "tenant-b",
+                "environment": "prod",
+                "service": "checkout-api",
+                "metrics": [
+                    {
+                        "metric_name": "http_latency_p95_ms",
+                        "service": "checkout-api",
+                        "unit": "ms",
+                        "points": [{"ts": "2026-06-24T09:00:00Z", "value": 2400}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("app.context_enrichment.ToolRegistry", lambda: ToolRegistry(ScopedBundleContextClient(str(tmp_path))))
+    body = metadata_only_triage_body(labels={"evidence_uri": "bundle.json"})
+
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "DIAGNOSED"
+    assert any("1300ms" in item["reason"] for item in payload["anomaly_evidence"])
+    assert not any("2400ms" in item["reason"] for item in payload["anomaly_evidence"])
+
+
+def test_missing_evidence_bundle_keeps_context_sparse_for_insufficient_context() -> None:
+    seed = base_seed(labels={"evidence_uri": "missing.json"})
+    registry = ToolRegistry(ContextClient(evidence_bundle_base_path="datapack/scenarios"))
+
+    body = build_triage_request_from_seed(seed, registry)
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert body["metrics"] == []
+    assert body["logs"] == []
+    assert body["recent_deploys"] == []
+    assert body["ownership"] is None
+    assert response.status_code == 200
+    assert response.json()["status"] == "INSUFFICIENT_CONTEXT"
+
+
 def test_tool_registry_rejects_unknown_and_out_of_scope_calls() -> None:
     scope = ToolScope(
         tenant_id="tenant-a",
@@ -248,6 +683,44 @@ def test_tool_registry_rejects_unknown_and_out_of_scope_calls() -> None:
         registry.execute("get_logs", {"tenant_id": "tenant-b"}, scope)
     with pytest.raises(ToolScopeError):
         registry.execute("get_logs", {"window_start": "2026-06-24T07:00:00Z"}, scope)
+    with pytest.raises(ToolScopeError):
+        registry.execute("get_jira_history", {"service": "billing-api"}, scope)
+
+
+def test_jira_history_suggests_configured_account_id(tmp_path, monkeypatch) -> None:
+    history_path = tmp_path / "jira-history.json"
+    history_path.write_text(
+        json.dumps(
+            [
+                {
+                    "tenant_id": "tenant-a",
+                    "environment": "sandbox",
+                    "service": "checkout-api",
+                    "account_id": "acct-123",
+                    "suggestion_reason": "Most recent checkout-api incidents were handled by the primary on-call.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("JIRA_HISTORY_PATH", str(history_path))
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["suggested_assignee_account_id"] == "acct-123"
+    assert "primary on-call" in payload["suggestion_reason"]
+    assert payload["ticket_payload"]["fields"]["suggested_assignee_account_id"] == "acct-123"
+
+
+def test_jira_history_missing_mapping_routes_to_team(tmp_path, monkeypatch) -> None:
+    history_path = tmp_path / "jira-history.json"
+    history_path.write_text("[]", encoding="utf-8")
+    monkeypatch.setenv("JIRA_HISTORY_PATH", str(history_path))
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["suggested_assignee_account_id"] is None
+    assert "route to payments-platform" in payload["suggestion_reason"]
 
 
 def test_llm_tool_call_parser_accepts_only_registered_tools() -> None:
@@ -374,6 +847,50 @@ def post_sample(name: str) -> dict[str, Any]:
     return response.json()
 
 
+def base_seed(labels: dict[str, Any] | None = None) -> IncidentSeed:
+    return IncidentSeed.model_validate(
+        {
+            "schema_version": "tf1.incident_seed.v1",
+            "tenant_id": "tenant-a",
+            "correlation_id": "corr-001",
+            "incident_id": "inc-001",
+            "environment": "prod",
+            "service": "checkout-api",
+            "severity": "high",
+            "title": "High p95 latency on checkout-api",
+            "description": "p95 latency above threshold",
+            "started_at": "2026-06-24T08:45:00Z",
+            "received_at": "2026-06-24T09:05:00Z",
+            "labels": labels or {},
+        }
+    )
+
+
+def metadata_only_triage_body(labels: dict[str, Any] | None = None) -> dict[str, Any]:
+    return {
+        "correlation_id": "corr-001",
+        "tenant_id": "tenant-a",
+        "incident_id": "inc-001",
+        "environment": "prod",
+        "received_at": "2026-06-24T09:05:00Z",
+        "alert": {
+            "alert_id": "alert-001",
+            "source": "cdo-detector",
+            "service": "checkout-api",
+            "severity": "high",
+            "title": "High p95 latency on checkout-api",
+            "description": "p95 latency above threshold",
+            "started_at": "2026-06-24T08:45:00Z",
+            "labels": labels or {},
+        },
+        "metrics": [],
+        "logs": [],
+        "traces": [],
+        "recent_deploys": [],
+        "ownership": None,
+    }
+
+
 class FakeContextClient:
     def get_metrics(self, service: str, environment: str, tenant_id: str, window: tuple[str, str]) -> list[dict[str, Any]]:
         return [
@@ -418,6 +935,62 @@ class FakeContextClient:
             "jira_project": "PAY",
             "runbooks": [{"title": "DB timeout", "url": "runbook://db-timeout"}],
         }
+
+    def get_evidence_bundle(self, evidence_uri: str, scope: ToolScope) -> dict[str, Any] | None:
+        return None
+
+    def get_jira_history(self, service: str, environment: str, tenant_id: str) -> dict[str, Any]:
+        return {
+            "suggested_assignee_account_id": None,
+            "suggestion_reason": "No fake Jira accountId history mapping is configured.",
+        }
+
+
+class BundleAndToolContextClient(FakeContextClient):
+    def get_evidence_bundle(self, evidence_uri: str, scope: ToolScope) -> dict[str, Any] | None:
+        return {
+            "tenant_id": scope.tenant_id,
+            "environment": scope.environment,
+            "service": scope.service,
+            "metrics": [
+                {
+                    "metric_name": "http_latency_p95_ms",
+                    "service": scope.service,
+                    "unit": "ms",
+                    "points": [{"ts": scope.received_at, "value": 2400}],
+                    "labels": {"source": "bundle"},
+                }
+            ],
+            "logs": [
+                {
+                    "service": scope.service,
+                    "ts": scope.received_at,
+                    "level": "error",
+                    "message": "bundle redis timeout",
+                }
+            ],
+            "deploy_events": [],
+            "ownership": self.get_ownership(scope.service),
+        }
+
+
+class ScopedBundleContextClient(ContextClient):
+    def __init__(self, evidence_bundle_base_path: str) -> None:
+        ContextClient.__init__(self, evidence_bundle_base_path=evidence_bundle_base_path)
+
+    @property
+    def metrics_access_configured(self) -> bool:
+        return True
+
+    @property
+    def logs_access_configured(self) -> bool:
+        return True
+
+    def get_metrics(self, service: str, environment: str, tenant_id: str, window: tuple[str, str]) -> list[dict[str, Any]]:
+        return FakeContextClient().get_metrics(service, environment, tenant_id, window)
+
+    def get_logs(self, service: str, environment: str, tenant_id: str, window: tuple[str, str], limit: int) -> list[dict[str, Any]]:
+        return FakeContextClient().get_logs(service, environment, tenant_id, window, limit)
 
 
 class FakeSQS:

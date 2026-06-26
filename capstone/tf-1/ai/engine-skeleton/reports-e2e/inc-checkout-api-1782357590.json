@@ -1,0 +1,415 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "threshold",
+      "metric_name": "availability_success_rate",
+      "reason": "availability_success_rate fell below availability threshold at 42percent.",
+      "score": 1.0,
+      "service": "checkout-api",
+      "severity": "high"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "availability_success_rate",
+      "reason": "availability_success_rate current value 42percent is -5.8 sigma from baseline.",
+      "score": 0.966,
+      "service": "checkout-api",
+      "severity": "high"
+    },
+    {
+      "detector": "threshold",
+      "metric_name": "http_5xx_rate",
+      "reason": "http_5xx_rate breached error threshold at 38percent.",
+      "score": 1.0,
+      "service": "checkout-api",
+      "severity": "high"
+    },
+    {
+      "detector": "log_keyword",
+      "metric_name": "logs",
+      "reason": "2 error-like log entries; sample: health check failed: dependency connection refused",
+      "score": 0.4,
+      "service": "checkout-api",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-28881a5513de",
+  "causal_hints": [
+    {
+      "reason": "Causal hints require at least six aligned points per compared service.",
+      "score": 0.0,
+      "type": "insufficient_points"
+    }
+  ],
+  "created_at": "2026-06-25T03:19:50.927338Z",
+  "detector_evidence": [
+    "availability_success_rate dropped to 42percent",
+    "http_5xx_rate=38percent",
+    "health check failed: dependency connection refused",
+    "readiness probe failed for checkout-api",
+    "availability_success_rate current value 42 is -5.8 sigma from baseline"
+  ],
+  "incident_id": "inc-checkout-api-1782357590",
+  "investigation_summary": "Deterministic investigator summary: checkout-api produced 4 anomaly evidence item(s). Top RCA candidate is checkout-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "jira_payload": {
+    "description": "checkout-api appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: availability_success_rate, http_5xx_rate.; Representative log: health check failed: dependency connection refused; Recent deploy sha-critical at 2026-06-22T07:52:00Z.; Runbook available: Synthetic scenario triage.",
+    "fields": {
+      "audit_id": "audit-28881a5513de",
+      "confidence": 0.86,
+      "correlation_id": "corr-checkout-api-1782357590",
+      "owner_team": "payments-platform",
+      "status": "DIAGNOSED"
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "checkout-api",
+      "critical_service_down"
+    ],
+    "project": "PAY",
+    "summary": "[critical] checkout-api critical_service_down"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    },
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "fallback": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": []
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 1.0,
+      "rank": 1,
+      "reasons": [
+        "availability_success_rate fell below availability threshold at 42percent.",
+        "availability_success_rate current value 42percent is -5.8 sigma from baseline.",
+        "http_5xx_rate breached error threshold at 38percent.",
+        "2 error-like log entries; sample: health check failed: dependency connection refused"
+      ],
+      "score": 3.816,
+      "service": "checkout-api"
+    },
+    {
+      "confidence": 0.092,
+      "rank": 2,
+      "reasons": [
+        "Dependency of impacted service checkout-api via log_dependency_hint."
+      ],
+      "score": 0.35,
+      "service": "checkout"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/inc-checkout-api-1782357590",
+  "request_context": {
+    "alert": {
+      "alert_id": "alert-checkout-api-1782357590",
+      "description": "availability_success_rate dropped to 42percent; http_5xx_rate=38percent; health check failed: dependency connection refused",
+      "labels": {
+        "detector": "threshold_baseline_log_trace_worker"
+      },
+      "service": "checkout-api",
+      "severity": "critical",
+      "source": "aiops-observability-worker",
+      "started_at": "2026-06-25T03:17:50.884339Z",
+      "title": "checkout-api is down"
+    },
+    "correlation_id": "corr-checkout-api-1782357590",
+    "environment": "sandbox",
+    "incident_id": "inc-checkout-api-1782357590",
+    "logs": [
+      {
+        "labels": {
+          "pod": "checkout-api-7d9f",
+          "version": "sha-critical"
+        },
+        "level": "error",
+        "message": "health check failed: dependency connection refused",
+        "service": "checkout-api",
+        "trace_id": "trace-critical-001",
+        "ts": "2026-06-22T08:01:30Z"
+      },
+      {
+        "labels": {
+          "pod": "checkout-api-7d9f",
+          "version": "sha-critical"
+        },
+        "level": "error",
+        "message": "readiness probe failed for checkout-api",
+        "service": "checkout-api",
+        "trace_id": "trace-critical-002",
+        "ts": "2026-06-22T08:02:10Z"
+      }
+    ],
+    "metrics": [
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "availability_success_rate",
+        "points": [
+          {
+            "ts": "2026-06-22T07:59:00Z",
+            "value": 99.9
+          },
+          {
+            "ts": "2026-06-22T08:01:00Z",
+            "value": 42.0
+          }
+        ],
+        "service": "checkout-api",
+        "unit": "percent"
+      },
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "http_5xx_rate",
+        "points": [
+          {
+            "ts": "2026-06-22T08:01:00Z",
+            "value": 38.0
+          }
+        ],
+        "service": "checkout-api",
+        "unit": "percent"
+      }
+    ],
+    "ownership": {
+      "jira_project": "PAY",
+      "owner_team": "payments-platform",
+      "runbooks": [
+        {
+          "excerpt": "Check service health, saturation, dependency failures, trace latency, and recent deploys before rollback.",
+          "title": "Synthetic scenario triage",
+          "url": "runbook://synthetic-scenario-triage"
+        }
+      ],
+      "service": "checkout-api",
+      "slack_channel": "#oncall-payments"
+    },
+    "received_at": "2026-06-25T03:19:50.884339Z",
+    "recent_deploys": [
+      {
+        "change_summary": "updated dependency client configuration",
+        "deployed_at": "2026-06-22T07:52:00Z",
+        "deployed_by": "ci",
+        "rollback_ref": "sha-prev-critical",
+        "service": "checkout-api",
+        "version": "sha-critical"
+      }
+    ],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [
+      {
+        "evidence": "log_dependency_hint",
+        "source": "checkout-api",
+        "target": "checkout"
+      }
+    ],
+    "nodes": [
+      "checkout",
+      "checkout-api"
+    ],
+    "root_service": "checkout-api"
+  },
+  "slack_payload": {
+    "channel": "#oncall-payments",
+    "text": "checkout-api: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: availability_success_rate fell below availability threshold at 42percent.; availability_success_rate current value 42percent is -5.8 sigma from baseline.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-28881a5513de."
+  },
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "threshold",
+        "metric_name": "availability_success_rate",
+        "reason": "availability_success_rate fell below availability threshold at 42percent.",
+        "score": 1.0,
+        "service": "checkout-api",
+        "severity": "high"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "availability_success_rate",
+        "reason": "availability_success_rate current value 42percent is -5.8 sigma from baseline.",
+        "score": 0.966,
+        "service": "checkout-api",
+        "severity": "high"
+      },
+      {
+        "detector": "threshold",
+        "metric_name": "http_5xx_rate",
+        "reason": "http_5xx_rate breached error threshold at 38percent.",
+        "score": 1.0,
+        "service": "checkout-api",
+        "severity": "high"
+      },
+      {
+        "detector": "log_keyword",
+        "metric_name": "logs",
+        "reason": "2 error-like log entries; sample: health check failed: dependency connection refused",
+        "score": 0.4,
+        "service": "checkout-api",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-28881a5513de",
+    "causal_hints": [
+      {
+        "reason": "Causal hints require at least six aligned points per compared service.",
+        "score": 0.0,
+        "type": "insufficient_points"
+      }
+    ],
+    "classification": "critical_service_down",
+    "confidence": 0.86,
+    "incident_id": "inc-checkout-api-1782357590",
+    "investigation_summary": "Deterministic investigator summary: checkout-api produced 4 anomaly evidence item(s). Top RCA candidate is checkout-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic"
+      },
+      "enabled": false,
+      "provider": "deterministic",
+      "tool_investigation": {
+        "enabled": false,
+        "fallback": false,
+        "provider": "agentcore",
+        "runtime_arn_configured": false,
+        "tool_calls": []
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 1.0,
+        "rank": 1,
+        "reasons": [
+          "availability_success_rate fell below availability threshold at 42percent.",
+          "availability_success_rate current value 42percent is -5.8 sigma from baseline.",
+          "http_5xx_rate breached error threshold at 38percent.",
+          "2 error-like log entries; sample: health check failed: dependency connection refused"
+        ],
+        "score": 3.816,
+        "service": "checkout-api"
+      },
+      {
+        "confidence": 0.092,
+        "rank": 2,
+        "reasons": [
+          "Dependency of impacted service checkout-api via log_dependency_hint."
+        ],
+        "score": 0.35,
+        "service": "checkout"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "service_down_runbook",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Critical availability alerts need bounded investigation before any remediation is attempted."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "page_service_owner",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Page or notify the owning team for immediate human review.",
+        "type": "ESCALATE_OWNER",
+        "why": "Critical impact requires the accountable owner to validate and coordinate response."
+      },
+      {
+        "approval_reason": "Rollback changes production state and must be approved by the owning team.",
+        "evidence_refs": [
+          "recent_deploys[0]",
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]"
+        ],
+        "id": "consider_recent_deploy_rollback",
+        "priority": 3,
+        "requires_human_approval": true,
+        "risk": "medium",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
+        "type": "ROLLBACK_CONSIDER",
+        "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation."
+      }
+    ],
+    "service_topology": {
+      "edges": [
+        {
+          "evidence": "log_dependency_hint",
+          "source": "checkout-api",
+          "target": "checkout"
+        }
+      ],
+      "nodes": [
+        "checkout",
+        "checkout-api"
+      ],
+      "root_service": "checkout-api"
+    },
+    "severity": "critical",
+    "slack_payload": {
+      "channel": "#oncall-payments",
+      "text": "checkout-api: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: availability_success_rate fell below availability threshold at 42percent.; availability_success_rate current value 42percent is -5.8 sigma from baseline.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-28881a5513de."
+    },
+    "status": "DIAGNOSED",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: availability_success_rate, http_5xx_rate.",
+        "Representative log: health check failed: dependency connection refused",
+        "Recent deploy sha-critical at 2026-06-22T07:52:00Z.",
+        "Runbook available: Synthetic scenario triage."
+      ],
+      "summary": "checkout-api appears unavailable or critically degraded based on the alert and supporting context."
+    },
+    "ticket_payload": {
+      "description": "checkout-api appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: availability_success_rate, http_5xx_rate.; Representative log: health check failed: dependency connection refused; Recent deploy sha-critical at 2026-06-22T07:52:00Z.; Runbook available: Synthetic scenario triage.",
+      "fields": {
+        "audit_id": "audit-28881a5513de",
+        "confidence": 0.86,
+        "correlation_id": "corr-checkout-api-1782357590",
+        "owner_team": "payments-platform",
+        "status": "DIAGNOSED"
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "checkout-api",
+        "critical_service_down"
+      ],
+      "project": "PAY",
+      "summary": "[critical] checkout-api critical_service_down"
+    }
+  }
+}

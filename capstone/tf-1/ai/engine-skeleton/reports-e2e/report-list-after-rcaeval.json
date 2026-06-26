@@ -1,0 +1,191 @@
+﻿{
+    "reports":  [
+                    {
+                        "incident_id":  "rcaeval-re1tt_ts-route-service_disk_3",
+                        "created_at":  "2026-06-25T03:26:00.414392Z",
+                        "service":  "ts-route-service",
+                        "title":  "Noisy flapping alert on ts-route-service from RCAEval disk case",
+                        "severity":  "low",
+                        "status":  "INVESTIGATE",
+                        "classification":  "noisy_or_ambiguous_alert",
+                        "confidence":  0.45,
+                        "audit_id":  "audit-c68592a9cbb5"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re1ss_user_cpu_3",
+                        "created_at":  "2026-06-25T03:25:59.094689Z",
+                        "service":  "user",
+                        "title":  "Noisy flapping alert on user from RCAEval cpu case",
+                        "severity":  "low",
+                        "status":  "INVESTIGATE",
+                        "classification":  "noisy_or_ambiguous_alert",
+                        "confidence":  0.45,
+                        "audit_id":  "audit-58bdd435ecf1"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re1ob_cartservice_mem_1",
+                        "created_at":  "2026-06-25T03:25:57.483899Z",
+                        "service":  "cartservice",
+                        "title":  "Noisy flapping alert on cartservice from RCAEval mem case",
+                        "severity":  "low",
+                        "status":  "INVESTIGATE",
+                        "classification":  "noisy_or_ambiguous_alert",
+                        "confidence":  0.45,
+                        "audit_id":  "audit-84f60564f9da"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re2ss_catalogue_delay_2",
+                        "created_at":  "2026-06-25T03:25:56.279083Z",
+                        "service":  "catalogue",
+                        "title":  "High p95 latency on catalogue from RCAEval delay fault",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-08c73dc60f1d"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re1ss_carts_delay_1",
+                        "created_at":  "2026-06-25T03:25:55.332634Z",
+                        "service":  "carts",
+                        "title":  "High p95 latency on carts from RCAEval delay fault",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-6657b60f33a8"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re1ob_cartservice_delay_3",
+                        "created_at":  "2026-06-25T03:25:54.012911Z",
+                        "service":  "cartservice",
+                        "title":  "High p95 latency on cartservice from RCAEval delay fault",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-3b8964448d57"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re2tt_ts-auth-service_loss_1",
+                        "created_at":  "2026-06-25T03:25:52.858635Z",
+                        "service":  "ts-auth-service",
+                        "title":  "ts-auth-service is down from RCAEval loss fault",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-4799d6fa9033"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re2ss_orders_loss_1",
+                        "created_at":  "2026-06-25T03:25:51.552376Z",
+                        "service":  "orders",
+                        "title":  "orders is down from RCAEval loss fault",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-b62ffd155726"
+                    },
+                    {
+                        "incident_id":  "rcaeval-re1ss_user_loss_2",
+                        "created_at":  "2026-06-25T03:25:50.005757Z",
+                        "service":  "user",
+                        "title":  "user is down from RCAEval loss fault",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-14efaa7d6dcf"
+                    },
+                    {
+                        "incident_id":  "inc-payment-api-1782357590",
+                        "created_at":  "2026-06-25T03:19:50.995358Z",
+                        "service":  "payment-api",
+                        "title":  "High p95 latency and timeout signals on payment-api",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-99ea6d7d63e4"
+                    },
+                    {
+                        "incident_id":  "inc-checkout-api-1782357590",
+                        "created_at":  "2026-06-25T03:19:50.927338Z",
+                        "service":  "checkout-api",
+                        "title":  "checkout-api is down",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-28881a5513de"
+                    },
+                    {
+                        "incident_id":  "inc-noisy-001",
+                        "created_at":  "2026-06-24T08:42:47.345208Z",
+                        "service":  "search-api",
+                        "title":  "Noisy flapping alert on search-api",
+                        "severity":  "low",
+                        "status":  "INVESTIGATE",
+                        "classification":  "noisy_or_ambiguous_alert",
+                        "confidence":  0.45,
+                        "audit_id":  "audit-9ecc62afc1cd"
+                    },
+                    {
+                        "incident_id":  "inc-checkout-api-1782290567",
+                        "created_at":  "2026-06-24T08:42:47.286079Z",
+                        "service":  "checkout-api",
+                        "title":  "checkout-api is down",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-ef0fddcb2c76"
+                    },
+                    {
+                        "incident_id":  "inc-payment-api-1782290567",
+                        "created_at":  "2026-06-24T08:42:47.274508Z",
+                        "service":  "payment-api",
+                        "title":  "High p95 latency and timeout signals on payment-api",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-946726deea00"
+                    },
+                    {
+                        "incident_id":  "inc-checkout-api-1782290535",
+                        "created_at":  "2026-06-24T08:42:15.203213Z",
+                        "service":  "checkout-api",
+                        "title":  "checkout-api is down",
+                        "severity":  "critical",
+                        "status":  "DIAGNOSED",
+                        "classification":  "critical_service_down",
+                        "confidence":  0.86,
+                        "audit_id":  "audit-99b36ebbb2ff"
+                    },
+                    {
+                        "incident_id":  "inc-payment-api-1782290535",
+                        "created_at":  "2026-06-24T08:42:15.152088Z",
+                        "service":  "payment-api",
+                        "title":  "High p95 latency and timeout signals on payment-api",
+                        "severity":  "high",
+                        "status":  "DIAGNOSED",
+                        "classification":  "latency_degradation",
+                        "confidence":  0.82,
+                        "audit_id":  "audit-145fdedb8a56"
+                    },
+                    {
+                        "incident_id":  "rcaeval-e2e-results",
+                        "created_at":  null,
+                        "service":  null,
+                        "title":  null,
+                        "severity":  null,
+                        "status":  null,
+                        "classification":  null,
+                        "confidence":  null,
+                        "audit_id":  null
+                    }
+                ]
+}

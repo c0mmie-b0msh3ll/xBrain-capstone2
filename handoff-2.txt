@@ -1,345 +1,352 @@
-TF1 AI Ops - internal handoff và next steps
-Ngày cập nhật: 2026-06-24
-Audience: AI Ops team, mentor review, implementation follow-up.
-
-1. Current state
-
-TF1 AI Ops hiện là event-driven, compute-first triage service.
-
-High-level flow:
-
-Incident seed/event
--> bounded evidence lookup
--> normalized triage context
--> deterministic RCA/scoring
--> optional AgentCore grounded investigation
--> catalog-gated recommended actions
--> report JSON/API
--> Slack payload + Jira ticket_payload
-
-Quan trọng:
-
-- Shared handoff cho CDO phải transport-neutral.
-- Không đưa implementation detail riêng của bất kỳ CDO team nào vào docs/contracts chung.
-- AI không gọi trực tiếp vào customer application để lấy log/metrics.
-- Extra data phải đến từ CDO-hosted observability/evidence path.
-- AI/LLM không có quyền write/remediate/restart/rollback/scale.
-
-2. Important code paths
-
-TF1 app root:
-capstone/tf-1/ai/engine-skeleton
-
-Main API:
-capstone/tf-1/ai/engine-skeleton/app/main.py
-
-Worker/context flow:
-capstone/tf-1/ai/engine-skeleton/app/aiops_worker.py
-
-Incident seed conversion:
-capstone/tf-1/ai/engine-skeleton/app/incident_seed.py
-
-Bounded read-only context/tool registry:
-capstone/tf-1/ai/engine-skeleton/app/context_tools.py
-
-AgentCore LLM integration:
-capstone/tf-1/ai/engine-skeleton/app/llm.py
-
-Deterministic RCA:
-capstone/tf-1/ai/engine-skeleton/app/rca.py
-
-Catalog-gated recommended actions:
-capstone/tf-1/ai/engine-skeleton/app/action_catalog.py
-
-Tests:
-capstone/tf-1/ai/engine-skeleton/tests/test_aiops_pipeline.py
-
-Report UI:
-capstone/tf-1/ai/engine-skeleton/report-ui
-
-3. Data assets
-
-Primary data:
-
-- RCAEval raw subset:
-  capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/
-
-- RCAEval adapted requests:
-  capstone/tf-1/ai/engine-skeleton/datapack/external/adapted/
-
-- RCAEval-derived evidence bundles:
-  capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles/
-
-Current bundle coverage:
-
-- critical-service-down: 3
-- latency-degradation: 3
-- noisy-false-alert: 3
-- total: 9
-
-Supplemental data:
-
-- capstone/tf-1/ai/engine-skeleton/datapack/scenarios/
-
-Use supplemental scenario data for smoke tests and demo wiring only. Do not present it as the main eval dataset.
-
-4. Safety boundaries
-
-AgentCore is not allowed to execute remediation directly.
-
-AgentCore can only ask TF1 for extra evidence through allowlisted read-only tool calls:
-
-- get_metrics
-- get_logs
-- get_recent_deploys
-- get_ownership
-- detect_metric_anomalies
-- detect_log_anomalies
-- infer_topology
-- infer_causal_hints
-- rank_rca_candidates
-
-TF1 validates:
-
-- tenant_id
-- environment
-- service
-- bounded time window
-- max tool calls
-- log limit
-- max window minutes
-
-Final recommended actions come from `action_catalog.py`. LLM/AgentCore cannot invent action IDs or executable remediation types.
-
-5. Config/env currently expected
-
-AWS/AgentCore:
-
-- AWS_REGION=us-east-1
-- AGENTCORE_RUNTIME_ARN=...
-- ENABLE_AGENTCORE_LLM=true
-- ENABLE_AGENTCORE_LLM_TOOLS=true
-
-Tool limits:
-
-- LLM_TOOL_MAX_CALLS=3
-- LLM_TOOL_MAX_WINDOW_MINUTES=60
-- LLM_TOOL_LOG_LIMIT=50
-- LLM_TOOL_TIMEOUT_SECONDS=10
-
-Observability/evidence:
-
-- PROMETHEUS_URL=...
-- LOKI_URL=...
-- DEPLOY_METADATA_PATH=...
-- OWNERSHIP_PATH=...
-- EVIDENCE_BUNDLE_BASE_URI=... nếu CDO host bundles
-
-Slack:
-
-- SLACK_WEBHOOK_URL=... for one-way notification
-
-Auth:
-
-- SERVICE_AUTH_TOKEN=... optional for `/v1/triage`
-
-Transport-specific env vars should stay in private implementation notes, not in shared CDO handoff docs.
-
-6. Verification status
-
-Commands to run from `capstone/tf-1/ai/engine-skeleton`:
-
-python -m compileall app scripts
-python -m pytest tests -q
-python scripts/validate_datapack.py
-docker compose -f docker-compose.observability.yml config --quiet
-
-Commands to run from `capstone/tf-1/ai/engine-skeleton/report-ui`:
-
-npm run build
-
-Latest local verification on 2026-06-24:
-
-- compileall: passed
-- pytest: 20 passed
-- datapack validation: passed
-- docker compose config: passed
-- report-ui build: passed
-
-7. AWS deployment status
-
-AWS account access confirmed:
-
-- Account: 589077667575
-- Region: us-east-1
-- Caller: arn:aws:iam::589077667575:user/dinhdanhnam-admin
-
-Created/deployed:
-
-- ECR repo created: tf1-ai-triage-engine
-- ECR image pushed:
-  589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest
-- Image digest:
-  sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909
-- App Runner service ARN:
-  arn:aws:apprunner:us-east-1:589077667575:service/tf1-ai-triage-engine/540fcd194a144db09c63786d3d28c8f9
-- Demo endpoint:
-  https://snpmtcwpys.us-east-1.awsapprunner.com
-
-Smoke tests:
-
-- GET /healthz: passed, returned status ok.
-- POST /v1/triage with `samples/latency-degradation.request.json`: passed, returned DIAGNOSED / latency_degradation.
-
-Note: This is a public App Runner demo endpoint for W11 smoke testing. Production/internal deployment target remains the deployment contract path decided with CDO.
-
-8. Current Slack/Jira state
-
-Slack:
-
-- One-way notification/dry-run through Incoming Webhook.
-- No two-way Slack bot yet.
-- No slash commands, buttons, thread Q&A, or approval flow yet.
-
-Jira:
-
-- TF1 generates `ticket_payload`.
-- TF1 does not create Jira issues directly yet.
-- Current demo flow: TF1 Slack notify/report -> owner reviews -> Jira manually or integration consumes `ticket_payload`.
-
-Assignment policy:
-
-- Known service routes to owner team/project/channel.
-- Unknown service routes to default triage queue.
-- Noisy/low-confidence routes to triage queue.
-- Critical/high-confidence routes to owner queue.
-- No direct personal assignment unless Jira accountId mapping exists.
-
-9. Next AI Ops development tasks already created in Jira
-
-Project: A0X
-Issue type: Task
-
-Created tasks:
-
-- Explore Current TF1 AI Ops Source Code
-- Define AI Assignment Policy For Jira Routing
-- Extend Ownership Mapping For Routing Metadata
-- Implement Jira Publisher From TF1 Ticket Payload
-- Add Jira Configuration And Documentation
-- Implement Slack Request Verification
-- Add Slack Two-Way Read-Only Endpoints
-- Implement Slack AgentCore Q&A Over Bounded Report Context
-- Add Slack Interactive Buttons To Incident Notification
-- Add Incident Lifecycle And MTTA Audit Metadata
-- Add Integration Tests For Assignment, Jira, And Slack
-- Update AI Ops Handoff And Demo Docs
-
-Jira hygiene for W11:
-
-- Team members must pick issues.
-- Move To Do -> In Progress before coding.
-- Comment commit/PR links daily.
-- Move Done only after verification evidence exists.
-
-10. Slack AI two-way MVP
-
-Recommended scope: read-only Q&A only.
-
-Supported interactions:
-
-- Explain RCA.
-- Show evidence.
-- Show recommended actions.
-- Show Jira payload/report link.
-- Answer in Slack thread using bounded report context.
-
-Not in MVP:
-
-- rollback
-- restart
-- scale
-- database action
-- approval-based remediation
-- auto assign Jira without accountId mapping
-
-Suggested API additions:
-
-- POST /v1/slack/commands
-- POST /v1/slack/actions
-- POST /v1/slack/events
-
-Suggested module:
-
-capstone/tf-1/ai/engine-skeleton/app/slack_interactions.py
-
-Needed env:
-
-- SLACK_BOT_TOKEN=...
-- SLACK_SIGNING_SECRET=...
-- SLACK_ALLOWED_CHANNELS=...
-- SLACK_ALLOWED_USER_GROUPS=...
-- PUBLIC_TF1_CALLBACK_URL=...
-
-11. Jira publisher future work
-
-Preferred approach:
-
-Backend or integration layer creates Jira from `ticket_payload`. Slack should not be the source of record for ticket creation.
-
-Reason:
-
-- Backend has audit trail.
-- Backend has RCA evidence.
-- Backend has confidence/status/classification.
-- Backend can enforce idempotency by incident_id/audit_id.
-- Backend can attach report URL.
-
-Suggested module:
-
-capstone/tf-1/ai/engine-skeleton/app/jira_publisher.py
-
-Needed env:
-
-- JIRA_BASE_URL=...
-- JIRA_EMAIL=...
-- JIRA_API_TOKEN=...
-- JIRA_DEFAULT_PROJECT=...
-- JIRA_ISSUE_TYPE=Incident
-
-Needed mapping:
-
-- service -> jira_project
-- service/team -> Jira component
-- service owner -> Jira accountId only if auto assignment is required
-
-12. Review package for 2026-06-25
-
-Bring these files:
-
-- capstone/tf-1/ai/docs/01_requirements.md
-- capstone/tf-1/ai/docs/02_solution_design.md
-- capstone/tf-1/ai/docs/03_ai_engine_spec.md
-- capstone/tf-1/ai/docs/04_eval_report.md
-- capstone/tf-1/ai/docs/05_adrs.md
-- capstone/tf-1/ai/docs/06_cdo_evidence_handoff.md
-- capstone/tf-1/ai/docs/07_w11_readiness_checklist.md
-- capstone/tf-1/ai/contracts/telemetry-contract.md
-- capstone/tf-1/ai/contracts/ai-api-contract.md
-- capstone/tf-1/ai/contracts/deployment-contract.md
-- capstone/tf-1/standup-notes.md
-
-Supporting data/evidence handoff, not one of the 3 signed contracts:
-
-- capstone/tf-1/ai/contracts/observability-data-contract.md
-
-Talk track:
-
-- AIOps does not directly query customer applications.
-- CDO hosts/exposes bounded evidence.
-- RCAEval subset is the primary data source.
-- Evidence bundle is the W11 MVP for extra data.
-- Read-only evidence proxy is optional after bundle hosting works.
-- Triage is event-driven and compute-first.
-- AgentCore is optional grounded investigation/synthesis only.
-- No auto-remediation and no personal Jira assignment without accountId mapping.
+Dưới đây là flow hiện tại để sync với team, kèm thuật toán, ngưỡng quyết định, và bounds.
+
+**Flow Triage Hiện Tại**
+
+1. `POST /v1/triage`
+   - Nhận alert metadata và evidence nếu có.
+   - Contract public vẫn giữ nguyên, không đổi schema request.
+
+2. Validate request
+   - Check `X-Tenant-Id` khớp `tenant_id`.
+   - Check `X-Correlation-Id` khớp `correlation_id`.
+   - Nếu có `SERVICE_AUTH_TOKEN`, yêu cầu `Authorization: Bearer ...`.
+
+3. Context enrichment
+   - Inline evidence thắng trước: nếu request đã có `metrics`, `logs`, `traces`, `recent_deploys` thì giữ nguyên.
+   - Nếu có `alert.labels.evidence_uri`, engine load evidence bundle.
+   - Evidence bundle chỉ được dùng nếu đúng scope:
+     - `tenant_id`
+     - `environment`
+     - `service`
+     - thời gian nằm trong alert window
+   - Nếu thiếu field nào, gọi scoped context tools:
+     - `get_metrics`
+     - `get_logs`
+     - `get_traces`
+     - `get_recent_deploys`
+     - `get_ownership`
+   - Tool lỗi thì không fail request, chỉ degrade và ghi missing context.
+
+4. Deterministic RCA
+   - Chạy phân tích không dùng LLM:
+     - metric anomaly detection
+     - log anomaly detection
+     - topology inference
+     - causal hints
+     - RCA candidate ranking
+   - Output gồm:
+     - `anomaly_evidence`
+     - `service_topology`
+     - `causal_hints`
+     - `rca_candidates`
+     - `investigation_summary`
+
+5. Classification
+   - Rule-based classify thành:
+     - `INSUFFICIENT_CONTEXT`
+     - `INVESTIGATE`
+     - `DIAGNOSED`
+   - Classification chính:
+     - `insufficient_context`
+     - `noisy_or_ambiguous_alert`
+     - `critical_service_down`
+     - `latency_degradation`
+     - `general_investigation`
+
+6. Optional LLM investigation
+   - Chỉ chạy nếu enabled qua env.
+   - LLM chỉ được request read-only tools trong allowlist.
+   - Không được chạy PromQL/LogQL tự do, shell command, Jira, Slack, mutation, remediation.
+   - Nếu LLM lỗi, timeout, JSON sai, tool sai allowlist thì fallback deterministic.
+
+7. Jira history enrichment
+   - Read-only lookup `get_jira_history`.
+   - Dùng để gợi ý assignee.
+   - Không tạo Jira ticket.
+
+8. QA stage
+   - Mặc định chạy tối đa 1 QA iteration.
+   - Nếu QA thấy thiếu evidence/unsupported conclusion thì giảm confidence.
+   - Nếu vượt token budget thì trả best available RCA và thêm QA metadata.
+   - Không block triage.
+
+9. Response assembly
+   - Build diagnosis response:
+     - classification
+     - severity
+     - confidence
+     - suspected root cause
+     - recommended actions
+     - ticket payload
+     - audit id
+     - llm metadata + QA metadata
+   - Engine chỉ trả diagnosis data. Jira/Slack execution vẫn thuộc CDO.
+
+**Thuật Toán Đang Dùng**
+
+Metric anomaly detection:
+- Threshold rule
+- Rolling z-score 3 sigma
+- EWMA drift
+- Isolation Forest
+
+Log anomaly detection:
+- Keyword matching theo error tokens:
+  - `error`
+  - `timeout`
+  - `failed`
+  - `refused`
+  - `exhausted`
+  - `down`
+  - `deadline`
+
+Topology inference:
+- Từ metric labels `dependency`
+- Từ log labels `dependency`
+- Từ text log có dependency keywords:
+  - `redis`, `postgres`, `mysql`, `kafka`, `s3`, `checkout`, `payment`, `inventory`
+
+Causal hints:
+- Lag correlation giữa metric series của các service.
+- Chỉ chạy nếu mỗi service có đủ điểm dữ liệu.
+
+RCA ranking:
+- Cộng điểm từ:
+  - anomaly evidence score
+  - dependency relationship
+  - recent deploy
+  - causal hints
+- Trả top 5 RCA candidates.
+
+Classification:
+- Rule-based deterministic classifier.
+
+QA:
+- Deterministic consistency checks, không phải LLM QA hiện tại.
+
+**Decision Thresholds**
+
+Metric thresholds:
+- Latency: metric name chứa `latency`, value `>= 1000`
+- Error/5xx: metric name chứa `error` hoặc `5xx`, value `>= 5`
+- Availability: metric name chứa `availability`, value `< 95`
+- Timeout: metric name chứa `timeout`, value `>= 10`
+- CPU/memory: metric name chứa `cpu` hoặc `memory`, value `>= 85`
+
+Statistical thresholds:
+- Rolling z-score: anomaly nếu `abs(z_score) >= 3.0`
+- EWMA drift: anomaly nếu drift >= max của:
+  - `3 * spread`
+  - `25% expected`
+  - `1.0`
+- Isolation Forest:
+  - chạy khi có ít nhất 8 data points
+  - và ít nhất 3 giá trị khác nhau
+  - contamination = `0.15`
+  - latest point bị classify là outlier thì emit anomaly
+
+Causal hint:
+- Lag correlation cần ít nhất 6 aligned points.
+- Emit hint nếu `abs(correlation) >= 0.7`.
+
+Classification confidence:
+- `INSUFFICIENT_CONTEXT`: `0.25`
+- `noisy_or_ambiguous_alert`: `0.45`
+- `critical_service_down`: `0.86`
+- `latency_degradation`: `0.82`
+- `general_investigation`: `0.55`
+
+LLM investigation trigger:
+- Chạy nếu enabled và:
+  - confidence `< 0.7`, hoặc
+  - status là `INSUFFICIENT_CONTEXT` / `INVESTIGATE`, hoặc
+  - thiếu metrics/logs/recent deploys, hoặc
+  - alert text chứa `ambiguous`, `noisy`, `dependency`, `missing context`.
+
+**Bounds / Guardrails**
+
+Request/API:
+- Public API giữ nguyên: `POST /v1/triage`.
+- Internal endpoints thêm:
+  - `/metrics`
+  - `/readyz`
+  - `/healthz`
+
+Context tools:
+- Read-only only.
+- Scope bắt buộc:
+  - same tenant
+  - same environment
+  - same service
+  - bounded time window
+- Default max window: `60 phút`.
+- Default log limit: `50`.
+- Context tool timeout: `AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS`, default `3s`.
+- Tool failure không fail request.
+
+LLM tools:
+- Max tool calls: `LLM_TOOL_MAX_CALLS`, default `3`.
+- Tool window max: `LLM_TOOL_MAX_WINDOW_MINUTES`, default `60`.
+- Log limit: `LLM_TOOL_LOG_LIMIT`, default `50`.
+- Token budget: `AIOPS_LLM_MAX_TOKENS_PER_INCIDENT`.
+- Nếu vượt budget thì fallback/degrade.
+- LLM không được mutate hệ thống.
+
+QA:
+- `AIOPS_QA_MAX_ITERATIONS=1`
+- `AIOPS_QA_REPAIR_MAX_ITERATIONS=1`
+- Nếu QA fail hoặc budget exceeded:
+  - trả best available diagnosis
+  - giảm confidence `-0.1`
+  - ghi metadata trong `llm_metadata.qa`
+
+Triage deadline:
+- `AIOPS_TRIAGE_DEADLINE_SECONDS=30`
+- Nếu vượt deadline thì ghi budget exceeded metric.
+
+Observability:
+- Metrics low-cardinality only.
+- Không label theo alert title, trace id, incident id, raw evidence.
+- Logs metadata-only mặc định:
+  - có audit/tenant/service/env/stage/status/duration/counts
+  - không log raw customer evidence.
+
+**Metrics Chính**
+
+Request:
+- `aiops_triage_requests_total{status,classification}`
+- `aiops_triage_request_duration_seconds`
+- `aiops_triage_inflight_requests`
+
+Context:
+- `aiops_context_tool_calls_total{tool,status}`
+- `aiops_context_tool_duration_seconds{tool}`
+- `aiops_context_enrichment_missing_fields_total{field}`
+- `aiops_context_enrichment_result_total{result}`
+
+LLM/QA:
+- `aiops_llm_calls_total{stage,model,status}`
+- `aiops_llm_tokens_total{stage,model,type}`
+- `aiops_llm_estimated_cost_usd_total{stage,model}`
+- `aiops_qa_iterations_total{result}`
+
+Self-protection:
+- `aiops_circuit_breaker_open{dependency}`
+- `aiops_budget_exceeded_total{budget_type}`
+- `aiops_degraded_mode_total{reason}`
+
+**Agent Hiện Đang Làm Gì**
+
+Hiện tại "agent" trong repo không phải là một autonomous agent được host riêng để tự mutate hệ thống. Nó là một pipeline gồm 2 phần chính:
+
+1. Triage engine
+   - FastAPI service: `app.main`.
+   - Endpoint chính: `POST /v1/triage`.
+   - Chạy deterministic RCA trước.
+   - Optional mới gọi LLM/AgentCore để:
+     - viết investigation summary,
+     - reword recommended actions,
+     - đề xuất bounded read-only tool calls.
+   - Engine vẫn là bên validate scope và execute tool local, không để LLM tự chạy lệnh.
+
+2. AIOps worker
+   - Script: `app.aiops_worker`.
+   - Nhiệm vụ:
+     - query Prometheus/Loki/Jaeger hoặc đọc offline datapack,
+     - detect incident candidate,
+     - build normalized triage request,
+     - gọi `/v1/triage`,
+     - ghi report JSON,
+     - publish Slack dry-run hoặc Slack webhook nếu configured.
+   - Worker cũng có SQS mode để consume incident seed từ queue.
+
+**Host Ở Đâu**
+
+Local/dev host:
+- Triage engine chạy ở:
+  - `http://localhost:8080`
+  - health: `http://localhost:8080/healthz`
+  - metrics: `http://localhost:8080/metrics`
+- Report UI:
+  - `http://localhost:5173`
+- Prometheus:
+  - `http://localhost:9090`
+- Loki:
+  - `http://localhost:3100`
+- Jaeger:
+  - `http://localhost:16686`
+- Grafana:
+  - `http://localhost:3000`
+
+Docker Compose host:
+- Service name trong compose: `triage-engine`.
+- Container name: `tf1-triage-engine`.
+- Nội bộ compose gọi qua:
+  - `http://triage-engine:8080/v1/triage`
+- Bên ngoài máy host gọi qua:
+  - `http://localhost:8080/v1/triage`
+
+AWS/AgentCore host:
+- AgentCore không host toàn bộ triage engine.
+- AgentCore chỉ là optional LLM runtime bên AWS Bedrock AgentCore.
+- Triage engine gọi AgentCore qua:
+  - `boto3.client("bedrock-agentcore")`
+  - `invoke_agent_runtime(...)`
+  - `AGENTCORE_RUNTIME_ARN`
+- Nếu không set env AgentCore thì engine chạy deterministic-only.
+
+**Kéo Về / Chạy Lên Như Thế Nào**
+
+Kéo code về:
+- Pull repo bình thường bằng Git.
+- Vào thư mục:
+  - `capstone/tf-1/ai/engine-skeleton`
+
+Chạy full local demo stack:
+- `docker compose -f docker-compose.observability.yml up --build`
+
+Chạy API không Docker:
+- `pip install -r requirements.txt`
+- `python -m uvicorn app.main:app --host 127.0.0.1 --port 8081`
+
+Trigger report offline:
+- `python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports`
+
+Kéo data observability về:
+- Worker query Prometheus bằng `PROMETHEUS_URL`.
+- Worker query Loki bằng `LOKI_URL`.
+- Worker query Jaeger bằng `JAEGER_URL`.
+- Query đều bounded theo tenant/service/environment/window.
+
+Kéo incident seed từ SQS:
+- Set `SQS_QUEUE_URL`.
+- Worker chạy SQS mode.
+- Worker receive message, validate `IncidentSeed`, build triage request, gọi `/v1/triage`, ghi report, rồi delete message nếu xử lý thành công.
+
+**AgentCore Runtime Có Phải Agent Không**
+
+Đúng, nhưng chỉ là optional LLM runtime, không phải core control plane.
+
+AgentCore runtime dùng cho:
+- `investigation_summary`
+- `action_wording`
+- `tool_calls` read-only
+
+AgentCore runtime không được:
+- tự query Prometheus/Loki bằng query tự do,
+- chạy shell command,
+- mutate app/customer system,
+- tạo Jira,
+- post Slack,
+- rollback/restart/scale service.
+
+Env để bật AgentCore:
+- `AWS_REGION=us-east-1`
+- `AGENTCORE_RUNTIME_ARN=arn:aws:bedrock-agentcore:...:runtime/tf1-investigator`
+- `ENABLE_AGENTCORE_LLM=true`
+- `ENABLE_AGENTCORE_LLM_TOOLS=true`
+
+Nếu AgentCore lỗi:
+- engine fallback deterministic RCA,
+- không fail request,
+- ghi degraded metadata/metrics.

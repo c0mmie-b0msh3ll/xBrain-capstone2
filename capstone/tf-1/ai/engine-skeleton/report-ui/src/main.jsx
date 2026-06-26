@@ -191,9 +191,9 @@ function ReportDetail({ incidentId }) {
         <p className="lead">{report.investigation_summary || triage.investigation_summary || "No investigator summary available."}</p>
       </ReportSection>
 
-      <ReportSection title="Slack And Jira Payloads">
+      <ReportSection title="Slack Context And Jira Payload">
         <div className="payloadGrid">
-          <Payload title="Slack" value={report.slack_payload || triage.slack_payload} />
+          <Payload title="Slack Context" value={report.slack_context || slackContextFromTriage(triage)} />
           <Payload title="Jira" value={report.jira_payload || triage.ticket_payload} />
         </div>
       </ReportSection>
@@ -254,6 +254,18 @@ function RecommendedActions({ actions }) {
 
 function Payload({ title, value }) {
   return <div><h3>{title}</h3><pre className="payload">{JSON.stringify(value || {}, null, 2)}</pre></div>;
+}
+
+function slackContextFromTriage(triage) {
+  return {
+    incident_id: triage.incident_id,
+    classification: triage.classification,
+    severity: triage.severity,
+    confidence: triage.confidence,
+    status: triage.status,
+    suggested_assignee_account_id: triage.suggested_assignee_account_id,
+    suggestion_reason: triage.suggestion_reason,
+  };
 }
 
 function Empty({ text }) {

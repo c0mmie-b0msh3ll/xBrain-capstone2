@@ -2,18 +2,40 @@ from __future__ import annotations
 
 import hashlib
 import os
+import time
 from typing import Any, Literal
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.action_catalog import select_actions
+from app.agent_runtime import agent_platform_enabled, run_agent_platform
+from app.context_enrichment import enrich_triage_context
+from app.context_tools import ToolRegistry, ToolScopeError, scope_from_request
+from app.investigation_router import select_investigation_mode
 from app.llm import investigate_with_tools, reword_catalog_actions, synthesize_investigation_summary
+from app.observability import (
+    BUDGET_EXCEEDED_TOTAL,
+    DEGRADED_MODE_TOTAL,
+    INVESTIGATION_MODE_SELECTED_TOTAL,
+    QA_ITERATIONS_TOTAL,
+    TRIAGE_INFLIGHT_REQUESTS,
+    TRIAGE_REQUEST_DURATION_SECONDS,
+    TRIAGE_REQUESTS_TOTAL,
+    configure_logging,
+    configure_tracing,
+    log_event,
+    metrics_response,
+    span,
+)
 from app.rca import analyze_request
 from app.report_store import list_reports, read_report
 
+
+configure_logging()
+configure_tracing()
 
 app = FastAPI(title="TF1 AI Triage Engine", version="v1")
 app.add_middleware(
@@ -169,6 +191,22 @@ def healthz() -> dict[str, str]:
     return {"status": "ok", "service": "tf1-ai-triage-engine", "version": "v1"}
 
 
+@app.get("/readyz")
+def readyz() -> dict[str, Any]:
+    return {
+        "status": "ready",
+        "service": "tf1-ai-triage-engine",
+        "observability": os.getenv("AIOPS_OBSERVABILITY_ENABLED", "true"),
+        "qa_max_iterations": int(os.getenv("AIOPS_QA_MAX_ITERATIONS", "1")),
+    }
+
+
+@app.get("/metrics")
+def metrics() -> Response:
+    payload, content_type = metrics_response()
+    return Response(content=payload, media_type=content_type)
+
+
 @app.get("/v1/reports")
 def get_reports() -> dict[str, Any]:
     return {"reports": list_reports()}
@@ -200,18 +238,110 @@ def triage(
     x_correlation_id: str = Header(..., alias="X-Correlation-Id"),
     authorization: str | None = Header(default=None, alias="Authorization"),
 ) -> TriageResponse:
-    validate_headers(request, x_tenant_id, x_correlation_id, authorization)
-    audit_id = build_audit_id(request)
+    with span("request_validation", tenant_id=request.tenant_id, service=request.alert.service, environment=request.environment):
+        validate_headers(request, x_tenant_id, x_correlation_id, authorization)
+        audit_id = build_audit_id(request)
     return triage_request(request, audit_id)
 
 
 def triage_request(request: TriageRequest, audit_id: str | None = None) -> TriageResponse:
     audit_id = audit_id or build_audit_id(request)
-    rca = analyze_request(request)
-    decision = classify(request, rca)
-    request, rca, decision, tool_metadata = investigate_with_tools(request, decision, rca)
-    decision = classify(request, rca)
-    return build_response(request, audit_id, decision, {"tool_investigation": tool_metadata})
+    started = time.perf_counter()
+    TRIAGE_INFLIGHT_REQUESTS.inc()
+    classification = "unknown"
+    status = "error"
+    try:
+        with span("triage_request", audit_id=audit_id, tenant_id=request.tenant_id, service=request.alert.service, environment=request.environment):
+            log_triage_stage(request, audit_id, "started", "ok")
+            with span("context_enrichment", audit_id=audit_id):
+                enriched_body = enrich_triage_context(request.model_dump(mode="json"))
+            request = TriageRequest.model_validate(enriched_body)
+
+            with span("deterministic_rca", audit_id=audit_id):
+                rca = analyze_request(request)
+            decision = classify(request, rca)
+
+            with span("mode_selection", audit_id=audit_id):
+                mode_selection = select_investigation_mode(request, decision, rca, agent_platform_enabled())
+                INVESTIGATION_MODE_SELECTED_TOTAL.labels(
+                    mode=mode_selection.selected_mode,
+                    source=mode_selection.source,
+                ).inc()
+            log_triage_stage(
+                request,
+                audit_id,
+                "mode_selected",
+                "ok",
+                classification=decision["classification"],
+                investigation_mode=mode_selection.selected_mode,
+                complexity_score=mode_selection.complexity_score,
+            )
+
+            platform_action_ids: list[str] = []
+            tool_metadata: dict[str, Any] = {"enabled": False, "skipped_reason": "mode_not_agent_assisted"}
+            agent_metadata: dict[str, Any] | None = None
+            if mode_selection.selected_mode == "agent_assisted":
+                with span("llm_investigation", audit_id=audit_id):
+                    request, rca, decision, tool_metadata = investigate_with_tools(request, decision, rca)
+            elif mode_selection.selected_mode == "agent_platform":
+                with span("agent_platform", audit_id=audit_id):
+                    request, rca, decision, agent_metadata, platform_action_ids = run_agent_platform(request, decision, rca)
+
+            with span("deterministic_rca_reclassify", audit_id=audit_id):
+                rca = enrich_rca_with_jira_history(request, rca)
+                if mode_selection.selected_mode != "agent_platform" or (agent_metadata and agent_metadata.get("fallback")):
+                    decision = classify(request, rca)
+                else:
+                    decision = decision.copy()
+                    decision["rca"] = rca
+
+            with span("qa", audit_id=audit_id):
+                qa_metadata = run_qa(request, decision, rca)
+            if qa_metadata.get("confidence_delta"):
+                decision = decision.copy()
+                decision["confidence"] = max(0.0, round(decision["confidence"] + float(qa_metadata["confidence_delta"]), 2))
+
+            with span("response_assembly", audit_id=audit_id):
+                response = build_response(
+                    request,
+                    audit_id,
+                    decision,
+                    {
+                        "investigation_mode": mode_selection.selected_mode,
+                        "mode_selection": mode_selection.metadata(),
+                        "tool_investigation": tool_metadata,
+                        "agent_platform": agent_metadata,
+                        "qa": qa_metadata,
+                    },
+                    platform_action_ids,
+                )
+            classification = response.classification
+            status = response.status
+            log_triage_stage(
+                request,
+                audit_id,
+                "completed",
+                status,
+                classification=classification,
+                started=started,
+                investigation_mode=mode_selection.selected_mode,
+                complexity_score=mode_selection.complexity_score,
+                agent_iterations=(agent_metadata or {}).get("iterations"),
+                fallback_reason=(agent_metadata or {}).get("fallback_reason"),
+            )
+            return response
+    except Exception as exc:
+        DEGRADED_MODE_TOTAL.labels(reason="triage_exception").inc()
+        log_triage_stage(request, audit_id, "failed", "error", error_class=type(exc).__name__, started=started)
+        raise
+    finally:
+        duration = time.perf_counter() - started
+        deadline = float(os.getenv("AIOPS_TRIAGE_DEADLINE_SECONDS", "30"))
+        if duration > deadline:
+            BUDGET_EXCEEDED_TOTAL.labels(budget_type="triage_deadline").inc()
+        TRIAGE_REQUEST_DURATION_SECONDS.observe(duration)
+        TRIAGE_REQUESTS_TOTAL.labels(status=status, classification=classification).inc()
+        TRIAGE_INFLIGHT_REQUESTS.dec()
 
 
 def validate_headers(
@@ -340,11 +470,116 @@ def collect_evidence(request: TriageRequest, fallback: str) -> list[str]:
     return evidence or [fallback]
 
 
+def run_qa(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> dict[str, Any]:
+    max_iterations = int(os.getenv("AIOPS_QA_MAX_ITERATIONS", "1"))
+    repair_max_iterations = int(os.getenv("AIOPS_QA_REPAIR_MAX_ITERATIONS", "1"))
+    token_budget = int(os.getenv("AIOPS_LLM_MAX_TOKENS_PER_INCIDENT", "0") or 0)
+    metadata: dict[str, Any] = {
+        "enabled": max_iterations > 0,
+        "iterations": 0,
+        "repair_iterations": 0,
+        "result": "skipped" if max_iterations <= 0 else "passed",
+    }
+    if max_iterations <= 0:
+        QA_ITERATIONS_TOTAL.labels(result="skipped").inc()
+        return metadata
+
+    metadata["iterations"] = 1
+    issues = qa_findings(request, decision, rca)
+    if token_budget and estimate_qa_tokens(request, decision, rca) > token_budget:
+        metadata["result"] = "budget_exceeded"
+        metadata["confidence_delta"] = -0.1
+        BUDGET_EXCEEDED_TOTAL.labels(budget_type="qa_tokens").inc()
+        DEGRADED_MODE_TOTAL.labels(reason="qa_budget_exceeded").inc()
+    elif issues:
+        metadata["result"] = "failed"
+        metadata["issues"] = issues
+        metadata["confidence_delta"] = -0.1
+        if repair_max_iterations > 0:
+            metadata["repair_iterations"] = 1
+            metadata["repair_result"] = "not_attempted_deterministic_only"
+        DEGRADED_MODE_TOTAL.labels(reason="qa_failed").inc()
+    QA_ITERATIONS_TOTAL.labels(result=str(metadata["result"])).inc()
+    return metadata
+
+
+def qa_findings(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> list[str]:
+    findings: list[str] = []
+    if decision["status"] == "DIAGNOSED" and not decision.get("evidence"):
+        findings.append("diagnosis_missing_evidence")
+    if decision["status"] == "DIAGNOSED" and not (request.metrics or request.logs or request.recent_deploys or rca.get("anomaly_evidence")):
+        findings.append("diagnosis_without_supporting_context")
+    if decision["classification"] == "latency_degradation" and "latency" not in " ".join(decision.get("evidence", []) + [request.alert.title]).lower():
+        findings.append("latency_classification_without_latency_evidence")
+    return findings
+
+
+def estimate_qa_tokens(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> int:
+    evidence_items = len(request.metrics) + len(request.logs) + len(request.traces) + len(request.recent_deploys)
+    return 64 + (evidence_items * 24) + (len(decision.get("evidence", [])) * 16) + (len(rca.get("anomaly_evidence", [])) * 24)
+
+
+def log_triage_stage(
+    request: TriageRequest,
+    audit_id: str,
+    stage: str,
+    status: str,
+    classification: str | None = None,
+    error_class: str | None = None,
+    started: float | None = None,
+    investigation_mode: str | None = None,
+    complexity_score: int | None = None,
+    agent_iterations: int | None = None,
+    fallback_reason: str | None = None,
+) -> None:
+    duration_ms = round((time.perf_counter() - started) * 1000, 2) if started else None
+    log_event(
+        "triage_stage",
+        audit_id=audit_id,
+        tenant_id=request.tenant_id,
+        correlation_id=request.correlation_id,
+        incident_id=request.incident_id,
+        service=request.alert.service,
+        environment=request.environment,
+        stage=stage,
+        status=status,
+        classification=classification,
+        duration_ms=duration_ms,
+        metrics_count=len(request.metrics),
+        logs_count=len(request.logs),
+        traces_count=len(request.traces),
+        deploys_count=len(request.recent_deploys),
+        error_class=error_class,
+        investigation_mode=investigation_mode,
+        complexity_score=complexity_score,
+        agent_iterations=agent_iterations,
+        fallback_reason=fallback_reason,
+    )
+
+
+def enrich_rca_with_jira_history(request: TriageRequest, rca: dict[str, Any]) -> dict[str, Any]:
+    enriched = dict(rca)
+    if isinstance(enriched.get("jira_history"), dict):
+        return enriched
+    try:
+        result = ToolRegistry().execute("get_jira_history", {}, scope_from_request(request), request)
+        jira_history = result.get("result")
+    except (ToolScopeError, OSError, ValueError, RuntimeError):
+        jira_history = {
+            "suggested_assignee_account_id": None,
+            "suggestion_reason": "Jira history lookup was unavailable; route to owner team for human confirmation.",
+        }
+    if isinstance(jira_history, dict):
+        enriched["jira_history"] = jira_history
+    return enriched
+
+
 def build_response(
     request: TriageRequest,
     audit_id: str,
     decision: dict[str, Any],
     extra_llm_metadata: dict[str, Any] | None = None,
+    advisory_action_ids: list[str] | None = None,
 ) -> TriageResponse:
     owner = request.ownership or Ownership(service=request.alert.service)
     project = owner.jira_project or "OPS"
@@ -355,13 +590,28 @@ def build_response(
     service_topology = request.service_topology or rca.get("service_topology")
     rca_candidates = request.rca_candidates or rca.get("rca_candidates", [])
     causal_hints = request.causal_hints or rca.get("causal_hints", [])
-    llm_result = synthesize_investigation_summary(request, decision, rca)
+    investigation_mode = (extra_llm_metadata or {}).get("investigation_mode")
+    if investigation_mode in {"deterministic_only", "agent_platform"}:
+        llm_result = {"enabled": False, "provider": "deterministic", "skipped_reason": f"{investigation_mode}_mode"}
+    else:
+        llm_result = synthesize_investigation_summary(request, decision, rca)
     investigation_summary = request.investigation_summary or llm_result.get("summary") or rca.get("investigation_summary")
+    if investigation_mode == "agent_platform" and decision.get("agent_final"):
+        investigation_summary = decision["summary"]
     llm_metadata = {key: value for key, value in llm_result.items() if key != "summary"}
     if extra_llm_metadata:
-        llm_metadata.update(extra_llm_metadata)
+        llm_metadata.update({key: value for key, value in extra_llm_metadata.items() if value is not None})
     selected_actions = select_actions(request, decision, rca, runbook_ref)
-    action_wording = reword_catalog_actions(request, decision, rca, selected_actions)
+    if investigation_mode == "agent_platform" and advisory_action_ids:
+        advisory = [action for action in selected_actions if action.get("id") in set(advisory_action_ids)]
+        if advisory:
+            selected_actions = advisory
+            for index, action in enumerate(selected_actions):
+                action["priority"] = index + 1
+    if investigation_mode in {"deterministic_only", "agent_platform"}:
+        action_wording = {"actions": selected_actions, "metadata": {"enabled": False, "provider": "deterministic", "skipped_reason": f"{investigation_mode}_mode"}}
+    else:
+        action_wording = reword_catalog_actions(request, decision, rca, selected_actions)
     action_payloads = action_wording["actions"]
     llm_metadata["action_wording"] = action_wording["metadata"]
     actions = [RecommendedAction(**action) for action in action_payloads]

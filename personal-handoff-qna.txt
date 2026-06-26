@@ -1,0 +1,354 @@
+TF1 AI Ops - Personal Handoff/Q&A Cheat Sheet
+Date: 2026-06-25
+Audience: for my own onsite/team/mentor replies
+
+1. One-line status
+
+TF1 AI Ops W11 package is ready for review: docs are updated, 3 signed/frozen contracts are ready, RCAEval-derived evidence bundles are prepared, AWS demo endpoint is deployed and smoke-tested, and Jira backlog/evidence tasks are created.
+
+Demo endpoint:
+https://snpmtcwpys.us-east-1.awsapprunner.com
+
+Latest pushed commit:
+2d81531 Clarify CDO handoff routing wording
+
+2. What we currently have
+
+Docs ready:
+
+- capstone/tf-1/ai/docs/01_requirements.md
+- capstone/tf-1/ai/docs/02_solution_design.md
+- capstone/tf-1/ai/docs/03_ai_engine_spec.md
+- capstone/tf-1/ai/docs/04_eval_report.md
+- capstone/tf-1/ai/docs/05_adrs.md
+- capstone/tf-1/ai/docs/06_cdo_evidence_handoff.md
+- capstone/tf-1/ai/docs/07_w11_readiness_checklist.md
+- capstone/tf-1/ai/docs/08_discovery_debrief.md
+- capstone/tf-1/ai/docs/09_w12_delivery_plan.md
+
+3 contracts to sign/freeze:
+
+- capstone/tf-1/ai/contracts/telemetry-contract.md
+- capstone/tf-1/ai/contracts/ai-api-contract.md
+- capstone/tf-1/ai/contracts/deployment-contract.md
+
+Supporting handoff, not a 4th signed contract:
+
+- capstone/tf-1/ai/contracts/observability-data-contract.md
+
+Handoff files:
+
+- handoff-1.txt: CDO-facing, transport-neutral.
+- handoff-2.txt: AI Ops internal.
+
+Process/evidence files:
+
+- capstone/tf-1/standup-notes.md
+- capstone/tf-1/curveball-responses.md
+- capstone/tf-1/individual-pitches.md
+
+Data assets:
+
+- RCAEval raw subset:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/rcaeval-subsets/
+
+- RCAEval adapted requests:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/adapted/
+
+- RCAEval evidence bundles:
+  capstone/tf-1/ai/engine-skeleton/datapack/external/evidence-bundles/
+
+Current bundle count:
+
+- critical-service-down: 3
+- latency-degradation: 3
+- noisy-false-alert: 3
+- total: 9
+
+Important data caveat:
+
+- Primary scenario data is RCAEval subset.
+- Local RCAEval subset currently provides metrics and inject time.
+- Logs/traces/deploy/ownership/runbooks are supplemental sample-derived records and are marked in `data_lineage`.
+- Synthetic scenario datapack is only smoke/demo/supplemental, not the primary dataset.
+
+3. Architecture explanation
+
+Short version:
+
+Incident seed/event
+-> CDO-hosted evidence bundle or read-only evidence proxy
+-> TF1 AIOps context layer
+-> POST /v1/triage
+-> compute-first RCA
+-> optional AgentCore synthesis
+-> report + Slack payload + Jira ticket_payload
+
+Longer version:
+
+TF1 does not let AI directly call customer applications for logs or metrics. CDO/platform owns observability collection, storage, retention, auth, and bounded evidence access. AI Ops owns normalization, detection/context packaging, RCA, confidence gating, report generation, and Slack/Jira payload output.
+
+The triage engine is event-driven. It is not continuously running expensive AI over every metric/log event. A lightweight detector/context layer identifies an incident candidate, collects bounded context, then calls `/v1/triage`.
+
+4. What to say if CDO asks "AI lấy thêm data từ đâu?"
+
+Answer:
+
+AI does not go to customer apps directly. Extra evidence comes from CDO-hosted observability/evidence paths:
+
+- metrics
+- logs
+- traces
+- deploy metadata
+- ownership mapping
+- runbook excerpts
+
+W11 MVP is precomputed evidence bundles. CDO can host JSON bundles in S3/MinIO/object storage, Postgres/DynamoDB, or an internal static service. Later, if live query is needed, CDO can expose a read-only evidence proxy with approved operations only.
+
+Approved read-only operations:
+
+- get_metric_window
+- get_log_snippets
+- get_trace_summary
+- get_deploy_events
+- get_ownership
+- get_runbook_excerpt
+
+Do not say:
+
+- Do not mention any CDO team's private transport choice.
+- Do not say AI has direct Prometheus/Loki credentials unless CDO explicitly chooses that.
+- Do not say LLM can generate arbitrary PromQL/LogQL.
+
+5. What to say if mentor asks "Why 4 contract files?"
+
+Answer:
+
+We still only have 3 W11 signed/frozen contracts as required:
+
+1. Telemetry contract
+2. AI API contract
+3. Deployment contract
+
+`observability-data-contract.md` is a supporting data-availability handoff. It exists because CDO asked where metrics/logs/traces/deploy/runbook evidence should come from and how to host/expose it. It is not counted as the 4th signed contract.
+
+6. What to say if mentor asks "Why not just send all logs/metrics into AI?"
+
+Answer:
+
+Because it is unsafe, expensive, and hard to audit. We only send bounded incident context:
+
+- tenant scoped
+- service scoped
+- environment scoped
+- time-window scoped
+- redacted/sampled logs
+- limited trace summaries
+- metadata with audit IDs
+
+The LLM, if enabled, only sees grounded evidence/report context after compute-first RCA. It does not receive unbounded raw telemetry or backend credentials.
+
+7. What to say if mentor asks "What exactly does the AI do?"
+
+Answer:
+
+Current skeleton does compute-first triage:
+
+- validates tenant/correlation headers
+- validates request schema
+- extracts metric/log/deploy/ownership features
+- runs deterministic RCA classification
+- computes confidence/status
+- selects catalog-gated recommended actions
+- returns report data, Slack payload, Jira ticket_payload, and audit_id
+
+Optional AgentCore/LLM is only for grounded synthesis/investigation wording after deterministic evidence exists. It is not the source of truth for remediation.
+
+8. What to say if mentor asks "What scenarios do you cover?"
+
+Answer:
+
+Three required TF1 scenarios:
+
+- critical service down
+- latency degradation
+- noisy/false alert
+
+We have:
+
+- 4 direct sample requests including insufficient context
+- 3 supplemental scenario datapacks
+- 9 RCAEval-derived evidence bundles across the three main scenario categories
+
+Expected behavior:
+
+- Critical service down -> DIAGNOSED / critical_service_down
+- Latency degradation -> DIAGNOSED / latency_degradation
+- Noisy alert -> INVESTIGATE / noisy_or_ambiguous_alert
+- Missing context -> INSUFFICIENT_CONTEXT
+
+9. What to say if mentor asks "What is deployed?"
+
+Answer:
+
+We deployed the engine skeleton to AWS App Runner for W11 demo integration.
+
+Endpoint:
+https://snpmtcwpys.us-east-1.awsapprunner.com
+
+Evidence:
+
+- GET /healthz passed.
+- POST /v1/triage with latency sample passed.
+- ECR image:
+  589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest
+- Image digest:
+  sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909
+
+Important nuance:
+
+App Runner is the W11 demo endpoint. Production/internal target remains ECS Fargate/internal ALB or equivalent container platform as described in deployment contract and finalized with CDO.
+
+10. What to say if CDO asks "Mình cần làm gì?"
+
+Answer:
+
+For W11/W12 handoff, CDO needs to:
+
+1. Confirm they can call `/healthz` and `/v1/triage`.
+2. Confirm how they will host or expose evidence bundles.
+3. Preserve tenant/service/environment/timestamp labels.
+4. Provide bounded metrics/logs/traces/deploy/ownership/runbook evidence.
+5. Confirm auth/network boundary.
+6. Confirm Slack/Jira integration config if they want live send/create.
+7. Keep implementation transport details private if needed; shared AI contract only needs input/output/evidence boundary.
+
+11. What to say if CDO asks "Incident event cần chứa gì?"
+
+Answer:
+
+The incident seed/event only needs enough data to identify and scope the incident:
+
+- schema_version
+- tenant_id
+- correlation_id
+- incident_id
+- environment
+- service
+- severity
+- title/description
+- started_at/received_at
+- labels
+- optional evidence_uri
+
+It does not need to contain full metrics/logs. Full evidence can be hosted separately and looked up by incident_id/evidence_uri.
+
+12. What to say if mentor asks "How do you measure MTTA/MTTR?"
+
+Answer:
+
+For W11, we document the baseline plan. For W12 final eval:
+
+- MTTA reduction target: >= 50%
+- MTTR reduction target: >= 30%, or time-to-actionable-ticket proxy if real fix time cannot be measured
+
+Method:
+
+Compare manual investigation steps versus Triage Hub flow on the same three scenarios:
+
+- time to identify owner
+- time to collect evidence
+- time to produce suspected RCA
+- time to create Jira payload/report
+- time to notify Slack owner
+
+13. What to say if mentor asks "What is still pending?"
+
+Answer:
+
+W11 review package is ready. Pending items are expected onsite/W12 work:
+
+- sign names/timestamps in three contracts after CDO/mentor approval
+- record Curveball #1 response
+- CDO chooses evidence bundle hosting location
+- team members pick Jira tasks and attach evidence
+- W12 final eval precision/recall/F1/latency
+- W12 slides/demo video/final build
+- optional live Slack/Jira publisher if config is approved
+
+14. Jira status
+
+Project:
+A0X / AIO-01-XBrain
+
+Backlog:
+
+- A0X-19 to A0X-30: implementation backlog for Jira routing, Slack two-way, tests, docs.
+- A0X-32 to A0X-35: W11 docs/deploy/datapack/evidence tasks.
+- A0X-31 is duplicate of A0X-27.
+
+What to tell team:
+
+Everyone should pick a task, assign to self, move To Do -> In Progress, then attach evidence/commit/PR/screenshot before Done. Mentor tracks Jira history for W11/W12 grading and individual defense.
+
+15. If asked about Slack
+
+Current:
+
+- One-way Slack payload/webhook style notification.
+- No two-way Slack bot yet.
+
+Future MVP:
+
+- slash command/actions/events
+- verify Slack signing secret
+- read-only Q&A in thread
+- AgentCore answers only from bounded report context
+- no rollback/restart/scale/DB actions
+
+16. If asked about Jira
+
+Current:
+
+- TF1 generates `ticket_payload`.
+- Live Jira issue creation is not mandatory for W11.
+
+Future:
+
+- `jira_publisher.py`
+- feature flag enable/disable
+- idempotency by incident_id/audit_id
+- stores Jira key/link in report metadata
+- personal assignment only if Jira accountId mapping exists
+
+Assignment policy:
+
+- known owner -> owner team/project/channel
+- unknown/noisy/low-confidence -> triage backlog/lane
+- critical/high-confidence -> owner backlog/lane
+- no direct personal assignment without accountId
+
+17. Strong talking points
+
+- We are not building a raw-data LLM wrapper.
+- We are building event-driven, compute-first, evidence-bounded triage.
+- CDO owns observability plumbing and data exposure.
+- AI Ops owns interpretation, RCA, confidence, and output payloads.
+- RCAEval subset is the primary scenario data.
+- Evidence bundles make CDO handoff concrete.
+- No auto-remediation.
+- 3 signed contracts only; observability data contract is supporting handoff.
+
+18. Avoid saying
+
+- Do not mention private transport/queue implementation details from any CDO team.
+- Do not say AI directly queries customer applications.
+- Do not say LLM can freely query Prometheus/Loki.
+- Do not claim live Jira publisher is implemented.
+- Do not claim two-way Slack bot is implemented.
+- Do not claim final precision/recall/F1 is done yet.
+
+19. Quick script if I need to explain in 30 seconds
+
+TF1 AI Ops currently has a working skeleton triage endpoint and complete W11 handoff package. The flow is incident seed -> bounded evidence from CDO -> `/v1/triage` -> compute-first RCA -> report + Slack/Jira payload. Primary data is RCAEval subset, packaged into 9 evidence bundles for CDO to host or expose. We have exactly 3 signed contracts for W11: telemetry, ai-api, deployment. The observability data contract is only supporting handoff to explain evidence hosting. Demo endpoint is live and smoke-tested. W12 work is final eval, deeper Slack/Jira integration, and CDO-hosted evidence integration.
+

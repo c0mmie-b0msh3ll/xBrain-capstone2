@@ -15,34 +15,148 @@
   },
   "recommended_actions": [
     {
+      "id": "service_down_runbook",
       "type": "RUNBOOK_CHECK",
       "priority": 1,
       "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
-      "runbook_ref": "runbook://service-down"
+      "runbook_ref": "runbook://service-down",
+      "risk": "low",
+      "why": "Critical availability alerts need bounded investigation before any remediation is attempted.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]",
+        "anomaly_evidence[0]",
+        "anomaly_evidence[1]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
     },
     {
+      "id": "page_service_owner",
       "type": "ESCALATE_OWNER",
       "priority": 2,
       "summary": "Page or notify the owning team for immediate human review.",
-      "runbook_ref": "runbook://service-down"
+      "runbook_ref": "runbook://service-down",
+      "risk": "low",
+      "why": "Critical impact requires the accountable owner to validate and coordinate response.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]",
+        "anomaly_evidence[0]",
+        "anomaly_evidence[1]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
+    },
+    {
+      "id": "consider_recent_deploy_rollback",
+      "type": "ROLLBACK_CONSIDER",
+      "priority": 3,
+      "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
+      "runbook_ref": "runbook://service-down",
+      "risk": "medium",
+      "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation.",
+      "evidence_refs": [
+        "recent_deploys[0]",
+        "ownership.runbooks[0]",
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]"
+      ],
+      "requires_human_approval": true,
+      "approval_reason": "Rollback changes production state and must be approved by the owning team."
     }
   ],
   "ticket_payload": {
     "project": "PAY",
     "summary": "[critical] checkout-api critical_service_down",
     "description": "checkout-api appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: availability_success_rate.; Representative log: health check failed: dependency connection refused; Recent deploy sha-critical at 2026-06-22T07:52:00Z.; Runbook available: Service down triage.",
-    "labels": ["ai-triage", "tenant-a", "checkout-api", "critical_service_down"],
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "checkout-api",
+      "critical_service_down"
+    ],
     "fields": {
       "confidence": 0.86,
       "owner_team": "payments-platform",
       "correlation_id": "corr-critical-001",
       "audit_id": "audit-df867aed9ccd",
-      "status": "DIAGNOSED"
+      "status": "DIAGNOSED",
+      "suggested_assignee_account_id": null,
+      "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation."
     }
   },
-  "slack_payload": {
-    "channel": "#oncall-payments",
-    "text": "checkout-api: critical_service_down (DIAGNOSED, confidence 0.86). Audit: audit-df867aed9ccd."
+  "suggested_assignee_account_id": null,
+  "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation.",
+  "audit_id": "audit-df867aed9ccd",
+  "anomaly_evidence": [
+    {
+      "detector": "threshold",
+      "service": "checkout-api",
+      "metric_name": "availability_success_rate",
+      "severity": "high",
+      "score": 1.0,
+      "reason": "availability_success_rate fell below availability threshold at 42percent."
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "service": "checkout-api",
+      "metric_name": "availability_success_rate",
+      "severity": "high",
+      "score": 0.966,
+      "reason": "availability_success_rate current value 42percent is -5.8 sigma from baseline."
+    },
+    {
+      "detector": "log_keyword",
+      "service": "checkout-api",
+      "metric_name": "logs",
+      "severity": "medium",
+      "score": 0.2,
+      "reason": "1 error-like log entries; sample: health check failed: dependency connection refused"
+    }
+  ],
+  "service_topology": {
+    "root_service": "checkout-api",
+    "nodes": [
+      "checkout-api"
+    ],
+    "edges": []
   },
-  "audit_id": "audit-df867aed9ccd"
+  "rca_candidates": [
+    {
+      "rank": 1,
+      "service": "checkout-api",
+      "score": 2.616,
+      "confidence": 1.0,
+      "reasons": [
+        "availability_success_rate fell below availability threshold at 42percent.",
+        "availability_success_rate current value 42percent is -5.8 sigma from baseline.",
+        "1 error-like log entries; sample: health check failed: dependency connection refused",
+        "Recent deploy sha-critical at 2026-06-22T07:52:00Z."
+      ]
+    }
+  ],
+  "causal_hints": [
+    {
+      "type": "insufficient_points",
+      "score": 0.0,
+      "reason": "Causal hints require at least six aligned points per compared service."
+    }
+  ],
+  "investigation_summary": "Deterministic investigator summary: checkout-api produced 3 anomaly evidence item(s). Top RCA candidate is checkout-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "llm_metadata": {
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": [],
+      "fallback": false
+    },
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    }
+  }
 }

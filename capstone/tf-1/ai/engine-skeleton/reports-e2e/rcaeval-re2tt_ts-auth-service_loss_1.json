@@ -1,0 +1,2481 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "ts-auth-service_diskio",
+      "reason": "ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.",
+      "score": 1.0,
+      "service": "ts-auth-service",
+      "severity": "high"
+    },
+    {
+      "detector": "ewma_drift",
+      "metric_name": "ts-auth-service_diskio",
+      "reason": "ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.",
+      "score": 1.0,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-auth-service_diskio",
+      "reason": "ts-auth-service_diskio latest point was isolated against recent metric shape.",
+      "score": 0.808,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-auth-service_latency-50",
+      "reason": "ts-auth-service_latency-50 latest point was isolated against recent metric shape.",
+      "score": 0.811,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-auth-service_latency-90",
+      "reason": "ts-auth-service_latency-90 latest point was isolated against recent metric shape.",
+      "score": 0.754,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-auth-service_mem",
+      "reason": "ts-auth-service_mem latest point was isolated against recent metric shape.",
+      "score": 0.752,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-auth-service_workload",
+      "reason": "ts-auth-service_workload latest point was isolated against recent metric shape.",
+      "score": 0.835,
+      "service": "ts-auth-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-admin-basic-info-service_cpu",
+      "reason": "ts-admin-basic-info-service_cpu latest point was isolated against recent metric shape.",
+      "score": 0.677,
+      "service": "ts-admin-basic-info-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-admin-basic-info-service_diskio",
+      "reason": "ts-admin-basic-info-service_diskio latest point was isolated against recent metric shape.",
+      "score": 0.616,
+      "service": "ts-admin-basic-info-service",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "ts-admin-basic-info-service_latency-90",
+      "reason": "ts-admin-basic-info-service_latency-90 latest point was isolated against recent metric shape.",
+      "score": 0.765,
+      "service": "ts-admin-basic-info-service",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-4799d6fa9033",
+  "causal_hints": [
+    {
+      "direction": "experimental",
+      "reason": "ts-admin-basic-info-service and ts-auth-service metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.847,
+      "source": "ts-admin-basic-info-service",
+      "target": "ts-auth-service",
+      "type": "lag_correlation"
+    }
+  ],
+  "created_at": "2026-06-25T03:25:52.858635Z",
+  "data_source": "RCAEval adapted subset",
+  "detector_evidence": [
+    "RCAEval adapted request: critical-service-down/re2tt_ts-auth-service_loss_1.request.json"
+  ],
+  "incident_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+  "investigation_summary": "Deterministic investigator summary: ts-auth-service produced 10 anomaly evidence item(s). Top RCA candidate is ts-auth-service. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints available.",
+  "jira_payload": {
+    "description": "ts-auth-service appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: ts-auth-service_cpu, ts-auth-service_diskio, ts-auth-service_error.; Runbook available: RCAEval case investigation.",
+    "fields": {
+      "audit_id": "audit-4799d6fa9033",
+      "confidence": 0.86,
+      "correlation_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+      "owner_team": "dataset-owner",
+      "status": "DIAGNOSED"
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "ts-auth-service",
+      "critical_service_down"
+    ],
+    "project": "AIOPS",
+    "summary": "[critical] ts-auth-service critical_service_down"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    },
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "fallback": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": []
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 1.0,
+      "rank": 1,
+      "reasons": [
+        "ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.",
+        "ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.",
+        "ts-auth-service_diskio latest point was isolated against recent metric shape.",
+        "ts-auth-service_latency-50 latest point was isolated against recent metric shape."
+      ],
+      "score": 5.96,
+      "service": "ts-auth-service"
+    },
+    {
+      "confidence": 0.388,
+      "rank": 2,
+      "reasons": [
+        "ts-admin-basic-info-service_cpu latest point was isolated against recent metric shape.",
+        "ts-admin-basic-info-service_diskio latest point was isolated against recent metric shape.",
+        "ts-admin-basic-info-service_latency-90 latest point was isolated against recent metric shape.",
+        "ts-admin-basic-info-service and ts-auth-service metric movement is strongly lag-correlated; this is supporting evidence, not proof."
+      ],
+      "score": 2.312,
+      "service": "ts-admin-basic-info-service"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/rcaeval-re2tt_ts-auth-service_loss_1",
+  "request_context": {
+    "alert": {
+      "alert_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+      "description": "RCAEval loss-like fault adapted into the TF1 critical service down scenario.",
+      "labels": {
+        "case": "re2tt_ts-auth-service_loss_1",
+        "dataset": "RCAEval",
+        "fault": "loss",
+        "mapped_scenario": "critical-service-down"
+      },
+      "service": "ts-auth-service",
+      "severity": "critical",
+      "source": "RCAEval",
+      "started_at": "2024-01-23T04:10:03Z",
+      "title": "ts-auth-service is down from RCAEval loss fault"
+    },
+    "correlation_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+    "environment": "sandbox",
+    "incident_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+    "logs": [],
+    "metrics": [
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_cpu",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 11.577891983999734
+          },
+          {
+            "ts": "1705982974",
+            "value": 11.815162101764926
+          },
+          {
+            "ts": "1705982975",
+            "value": 12.05243221953012
+          },
+          {
+            "ts": "1705982976",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982977",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982978",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982979",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982980",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982981",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982982",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982983",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982984",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982985",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982986",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982987",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982988",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982989",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982990",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982991",
+            "value": 14.590088614021479
+          },
+          {
+            "ts": "1705982992",
+            "value": 9.143247500000202
+          },
+          {
+            "ts": "1705982993",
+            "value": 9.143247500000202
+          },
+          {
+            "ts": "1705982994",
+            "value": 9.143247500000202
+          },
+          {
+            "ts": "1705982995",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705982996",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705982997",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705982998",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705982999",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983000",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983001",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983002",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983003",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983004",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983005",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983006",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983007",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983008",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983009",
+            "value": 16.52237936227349
+          },
+          {
+            "ts": "1705983010",
+            "value": 18.116492815163692
+          },
+          {
+            "ts": "1705983011",
+            "value": 16.79697382484221
+          },
+          {
+            "ts": "1705983012",
+            "value": 16.79697382484221
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_diskio",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 43628.66092575008
+          },
+          {
+            "ts": "1705982974",
+            "value": 44522.75956910382
+          },
+          {
+            "ts": "1705982975",
+            "value": 45416.85821245757
+          },
+          {
+            "ts": "1705982976",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982977",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982978",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982979",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982980",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982981",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982982",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982983",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982984",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982985",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982986",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982987",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982988",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982989",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982990",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982991",
+            "value": 37808.649097706184
+          },
+          {
+            "ts": "1705982992",
+            "value": 40960.0
+          },
+          {
+            "ts": "1705982993",
+            "value": 40960.0
+          },
+          {
+            "ts": "1705982994",
+            "value": 40960.0
+          },
+          {
+            "ts": "1705982995",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705982996",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705982997",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705982998",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705982999",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983000",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983001",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983002",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983003",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983004",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983005",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983006",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983007",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983008",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983009",
+            "value": 71516.18324275955
+          },
+          {
+            "ts": "1705983010",
+            "value": 50413.858887965784
+          },
+          {
+            "ts": "1705983011",
+            "value": 1562277.5949871114
+          },
+          {
+            "ts": "1705983012",
+            "value": 1562277.5949871114
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_error",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.0
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.0
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.0
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_latency-50",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.21772151898734177
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.21772151898734177
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.21772151898734177
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.2138888888888889
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.22056962025316454
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.2228125
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.21962025316455697
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.22272727272727275
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.22631578947368422
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_latency-90",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.6125000000000006
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.6125000000000006
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.6125000000000006
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.5269230769230773
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.5115384615384618
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.49294871794871803
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.48888888888888893
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.5500000000000007
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.6
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_mem",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 241369088.0
+          },
+          {
+            "ts": "1705982974",
+            "value": 241369088.0
+          },
+          {
+            "ts": "1705982975",
+            "value": 241369088.0
+          },
+          {
+            "ts": "1705982976",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982977",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982978",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982979",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982980",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982981",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982982",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982983",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982984",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982985",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982986",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982987",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982988",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982989",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982990",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982991",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982992",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982993",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982994",
+            "value": 241389568.0
+          },
+          {
+            "ts": "1705982995",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705982996",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705982997",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705982998",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705982999",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983000",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983001",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983002",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983003",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983004",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983005",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983006",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983007",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983008",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983009",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983010",
+            "value": 242155520.0
+          },
+          {
+            "ts": "1705983011",
+            "value": 242434048.0
+          },
+          {
+            "ts": "1705983012",
+            "value": 242434048.0
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_socket",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 13.0
+          },
+          {
+            "ts": "1705982974",
+            "value": 13.0
+          },
+          {
+            "ts": "1705982975",
+            "value": 13.0
+          },
+          {
+            "ts": "1705982976",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982977",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982978",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982979",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982980",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982981",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982982",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982983",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982984",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982985",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982986",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982987",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982988",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982989",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982990",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982991",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982992",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982993",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982994",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982995",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982996",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982997",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982998",
+            "value": 12.0
+          },
+          {
+            "ts": "1705982999",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983000",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983001",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983002",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983003",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983004",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983005",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983006",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983007",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983008",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983009",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983010",
+            "value": 12.0
+          },
+          {
+            "ts": "1705983011",
+            "value": 13.0
+          },
+          {
+            "ts": "1705983012",
+            "value": 13.0
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-auth-service_workload",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 2.867
+          },
+          {
+            "ts": "1705982974",
+            "value": 2.867
+          },
+          {
+            "ts": "1705982975",
+            "value": 2.867
+          },
+          {
+            "ts": "1705982976",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982977",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982978",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982979",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982980",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982981",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982982",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982983",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982984",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982985",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982986",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982987",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982988",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982989",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982990",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982991",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982992",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982993",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982994",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982995",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982996",
+            "value": 2.8
+          },
+          {
+            "ts": "1705982997",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982998",
+            "value": 2.733
+          },
+          {
+            "ts": "1705982999",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983000",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983001",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983002",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983003",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983004",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983005",
+            "value": 2.733
+          },
+          {
+            "ts": "1705983006",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983007",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983008",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983009",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983010",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983011",
+            "value": 2.867
+          },
+          {
+            "ts": "1705983012",
+            "value": 2.933
+          }
+        ],
+        "service": "ts-auth-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-admin-basic-info-service_cpu",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.39601882371629843
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.45807041609512616
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.38009347088859957
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.3724589639536808
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.40579043766933764
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.2980814437948834
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.30422257802430713
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.3684680537654234
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.49820258417041996
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.49820258417041996
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.49820258417041996
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.49820258417041985
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.5178187317947618
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.5178187317947618
+          }
+        ],
+        "service": "ts-admin-basic-info-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-admin-basic-info-service_diskio",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 65064.92990746991
+          },
+          {
+            "ts": "1705982974",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982975",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982976",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982977",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982978",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982979",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982980",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982981",
+            "value": 49943.60615759793
+          },
+          {
+            "ts": "1705982982",
+            "value": 41441.74770106183
+          },
+          {
+            "ts": "1705982983",
+            "value": 40609.354265101865
+          },
+          {
+            "ts": "1705982984",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982985",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982986",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982987",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982988",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982989",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982990",
+            "value": 62517.6479566528
+          },
+          {
+            "ts": "1705982991",
+            "value": 40674.66519364144
+          },
+          {
+            "ts": "1705982992",
+            "value": 41512.65287751386
+          },
+          {
+            "ts": "1705982993",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982994",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982995",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982996",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982997",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982998",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705982999",
+            "value": 50279.26103234518
+          },
+          {
+            "ts": "1705983000",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983001",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983002",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983003",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983004",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983005",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983006",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983007",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983008",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983009",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983010",
+            "value": 33655.84108789877
+          },
+          {
+            "ts": "1705983011",
+            "value": 45888.415863768765
+          },
+          {
+            "ts": "1705983012",
+            "value": 45888.415863768765
+          }
+        ],
+        "service": "ts-admin-basic-info-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-admin-basic-info-service_latency-50",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.017258064516129032
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.0175
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.017499999999999995
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.0175
+          }
+        ],
+        "service": "ts-admin-basic-info-service",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "ts-admin-basic-info-service_latency-90",
+        "points": [
+          {
+            "ts": "1705982973",
+            "value": 0.0235
+          },
+          {
+            "ts": "1705982974",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982975",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982976",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982977",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982978",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982979",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982980",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982981",
+            "value": 0.023451612903225807
+          },
+          {
+            "ts": "1705982982",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982983",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982984",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982985",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982986",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982987",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982988",
+            "value": 0.023875
+          },
+          {
+            "ts": "1705982989",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982990",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982991",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982992",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982993",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982994",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982995",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982996",
+            "value": 0.024300000000000002
+          },
+          {
+            "ts": "1705982997",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705982998",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705982999",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983000",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983001",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983002",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983003",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983004",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983005",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983006",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983007",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983008",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983009",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983010",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983011",
+            "value": 0.024327586206896547
+          },
+          {
+            "ts": "1705983012",
+            "value": 0.024388888888888887
+          }
+        ],
+        "service": "ts-admin-basic-info-service",
+        "unit": null
+      }
+    ],
+    "ownership": {
+      "jira_project": "AIOPS",
+      "owner_team": "dataset-owner",
+      "runbooks": [
+        {
+          "excerpt": "Review root-cause service, root-cause indicator, metrics, logs, and traces from the RCAEval case.",
+          "title": "RCAEval case investigation",
+          "url": "runbook://rcaeval-case"
+        }
+      ],
+      "service": "ts-auth-service",
+      "slack_channel": "#aiops-demo"
+    },
+    "received_at": "2024-01-23T04:10:03Z",
+    "recent_deploys": [],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [],
+    "nodes": [
+      "ts-admin-basic-info-service",
+      "ts-auth-service"
+    ],
+    "root_service": "ts-auth-service"
+  },
+  "slack_payload": {
+    "channel": "#aiops-demo",
+    "text": "ts-auth-service: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.; ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-4799d6fa9033."
+  },
+  "source_request": "datapack/external/adapted/critical-service-down/re2tt_ts-auth-service_loss_1.request.json",
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "ts-auth-service_diskio",
+        "reason": "ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.",
+        "score": 1.0,
+        "service": "ts-auth-service",
+        "severity": "high"
+      },
+      {
+        "detector": "ewma_drift",
+        "metric_name": "ts-auth-service_diskio",
+        "reason": "ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.",
+        "score": 1.0,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-auth-service_diskio",
+        "reason": "ts-auth-service_diskio latest point was isolated against recent metric shape.",
+        "score": 0.808,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-auth-service_latency-50",
+        "reason": "ts-auth-service_latency-50 latest point was isolated against recent metric shape.",
+        "score": 0.811,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-auth-service_latency-90",
+        "reason": "ts-auth-service_latency-90 latest point was isolated against recent metric shape.",
+        "score": 0.754,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-auth-service_mem",
+        "reason": "ts-auth-service_mem latest point was isolated against recent metric shape.",
+        "score": 0.752,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-auth-service_workload",
+        "reason": "ts-auth-service_workload latest point was isolated against recent metric shape.",
+        "score": 0.835,
+        "service": "ts-auth-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-admin-basic-info-service_cpu",
+        "reason": "ts-admin-basic-info-service_cpu latest point was isolated against recent metric shape.",
+        "score": 0.677,
+        "service": "ts-admin-basic-info-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-admin-basic-info-service_diskio",
+        "reason": "ts-admin-basic-info-service_diskio latest point was isolated against recent metric shape.",
+        "score": 0.616,
+        "service": "ts-admin-basic-info-service",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "ts-admin-basic-info-service_latency-90",
+        "reason": "ts-admin-basic-info-service_latency-90 latest point was isolated against recent metric shape.",
+        "score": 0.765,
+        "service": "ts-admin-basic-info-service",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-4799d6fa9033",
+    "causal_hints": [
+      {
+        "direction": "experimental",
+        "reason": "ts-admin-basic-info-service and ts-auth-service metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.847,
+        "source": "ts-admin-basic-info-service",
+        "target": "ts-auth-service",
+        "type": "lag_correlation"
+      }
+    ],
+    "classification": "critical_service_down",
+    "confidence": 0.86,
+    "incident_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+    "investigation_summary": "Deterministic investigator summary: ts-auth-service produced 10 anomaly evidence item(s). Top RCA candidate is ts-auth-service. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints available.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic"
+      },
+      "enabled": false,
+      "provider": "deterministic",
+      "tool_investigation": {
+        "enabled": false,
+        "fallback": false,
+        "provider": "agentcore",
+        "runtime_arn_configured": false,
+        "tool_calls": []
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 1.0,
+        "rank": 1,
+        "reasons": [
+          "ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.",
+          "ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.",
+          "ts-auth-service_diskio latest point was isolated against recent metric shape.",
+          "ts-auth-service_latency-50 latest point was isolated against recent metric shape."
+        ],
+        "score": 5.96,
+        "service": "ts-auth-service"
+      },
+      {
+        "confidence": 0.388,
+        "rank": 2,
+        "reasons": [
+          "ts-admin-basic-info-service_cpu latest point was isolated against recent metric shape.",
+          "ts-admin-basic-info-service_diskio latest point was isolated against recent metric shape.",
+          "ts-admin-basic-info-service_latency-90 latest point was isolated against recent metric shape.",
+          "ts-admin-basic-info-service and ts-auth-service metric movement is strongly lag-correlated; this is supporting evidence, not proof."
+        ],
+        "score": 2.312,
+        "service": "ts-admin-basic-info-service"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "service_down_runbook",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://rcaeval-case",
+        "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Critical availability alerts need bounded investigation before any remediation is attempted."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "page_service_owner",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://rcaeval-case",
+        "summary": "Page or notify the owning team for immediate human review.",
+        "type": "ESCALATE_OWNER",
+        "why": "Critical impact requires the accountable owner to validate and coordinate response."
+      }
+    ],
+    "service_topology": {
+      "edges": [],
+      "nodes": [
+        "ts-admin-basic-info-service",
+        "ts-auth-service"
+      ],
+      "root_service": "ts-auth-service"
+    },
+    "severity": "critical",
+    "slack_payload": {
+      "channel": "#aiops-demo",
+      "text": "ts-auth-service: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: ts-auth-service_diskio current value 1.56228e+06 is 6.2 sigma from baseline.; ts-auth-service_diskio drifted from EWMA 588461.16 to 1.56228e+06.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-4799d6fa9033."
+    },
+    "status": "DIAGNOSED",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: ts-auth-service_cpu, ts-auth-service_diskio, ts-auth-service_error.",
+        "Runbook available: RCAEval case investigation."
+      ],
+      "summary": "ts-auth-service appears unavailable or critically degraded based on the alert and supporting context."
+    },
+    "ticket_payload": {
+      "description": "ts-auth-service appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: ts-auth-service_cpu, ts-auth-service_diskio, ts-auth-service_error.; Runbook available: RCAEval case investigation.",
+      "fields": {
+        "audit_id": "audit-4799d6fa9033",
+        "confidence": 0.86,
+        "correlation_id": "rcaeval-re2tt_ts-auth-service_loss_1",
+        "owner_team": "dataset-owner",
+        "status": "DIAGNOSED"
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "ts-auth-service",
+        "critical_service_down"
+      ],
+      "project": "AIOPS",
+      "summary": "[critical] ts-auth-service critical_service_down"
+    }
+  }
+}

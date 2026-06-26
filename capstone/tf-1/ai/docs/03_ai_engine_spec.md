@@ -158,6 +158,12 @@ Disallowed LLM outputs:
 | Reproducibility | Same input produces same skeleton output. | Response fixtures. |
 | Cost control | Bedrock is optional and invoked only after detection/triage need exists. | Architecture docs and deployment config. |
 
+### 8.1 Human Feedback And Retrain Design Note
+
+Human feedback is a future design target, not a W11 API contract requirement. CDO may collect whether an engineer confirmed or corrected the RCA in Slack/Jira and store that as audit metadata, but the W11 `/v1/triage` contract does not require a feedback endpoint.
+
+Future feedback values should remain non-executable audit metadata, for example `RCA_CONFIRMED`, `RCA_CORRECTED`, `OWNER_ACCEPTED`, and `OWNER_REJECTED`. Retrain triggering must remain offline until enough reviewed feedback exists, and a single feedback event must not automatically change production model behavior during W11/W12 demos.
+
 ## 9. AI Security
 
 | Risk | Mitigation |

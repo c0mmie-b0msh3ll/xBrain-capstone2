@@ -4,7 +4,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from app.context_tools import ToolRegistry, ToolScope
+from app.context_enrichment import enrich_triage_context
+from app.context_tools import ToolRegistry
 
 
 class IncidentSeed(BaseModel):
@@ -23,19 +24,7 @@ class IncidentSeed(BaseModel):
 
 
 def build_triage_request_from_seed(seed: IncidentSeed, registry: ToolRegistry | None = None) -> dict[str, Any]:
-    registry = registry or ToolRegistry()
-    scope = ToolScope(
-        tenant_id=seed.tenant_id,
-        environment=seed.environment,
-        service=seed.service,
-        started_at=seed.started_at,
-        received_at=seed.received_at,
-    )
-    metrics = registry.execute("get_metrics", {}, scope)["result"]
-    logs = registry.execute("get_logs", {}, scope)["result"]
-    deploys = registry.execute("get_recent_deploys", {}, scope)["result"]
-    ownership = registry.execute("get_ownership", {}, scope)["result"]
-    return {
+    body = {
         "correlation_id": seed.correlation_id,
         "tenant_id": seed.tenant_id,
         "incident_id": seed.incident_id,
@@ -51,8 +40,10 @@ def build_triage_request_from_seed(seed: IncidentSeed, registry: ToolRegistry | 
             "started_at": seed.started_at,
             "labels": seed.labels,
         },
-        "metrics": metrics,
-        "logs": logs,
-        "recent_deploys": deploys,
-        "ownership": ownership,
+        "metrics": [],
+        "logs": [],
+        "traces": [],
+        "recent_deploys": [],
+        "ownership": None,
     }
+    return enrich_triage_context(body, registry)

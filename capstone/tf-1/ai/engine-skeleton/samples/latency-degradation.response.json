@@ -15,34 +15,139 @@
   },
   "recommended_actions": [
     {
-      "type": "HUMAN_REVIEW",
+      "id": "dependency_timeout_triage",
+      "type": "RUNBOOK_CHECK",
       "priority": 1,
-      "summary": "Check saturation metrics, dependency latency, and slow query or timeout logs.",
-      "runbook_ref": "runbook://db-timeout"
+      "summary": "Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs.",
+      "runbook_ref": "runbook://db-timeout",
+      "risk": "low",
+      "why": "Timeout and dependency evidence can explain latency without requiring immediate rollback or restart.",
+      "evidence_refs": [
+        "logs[0]",
+        "anomaly_evidence[0]",
+        "ownership.runbooks[0]",
+        "suspected_root_cause.evidence[0]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
     },
     {
-      "type": "ROLLBACK_CONSIDER",
+      "id": "latency_saturation_review",
+      "type": "HUMAN_REVIEW",
       "priority": 2,
+      "summary": "Review saturation metrics, dependency latency, and trace samples before assigning remediation.",
+      "runbook_ref": "runbook://db-timeout",
+      "risk": "low",
+      "why": "Latency degradation has supporting evidence, but the exact bottleneck still needs operator validation.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]",
+        "anomaly_evidence[0]",
+        "anomaly_evidence[1]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
+    },
+    {
+      "id": "consider_recent_deploy_rollback",
+      "type": "ROLLBACK_CONSIDER",
+      "priority": 3,
       "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
-      "runbook_ref": "runbook://db-timeout"
+      "runbook_ref": "runbook://db-timeout",
+      "risk": "medium",
+      "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation.",
+      "evidence_refs": [
+        "recent_deploys[0]",
+        "ownership.runbooks[0]",
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]"
+      ],
+      "requires_human_approval": true,
+      "approval_reason": "Rollback changes production state and must be approved by the owning team."
     }
   ],
   "ticket_payload": {
     "project": "PAY",
     "summary": "[high] checkout-api latency_degradation",
     "description": "checkout-api is showing latency degradation, likely related to timeout or recent change signals. Evidence: Metrics provided: http_latency_p95_ms.; Representative log: database timeout after 3000ms; Recent deploy sha-latency at 2026-06-22T08:50:00Z.; Runbook available: Database timeout triage.",
-    "labels": ["ai-triage", "tenant-a", "checkout-api", "latency_degradation"],
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "checkout-api",
+      "latency_degradation"
+    ],
     "fields": {
       "confidence": 0.82,
       "owner_team": "payments-platform",
       "correlation_id": "corr-latency-001",
       "audit_id": "audit-bd3ad67392c2",
-      "status": "DIAGNOSED"
+      "status": "DIAGNOSED",
+      "suggested_assignee_account_id": null,
+      "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation."
     }
   },
-  "slack_payload": {
-    "channel": "#oncall-payments",
-    "text": "checkout-api: latency_degradation (DIAGNOSED, confidence 0.82). Audit: audit-bd3ad67392c2."
+  "suggested_assignee_account_id": null,
+  "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation.",
+  "audit_id": "audit-bd3ad67392c2",
+  "anomaly_evidence": [
+    {
+      "detector": "rolling_zscore_3sigma",
+      "service": "checkout-api",
+      "metric_name": "http_latency_p95_ms",
+      "severity": "high",
+      "score": 1.0,
+      "reason": "http_latency_p95_ms current value 950ms is 33.2 sigma from baseline."
+    },
+    {
+      "detector": "log_keyword",
+      "service": "checkout-api",
+      "metric_name": "logs",
+      "severity": "medium",
+      "score": 0.2,
+      "reason": "1 error-like log entries; sample: database timeout after 3000ms"
+    }
+  ],
+  "service_topology": {
+    "root_service": "checkout-api",
+    "nodes": [
+      "checkout-api"
+    ],
+    "edges": []
   },
-  "audit_id": "audit-bd3ad67392c2"
+  "rca_candidates": [
+    {
+      "rank": 1,
+      "service": "checkout-api",
+      "score": 1.65,
+      "confidence": 1.0,
+      "reasons": [
+        "http_latency_p95_ms current value 950ms is 33.2 sigma from baseline.",
+        "1 error-like log entries; sample: database timeout after 3000ms",
+        "Recent deploy sha-latency at 2026-06-22T08:50:00Z."
+      ]
+    }
+  ],
+  "causal_hints": [
+    {
+      "type": "insufficient_points",
+      "score": 0.0,
+      "reason": "Causal hints require at least six aligned points per compared service."
+    }
+  ],
+  "investigation_summary": "Deterministic investigator summary: checkout-api produced 2 anomaly evidence item(s). Top RCA candidate is checkout-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "llm_metadata": {
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": [],
+      "fallback": false
+    },
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    }
+  }
 }

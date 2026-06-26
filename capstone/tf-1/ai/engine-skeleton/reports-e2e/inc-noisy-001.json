@@ -1,0 +1,294 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "log_keyword",
+      "metric_name": "logs",
+      "reason": "1 error-like log entries; sample: synthetic probe timeout recovered on retry",
+      "score": 0.2,
+      "service": "search-api",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-9ecc62afc1cd",
+  "causal_hints": [
+    {
+      "reason": "Causal hints require at least six aligned points per compared service.",
+      "score": 0.0,
+      "type": "insufficient_points"
+    }
+  ],
+  "created_at": "2026-06-24T08:42:47.345208Z",
+  "detector_evidence": [
+    "scenario noisy seed/request"
+  ],
+  "incident_id": "inc-noisy-001",
+  "investigation_summary": "Deterministic investigator summary: search-api produced 1 anomaly evidence item(s). Top RCA candidate is search-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "jira_payload": {
+    "description": "Signals are weak or ambiguous; the alert should be investigated without assigning a firm root cause. Evidence: Metrics provided: http_5xx_rate, http_latency_p95_ms.; Representative log: synthetic probe timeout recovered on retry; Runbook available: Noisy alert triage.",
+    "fields": {
+      "audit_id": "audit-9ecc62afc1cd",
+      "confidence": 0.45,
+      "correlation_id": "corr-noisy-001",
+      "owner_team": "search-platform",
+      "status": "INVESTIGATE"
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "search-api",
+      "noisy_or_ambiguous_alert"
+    ],
+    "project": "SRCH",
+    "summary": "[low] search-api noisy_or_ambiguous_alert"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    },
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "fallback": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": []
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 0.2,
+      "rank": 1,
+      "reasons": [
+        "1 error-like log entries; sample: synthetic probe timeout recovered on retry"
+      ],
+      "score": 0.2,
+      "service": "search-api"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/inc-noisy-001",
+  "request_context": {
+    "alert": {
+      "alert_id": "alert-noisy-001",
+      "description": "Single probe failure recovered before user-impacting metrics changed",
+      "labels": {
+        "detector": "single_probe_noise_filter",
+        "region": "us-east-1"
+      },
+      "service": "search-api",
+      "severity": "low",
+      "source": "synthetic-pack",
+      "started_at": "2026-06-22T11:05:00Z",
+      "title": "Noisy flapping alert on search-api"
+    },
+    "correlation_id": "corr-noisy-001",
+    "environment": "sandbox",
+    "incident_id": "inc-noisy-001",
+    "logs": [
+      {
+        "labels": {
+          "pod": "search-api-55bf",
+          "version": "sha-search"
+        },
+        "level": "warning",
+        "message": "synthetic probe timeout recovered on retry",
+        "service": "search-api",
+        "trace_id": "trace-noisy-001",
+        "ts": "2026-06-22T11:05:03Z"
+      }
+    ],
+    "metrics": [
+      {
+        "labels": {
+          "endpoint": "/search",
+          "region": "us-east-1"
+        },
+        "metric_name": "http_5xx_rate",
+        "points": [
+          {
+            "ts": "2026-06-22T11:00:00Z",
+            "value": 0.1
+          },
+          {
+            "ts": "2026-06-22T11:06:00Z",
+            "value": 0.1
+          }
+        ],
+        "service": "search-api",
+        "unit": "percent"
+      },
+      {
+        "labels": {
+          "endpoint": "/search",
+          "region": "us-east-1"
+        },
+        "metric_name": "http_latency_p95_ms",
+        "points": [
+          {
+            "ts": "2026-06-22T11:00:00Z",
+            "value": 170
+          },
+          {
+            "ts": "2026-06-22T11:06:00Z",
+            "value": 180
+          }
+        ],
+        "service": "search-api",
+        "unit": "ms"
+      }
+    ],
+    "ownership": {
+      "jira_project": "SRCH",
+      "owner_team": "search-platform",
+      "runbooks": [
+        {
+          "excerpt": "Check alert repetition and user impact before escalating.",
+          "title": "Noisy alert triage",
+          "url": "runbook://noisy-alert"
+        }
+      ],
+      "service": "search-api",
+      "slack_channel": "#oncall-search"
+    },
+    "received_at": "2026-06-22T11:07:00Z",
+    "recent_deploys": [],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [],
+    "nodes": [
+      "search-api"
+    ],
+    "root_service": "search-api"
+  },
+  "slack_payload": {
+    "channel": "#oncall-search",
+    "text": "search-api: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Evidence: 1 error-like log entries; sample: synthetic probe timeout recovered on retry. Action: Watch for alert repetition and compare it with user-impacting metrics before opening remediation work. Audit: audit-9ecc62afc1cd."
+  },
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "log_keyword",
+        "metric_name": "logs",
+        "reason": "1 error-like log entries; sample: synthetic probe timeout recovered on retry",
+        "score": 0.2,
+        "service": "search-api",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-9ecc62afc1cd",
+    "causal_hints": [
+      {
+        "reason": "Causal hints require at least six aligned points per compared service.",
+        "score": 0.0,
+        "type": "insufficient_points"
+      }
+    ],
+    "classification": "noisy_or_ambiguous_alert",
+    "confidence": 0.45,
+    "incident_id": "inc-noisy-001",
+    "investigation_summary": "Deterministic investigator summary: search-api produced 1 anomaly evidence item(s). Top RCA candidate is search-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic"
+      },
+      "enabled": false,
+      "provider": "deterministic",
+      "tool_investigation": {
+        "enabled": false,
+        "fallback": false,
+        "provider": "agentcore",
+        "runtime_arn_configured": false,
+        "tool_calls": []
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 0.2,
+        "rank": 1,
+        "reasons": [
+          "1 error-like log entries; sample: synthetic probe timeout recovered on retry"
+        ],
+        "score": 0.2,
+        "service": "search-api"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "logs[0]"
+        ],
+        "id": "observe_user_impact",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://noisy-alert",
+        "summary": "Watch for alert repetition and compare it with user-impacting metrics before opening remediation work.",
+        "type": "OBSERVE",
+        "why": "The alert signal is weak or ambiguous, so observation is safer than remediation."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "logs[0]"
+        ],
+        "id": "human_review_noisy_alert",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://noisy-alert",
+        "summary": "Have the service owner confirm whether this alert is actionable before escalation.",
+        "type": "HUMAN_REVIEW",
+        "why": "Human confirmation is required when deterministic evidence does not establish a clear impact."
+      }
+    ],
+    "service_topology": {
+      "edges": [],
+      "nodes": [
+        "search-api"
+      ],
+      "root_service": "search-api"
+    },
+    "severity": "low",
+    "slack_payload": {
+      "channel": "#oncall-search",
+      "text": "search-api: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Evidence: 1 error-like log entries; sample: synthetic probe timeout recovered on retry. Action: Watch for alert repetition and compare it with user-impacting metrics before opening remediation work. Audit: audit-9ecc62afc1cd."
+    },
+    "status": "INVESTIGATE",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: http_5xx_rate, http_latency_p95_ms.",
+        "Representative log: synthetic probe timeout recovered on retry",
+        "Runbook available: Noisy alert triage."
+      ],
+      "summary": "Signals are weak or ambiguous; the alert should be investigated without assigning a firm root cause."
+    },
+    "ticket_payload": {
+      "description": "Signals are weak or ambiguous; the alert should be investigated without assigning a firm root cause. Evidence: Metrics provided: http_5xx_rate, http_latency_p95_ms.; Representative log: synthetic probe timeout recovered on retry; Runbook available: Noisy alert triage.",
+      "fields": {
+        "audit_id": "audit-9ecc62afc1cd",
+        "confidence": 0.45,
+        "correlation_id": "corr-noisy-001",
+        "owner_team": "search-platform",
+        "status": "INVESTIGATE"
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "search-api",
+        "noisy_or_ambiguous_alert"
+      ],
+      "project": "SRCH",
+      "summary": "[low] search-api noisy_or_ambiguous_alert"
+    }
+  }
+}

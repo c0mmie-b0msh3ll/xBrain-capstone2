@@ -6,6 +6,15 @@ import uuid
 from typing import Any
 
 from app.context_tools import ToolRegistry, ToolScopeError, merge_tool_result_into_request, scope_from_request
+from app.observability import (
+    BUDGET_EXCEEDED_TOTAL,
+    DEGRADED_MODE_TOTAL,
+    LLM_CALLS_TOTAL,
+    LLM_ESTIMATED_COST_USD_TOTAL,
+    LLM_TOKENS_TOTAL,
+    estimate_tokens,
+    span,
+)
 from app.rca import analyze_request
 
 
@@ -22,11 +31,9 @@ def synthesize_investigation_summary(request: Any, decision: dict[str, Any], rca
         return {"enabled": False, "provider": "deterministic"}
 
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+    model = active_model_id()
     try:
-        raw_text = invoke_agentcore_payload(
-            request,
-            "summary",
-            {
+        payload = {
                 "task": "investigation_summary",
                 "system_instructions": (
                     "You are an AIOps incident investigator. Use only the provided bounded evidence. "
@@ -34,8 +41,8 @@ def synthesize_investigation_summary(request: Any, decision: dict[str, Any], rca
                     "Write a concise operational summary with root-cause hypothesis, evidence, confidence caveat, and next action."
                 ),
                 "input": build_prompt_payload(request, decision, rca),
-            },
-        )
+            }
+        raw_text = tracked_llm_call(request, "summary", payload, model)
         return {
             "enabled": True,
             "provider": "agentcore",
@@ -44,6 +51,8 @@ def synthesize_investigation_summary(request: Any, decision: dict[str, Any], rca
             "summary": extract_agentcore_text(raw_text),
         }
     except Exception as exc:  # pragma: no cover - exercised only with live AWS credentials
+        LLM_CALLS_TOTAL.labels(stage="summary", model=model, status="error").inc()
+        DEGRADED_MODE_TOTAL.labels(reason="llm_summary_failure").inc()
         return {
             "enabled": True,
             "provider": "agentcore",
@@ -64,11 +73,9 @@ def reword_catalog_actions(
         return {"actions": actions, "metadata": {"enabled": False, "provider": "deterministic"}}
 
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+    model = active_model_id()
     try:
-        raw_text = invoke_agentcore_payload(
-            request,
-            "actions",
-            {
+        payload = {
                 "task": "action_wording",
                 "system_instructions": (
                     "You are an AIOps recommendation editor. Choose and reword only provided action IDs. "
@@ -76,8 +83,8 @@ def reword_catalog_actions(
                     "Return strict JSON with an actions array. Each item must include id, summary, and why only."
                 ),
                 "input": build_action_prompt_payload(request, decision, rca, actions),
-            },
-        )
+            }
+        raw_text = tracked_llm_call(request, "actions", payload, model)
         reworded = apply_action_rewording(actions, raw_text)
         return {
             "actions": reworded,
@@ -90,6 +97,8 @@ def reword_catalog_actions(
             },
         }
     except Exception as exc:  # pragma: no cover - exercised only with live AWS credentials
+        LLM_CALLS_TOTAL.labels(stage="actions", model=model, status="error").inc()
+        DEGRADED_MODE_TOTAL.labels(reason="llm_action_failure").inc()
         return {
             "actions": actions,
             "metadata": {
@@ -148,6 +157,7 @@ def investigate_with_tools(
     except Exception as exc:
         metadata["fallback"] = True
         metadata["error"] = f"{type(exc).__name__}: {exc}"
+        DEGRADED_MODE_TOTAL.labels(reason="llm_tool_failure").inc()
         return request, rca, decision, metadata
 
 
@@ -203,10 +213,36 @@ def request_tool_calls_from_agentcore(
     session_id = agentcore_session_id(request)
     prompt_payload = build_tool_prompt_payload(request, decision, rca, sorted(allowed_tools), max_calls)
     try:
-        raw_text = invoke_agentcore_payload(request, "tools", prompt_payload, session_id=session_id)
+        raw_text = tracked_llm_call(request, "tools", prompt_payload, active_model_id(), session_id=session_id)
     except Exception as exc:
         raise RuntimeError(f"AgentCore invocation failed: {exc}") from exc
     return parse_tool_calls(raw_text, allowed_tools, max_calls)
+
+
+def tracked_llm_call(request: Any, stage: str, payload: dict[str, Any], model: str, session_id: str | None = None) -> str:
+    prompt_tokens = estimate_tokens(payload)
+    token_budget = int(os.getenv("AIOPS_LLM_MAX_TOKENS_PER_INCIDENT", "0") or 0)
+    if token_budget and prompt_tokens > token_budget:
+        BUDGET_EXCEEDED_TOTAL.labels(budget_type="llm_tokens").inc()
+        raise RuntimeError("LLM token budget exceeded before provider call")
+    with span("llm_call", stage=stage, model=model, service=request.alert.service, environment=request.environment):
+        raw_text = invoke_agentcore_payload(request, stage, payload, session_id=session_id)
+    completion_tokens = estimate_tokens(raw_text)
+    LLM_CALLS_TOTAL.labels(stage=stage, model=model, status="ok").inc()
+    LLM_TOKENS_TOTAL.labels(stage=stage, model=model, type="prompt").inc(prompt_tokens)
+    LLM_TOKENS_TOTAL.labels(stage=stage, model=model, type="completion").inc(completion_tokens)
+    LLM_ESTIMATED_COST_USD_TOTAL.labels(stage=stage, model=model).inc(estimate_llm_cost_usd(prompt_tokens, completion_tokens))
+    return raw_text
+
+
+def active_model_id() -> str:
+    return configured_model_ids()[0] if configured_model_ids() else "agentcore-default"
+
+
+def estimate_llm_cost_usd(prompt_tokens: int, completion_tokens: int) -> float:
+    input_rate = float(os.getenv("AIOPS_LLM_INPUT_COST_PER_1K", "0") or 0)
+    output_rate = float(os.getenv("AIOPS_LLM_OUTPUT_COST_PER_1K", "0") or 0)
+    return (prompt_tokens / 1000.0 * input_rate) + (completion_tokens / 1000.0 * output_rate)
 
 
 def invoke_agentcore_payload(request: Any, purpose: str, payload: dict[str, Any], session_id: str | None = None) -> str:

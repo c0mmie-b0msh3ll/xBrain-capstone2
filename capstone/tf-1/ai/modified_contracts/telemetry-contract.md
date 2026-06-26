@@ -60,15 +60,18 @@ Every request to AI must include:
 |---|---|---:|---|
 | `correlation_id` | string | yes | Stable trace id for the full workflow. |
 | `tenant_id` | string | yes | Required for isolation. Missing tenant is rejected. |
-| `incident_id` | string | yes | Unique incident/alert grouping id. |
+| `incident_id` | string | yes | Unique incident/alert grouping id. Used as primary idempotency key. |
 | `environment` | enum | yes | `prod`, `staging`, `sandbox`. |
 | `received_at` | RFC3339 | yes | When the AIOps app received or generated the alert. |
+| `first_acknowledged_at` | RFC3339 | no | Optional. When the incident was first acknowledged by an on-call engineer. Used for MTTA calculation (Option b simulated in W11). |
+| `resolved_at` | RFC3339 | no | Optional. When the incident was marked as resolved/mitigated. Used for MTTR calculation (Option b simulated in W11). |
 
 Validation rules:
 
 - `tenant_id` must be non-empty and must match the `X-Tenant-Id` request header.
 - `correlation_id` must be non-empty and must match the `X-Correlation-Id` request header.
 - `environment` must be one of `prod`, `staging`, or `sandbox`.
+- `first_acknowledged_at` and `resolved_at` must be valid RFC3339 timestamps if provided.
 - Missing required envelope or alert fields returns `400`.
 
 ## Alert Metadata
@@ -121,12 +124,6 @@ Minimum useful metric types for TF1:
 - Request rate.
 - Saturation signals: CPU, memory, queue depth, DB connection count, or equivalent.
 
-Signal operating target for W11/W12 planning:
-
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Metrics | 60 seconds | ~200 samples/hour/service | 15 days | ~$1.50/month for TF1 demo scope |
-
 ## Logs Window
 
 Logs should be sampled, not dumped raw. The context layer should provide relevant snippets around the alert window.
@@ -148,12 +145,6 @@ Rules:
 - Maximum 50 log lines per service per incident unless otherwise agreed.
 - Preserve timestamp, service, level, and correlation/trace id when available.
 - Prefer AI-curated logs: meaningful, redacted snippets selected from noisy bounded log results by AI Ops cleaning/curation logic.
-
-Signal operating target for W11/W12 planning:
-
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Logs | Event-driven, sampled around alert window | ~200 relevant events/hour/service before curation; max 50 curated lines/service/incident | 14 days | ~$2.00/month for TF1 demo scope |
 
 ## AI-Curated Log Records
 
@@ -204,12 +195,6 @@ Rules:
 - Full trace dumps should be hosted as evidence bundles or evidence URIs, not inlined into `/v1/triage`.
 - RCAEval `traces.csv` rows are adapted into this normalized span-summary shape.
 
-Signal operating target for W11/W12 planning:
-
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Traces | Sampled; retain relevant spans around incidents | ~50 span summaries/hour/service after sampling | 7 days | ~$1.00/month for TF1 demo scope |
-
 ## Recent Deploys
 
 ```json
@@ -224,12 +209,6 @@ Signal operating target for W11/W12 planning:
 ```
 
 Required for deploy-related diagnosis. If not available, the context layer must pass an empty array and AI will lower confidence.
-
-Signal operating target for W11/W12 planning:
-
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Deploy events | On each deployment/change event | ~10 events/day/service | 30 days | <$0.50/month for TF1 demo scope |
 
 ## Ownership And Runbook Docs
 
@@ -250,12 +229,6 @@ Signal operating target for W11/W12 planning:
 ```
 
 Runbook/docs are preferred for AI suggestion quality. If the mentor data pack does not include runbooks, AI team may create minimal scenario runbooks and mark them as synthetic.
-
-Signal operating target for W11/W12 planning:
-
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Ownership/runbooks | Updated on ownership or runbook change | ~1-5 records/service | Until superseded; keep 90-day change history | <$0.50/month for TF1 demo scope |
 
 ## Context Sufficiency
 
@@ -295,7 +268,7 @@ Mapping type must be one of:
 - Invocation mode: event-driven after platform alert detection, not continuous full triage over all telemetry.
 - Detection ownership: CDO/platform owns alert detection and incident triggering; AI Ops owns incident-level RCA after invocation.
 - Extra context ownership: Customer observability is the source of truth. CDO/platform exposes bounded evidence access; AI Ops may pull bounded evidence after alert delivery, clean/curate it, and then triage.
-- Duplicate handling: the caller must provide `correlation_id`; AI responses must be idempotent for the same `correlation_id`.
+- Duplicate handling: the caller must provide `incident_id`; AI responses must be idempotent for the same `incident_id`.
 - Missing data behavior: AI returns lower confidence or `INSUFFICIENT_CONTEXT`.
 - Malformed data behavior: AI returns `400` with validation errors.
 - Safety behavior: AI must never return an executable auto-remediation action.
@@ -306,7 +279,7 @@ Mapping type must be one of:
 
 | Item | W11 decision |
 |---|---|
-| Primary datapack format | Use the RCAEval subset under `../engine-skeleton/datapack/external/` as the primary scenario data. The CDO-hostable artifacts are normalized evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/`. |
+| Primary datapack format | Use the RCAEval subset under `../engine-skeleton/datapack/external/` as the primary scenario data. The CDO-hostable artifacts are normalized evidence bundles under `../engine-skeleton/datapack/external/evidence-bundles/`. Both CDO platforms must use the identical test fixture dataset to ensure E2E scenario validation alignment. |
 | Triage request format | `POST /v1/triage` remains the normalized incident context contract. Raw dataset fields are adapted before calling the triage endpoint. |
 | Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
 | Evidence follow-up | Optional bounded access to the customer's observability/evidence layer can be used after alert delivery for follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |

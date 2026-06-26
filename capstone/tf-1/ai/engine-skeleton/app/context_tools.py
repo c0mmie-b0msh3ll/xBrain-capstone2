@@ -4,16 +4,19 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 import requests
 
+from app.observability import CIRCUIT_BREAKER_OPEN, CONTEXT_TOOL_CALLS_TOTAL, CONTEXT_TOOL_DURATION_SECONDS, span, timed
 from app import rca
 
 
 READ_ONLY_TOOL_NAMES = {
     "get_metrics",
     "get_logs",
+    "get_traces",
     "get_recent_deploys",
     "get_ownership",
     "detect_metric_anomalies",
@@ -21,6 +24,7 @@ READ_ONLY_TOOL_NAMES = {
     "infer_topology",
     "infer_causal_hints",
     "rank_rca_candidates",
+    "get_jira_history",
 }
 
 
@@ -45,6 +49,7 @@ class ToolRegistry:
         self._tools: dict[str, Callable[..., Any]] = {
             "get_metrics": self._get_metrics,
             "get_logs": self._get_logs,
+            "get_traces": self._get_traces,
             "get_recent_deploys": self._get_recent_deploys,
             "get_ownership": self._get_ownership,
             "detect_metric_anomalies": self._detect_metric_anomalies,
@@ -52,6 +57,7 @@ class ToolRegistry:
             "infer_topology": self._infer_topology,
             "infer_causal_hints": self._infer_causal_hints,
             "rank_rca_candidates": self._rank_rca_candidates,
+            "get_jira_history": self._get_jira_history,
         }
 
     @property
@@ -60,16 +66,27 @@ class ToolRegistry:
 
     def execute(self, name: str, args: dict[str, Any] | None, scope: ToolScope, request: Any | None = None) -> dict[str, Any]:
         if name not in self._tools:
+            CONTEXT_TOOL_CALLS_TOTAL.labels(tool="unknown", status="blocked").inc()
             raise ToolScopeError(f"Unknown tool: {name}")
         args = args or {}
-        bounded_scope = validate_and_build_scope(args, scope)
-        result = self._tools[name](args, scope, request)
-        return {
-            "name": name,
-            "status": "ok",
-            "bounded_scope": bounded_scope,
-            "result": to_jsonable(result),
-        }
+        with span("context_tool_call", tool=name, tenant_id=scope.tenant_id, environment=scope.environment, service=scope.service):
+            with timed() as timer:
+                try:
+                    bounded_scope = validate_and_build_scope(args, scope)
+                    result = self._tools[name](args, scope, request)
+                    CONTEXT_TOOL_CALLS_TOTAL.labels(tool=name, status="ok").inc()
+                    CIRCUIT_BREAKER_OPEN.labels(dependency=name).set(0)
+                    return {
+                        "name": name,
+                        "status": "ok",
+                        "bounded_scope": bounded_scope,
+                        "result": to_jsonable(result),
+                    }
+                except Exception:
+                    CONTEXT_TOOL_CALLS_TOTAL.labels(tool=name, status="error").inc()
+                    raise
+                finally:
+                    CONTEXT_TOOL_DURATION_SECONDS.labels(tool=name).observe(timer["duration"])
 
     def _get_metrics(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> list[dict[str, Any]]:
         window = bounded_window(args, scope)
@@ -79,6 +96,13 @@ class ToolRegistry:
         window = bounded_window(args, scope)
         limit = min(int(args.get("limit") or scope.log_limit), scope.log_limit)
         return self.client.get_logs(scope.service, scope.environment, scope.tenant_id, window, limit)
+
+    def _get_traces(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> list[dict[str, Any]]:
+        window = bounded_window(args, scope)
+        limit = min(int(args.get("limit") or scope.log_limit), scope.log_limit)
+        if not hasattr(self.client, "get_traces"):
+            return []
+        return self.client.get_traces(scope.service, scope.environment, scope.tenant_id, window, limit)
 
     def _get_recent_deploys(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> list[dict[str, Any]]:
         window = bounded_window(args, scope)
@@ -118,22 +142,45 @@ class ToolRegistry:
         causal_hints = args.get("causal_hints") or request.causal_hints or rca.infer_causal_hints(request.metrics)
         return rca.rank_rca_candidates(request, evidence, topology, causal_hints)
 
+    def _get_jira_history(self, args: dict[str, Any], scope: ToolScope, request: Any | None) -> dict[str, Any]:
+        return self.client.get_jira_history(scope.service, scope.environment, scope.tenant_id)
+
 
 class ContextClient:
     def __init__(
         self,
         prometheus_url: str | None = None,
         loki_url: str | None = None,
+        jaeger_url: str | None = None,
         deploy_metadata_path: str | None = None,
         ownership_path: str | None = None,
+        evidence_bundle_base_path: str | None = None,
+        jira_history_path: str | None = None,
     ) -> None:
-        self.prometheus_url = prometheus_url or os.getenv("PROMETHEUS_URL", "http://localhost:9090")
-        self.loki_url = loki_url or os.getenv("LOKI_URL", "http://localhost:3100")
+        self.prometheus_url = prometheus_url or os.getenv("PROMETHEUS_URL")
+        self.loki_url = loki_url or os.getenv("LOKI_URL")
+        self.jaeger_url = jaeger_url or os.getenv("JAEGER_URL")
         self.deploy_metadata_path = deploy_metadata_path or os.getenv("DEPLOY_METADATA_PATH")
         self.ownership_path = ownership_path or os.getenv("OWNERSHIP_PATH")
-        self.timeout_seconds = int(os.getenv("LLM_TOOL_TIMEOUT_SECONDS", "10"))
+        self.evidence_bundle_base_path = evidence_bundle_base_path or os.getenv("EVIDENCE_BUNDLE_BASE_PATH")
+        self.jira_history_path = jira_history_path or os.getenv("JIRA_HISTORY_PATH")
+        self.timeout_seconds = int(os.getenv("AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS", os.getenv("LLM_TOOL_TIMEOUT_SECONDS", "3")))
+
+    @property
+    def metrics_access_configured(self) -> bool:
+        return bool(self.prometheus_url)
+
+    @property
+    def logs_access_configured(self) -> bool:
+        return bool(self.loki_url)
+
+    @property
+    def traces_access_configured(self) -> bool:
+        return bool(self.jaeger_url)
 
     def get_metrics(self, service: str, environment: str, tenant_id: str, window: tuple[str, str]) -> list[dict[str, Any]]:
+        if not self.prometheus_url:
+            return []
         query = (
             'aiops_scenario_metric_value{'
             f'tenant_id="{tenant_id}",environment="{environment}",service="{service}"'
@@ -163,6 +210,8 @@ class ContextClient:
         return metrics
 
     def get_logs(self, service: str, environment: str, tenant_id: str, window: tuple[str, str], limit: int) -> list[dict[str, Any]]:
+        if not self.loki_url:
+            return []
         query = f'{{tenant_id="{tenant_id}",environment="{environment}",service="{service}"}} |~ "(?i)(error|timeout|failed|refused|exhausted|down)"'
         response = requests.get(
             f"{self.loki_url.rstrip('/')}/loki/api/v1/query_range",
@@ -189,6 +238,47 @@ class ContextClient:
                     }
                 )
         return logs[:limit]
+
+    def get_traces(self, service: str, environment: str, tenant_id: str, window: tuple[str, str], limit: int) -> list[dict[str, Any]]:
+        if not self.jaeger_url:
+            return []
+        response = requests.get(
+            f"{self.jaeger_url.rstrip('/')}/api/traces",
+            params={"service": service, "lookback": "1h", "limit": str(limit)},
+            timeout=self.timeout_seconds,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        traces: list[dict[str, Any]] = []
+        for trace in payload.get("data", []):
+            if not isinstance(trace, dict):
+                continue
+            trace_id = str(trace.get("traceID") or trace.get("trace_id") or trace.get("id") or "unknown-trace")
+            spans = trace.get("spans") if isinstance(trace.get("spans"), list) else []
+            root_span = spans[0] if spans and isinstance(spans[0], dict) else {}
+            process = {}
+            processes = trace.get("processes")
+            if isinstance(processes, dict) and root_span.get("processID") in processes:
+                process = processes[root_span.get("processID")] or {}
+            service_name = service_from_trace_process(process) or service
+            start_time = root_span.get("startTime")
+            ts = format_iso(datetime.fromtimestamp(start_time / 1_000_000, timezone.utc)) if isinstance(start_time, (int, float)) else window[1]
+            if not iso_in_window(ts, window):
+                continue
+            traces.append(
+                {
+                    "trace_id": trace_id,
+                    "span_id": root_span.get("spanID"),
+                    "parent_span_id": first_parent_span_id(root_span),
+                    "service": service_name,
+                    "operation": root_span.get("operationName"),
+                    "ts": ts,
+                    "duration_ms": float(root_span.get("duration", 0)) / 1000 if root_span.get("duration") is not None else None,
+                    "status": trace_status(root_span),
+                    "labels": {"source": "jaeger", "environment": environment, "tenant_id": tenant_id},
+                }
+            )
+        return traces[:limit]
 
     def get_recent_deploys(self, service: str, environment: str, window: tuple[str, str]) -> list[dict[str, Any]]:
         if not self.deploy_metadata_path:
@@ -228,6 +318,42 @@ class ContextClient:
             "slack_channel": None,
             "jira_project": None,
             "runbooks": [],
+        }
+
+    def get_evidence_bundle(self, evidence_uri: str, scope: ToolScope) -> dict[str, Any] | None:
+        path = resolve_local_bundle_path(evidence_uri, self.evidence_bundle_base_path)
+        if path is None or not path.exists() or not path.is_file():
+            return None
+        bundle = load_json_file(str(path))
+        if not isinstance(bundle, dict):
+            return None
+        if not bundle_matches_scope(bundle, scope):
+            return None
+        return bundle
+
+    def get_jira_history(self, service: str, environment: str, tenant_id: str) -> dict[str, Any]:
+        if not self.jira_history_path:
+            return {
+                "suggested_assignee_account_id": None,
+                "suggestion_reason": "No Jira history mapping file is configured for read-only assignee suggestion.",
+            }
+        records = load_json_file(self.jira_history_path)
+        match = find_jira_history_match(records, service, environment, tenant_id)
+        if not match:
+            return {
+                "suggested_assignee_account_id": None,
+                "suggestion_reason": f"No Jira accountId history mapping matched {service}; route to owner team for human confirmation.",
+            }
+        account_id = match.get("account_id") or match.get("assignee_account_id") or match.get("suggested_assignee_account_id")
+        if not isinstance(account_id, str) or not account_id:
+            return {
+                "suggested_assignee_account_id": None,
+                "suggestion_reason": f"Jira history matched {service}, but no accountId mapping is available; route to owner team for human confirmation.",
+            }
+        return {
+            "suggested_assignee_account_id": account_id,
+            "suggestion_reason": str(match.get("suggestion_reason") or f"Suggested from read-only Jira history for {service}."),
+            "source": "jira_history",
         }
 
 
@@ -284,6 +410,8 @@ def merge_tool_result_into_request(request: Any, tool_call: dict[str, Any]) -> A
         updated["metrics"].extend(result)
     elif name == "get_logs" and isinstance(result, list):
         updated["logs"].extend(result)
+    elif name == "get_traces" and isinstance(result, list):
+        updated["traces"].extend(result)
     elif name == "get_recent_deploys" and isinstance(result, list):
         updated["recent_deploys"].extend(result)
     elif name == "get_ownership" and isinstance(result, dict):
@@ -339,3 +467,76 @@ def parse_log_line(line: str) -> dict[str, Any]:
 def load_json_file(path: str) -> Any:
     with open(path, encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def resolve_local_bundle_path(evidence_uri: str, base_path: str | None) -> Path | None:
+    if not evidence_uri:
+        return None
+    if evidence_uri.startswith(("s3://", "http://", "https://")):
+        return None
+    raw_path = evidence_uri.removeprefix("file://")
+    path = Path(raw_path)
+    if path.is_absolute():
+        return path
+    if base_path:
+        return Path(base_path) / path
+    return path
+
+
+def bundle_matches_scope(bundle: dict[str, Any], scope: ToolScope) -> bool:
+    for key, expected in (
+        ("tenant_id", scope.tenant_id),
+        ("environment", scope.environment),
+        ("service", scope.service),
+    ):
+        value = bundle.get(key)
+        if value is not None and value != expected:
+            return False
+    for key in ("started_at", "received_at", "window_start", "window_end"):
+        value = bundle.get(key)
+        if isinstance(value, str) and not iso_in_window(value, (scope.started_at, scope.received_at)):
+            return False
+    return True
+
+
+def find_jira_history_match(records: Any, service: str, environment: str, tenant_id: str) -> dict[str, Any] | None:
+    candidates = records.get("mappings") if isinstance(records, dict) and isinstance(records.get("mappings"), list) else records
+    if isinstance(records, dict) and records.get("service") == service:
+        candidates = [records]
+    if not isinstance(candidates, list):
+        return None
+    for record in candidates:
+        if not isinstance(record, dict):
+            continue
+        if record.get("service") != service:
+            continue
+        if record.get("tenant_id") not in (None, tenant_id):
+            continue
+        if record.get("environment") not in (None, environment):
+            continue
+        return record
+    return None
+
+
+def service_from_trace_process(process: dict[str, Any]) -> str | None:
+    service_name = process.get("serviceName") or process.get("service_name")
+    return str(service_name) if service_name else None
+
+
+def first_parent_span_id(span: dict[str, Any]) -> str | None:
+    references = span.get("references")
+    if isinstance(references, list) and references:
+        ref = references[0]
+        if isinstance(ref, dict) and ref.get("spanID"):
+            return str(ref["spanID"])
+    return None
+
+
+def trace_status(span: dict[str, Any]) -> str | None:
+    tags = span.get("tags")
+    if not isinstance(tags, list):
+        return None
+    for tag in tags:
+        if isinstance(tag, dict) and tag.get("key") in {"error", "otel.status_code"}:
+            return str(tag.get("value"))
+    return None

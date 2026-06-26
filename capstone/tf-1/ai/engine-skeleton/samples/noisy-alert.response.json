@@ -14,34 +14,112 @@
   },
   "recommended_actions": [
     {
+      "id": "observe_user_impact",
       "type": "OBSERVE",
       "priority": 1,
-      "summary": "Check whether the alert repeats and compare it against user-impacting metrics.",
-      "runbook_ref": "runbook://noisy-alert"
+      "summary": "Watch for alert repetition and compare it with user-impacting metrics before opening remediation work.",
+      "runbook_ref": "runbook://noisy-alert",
+      "risk": "low",
+      "why": "The alert signal is weak or ambiguous, so observation is safer than remediation.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]",
+        "anomaly_evidence[0]",
+        "logs[0]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
     },
     {
+      "id": "human_review_noisy_alert",
       "type": "HUMAN_REVIEW",
       "priority": 2,
-      "summary": "Have the service owner confirm whether this is actionable before creating remediation work.",
-      "runbook_ref": "runbook://noisy-alert"
+      "summary": "Have the service owner confirm whether this alert is actionable before escalation.",
+      "runbook_ref": "runbook://noisy-alert",
+      "risk": "low",
+      "why": "Human confirmation is required when deterministic evidence does not establish a clear impact.",
+      "evidence_refs": [
+        "suspected_root_cause.evidence[0]",
+        "suspected_root_cause.evidence[1]",
+        "anomaly_evidence[0]",
+        "logs[0]"
+      ],
+      "requires_human_approval": false,
+      "approval_reason": null
     }
   ],
   "ticket_payload": {
     "project": "SRCH",
     "summary": "[low] search-api noisy_or_ambiguous_alert",
     "description": "Signals are weak or ambiguous; the alert should be investigated without assigning a firm root cause. Evidence: Metrics provided: http_5xx_rate.; Representative log: synthetic probe timeout recovered on retry; Runbook available: Noisy alert triage.",
-    "labels": ["ai-triage", "tenant-a", "search-api", "noisy_or_ambiguous_alert"],
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "search-api",
+      "noisy_or_ambiguous_alert"
+    ],
     "fields": {
       "confidence": 0.45,
       "owner_team": "search-platform",
       "correlation_id": "corr-noisy-001",
       "audit_id": "audit-9ecc62afc1cd",
-      "status": "INVESTIGATE"
+      "status": "INVESTIGATE",
+      "suggested_assignee_account_id": null,
+      "suggestion_reason": "No Jira accountId history mapping is configured yet; route to search-platform for human confirmation."
     }
   },
-  "slack_payload": {
-    "channel": "#oncall-search",
-    "text": "search-api: noisy_or_ambiguous_alert (INVESTIGATE, confidence 0.45). Audit: audit-9ecc62afc1cd."
+  "suggested_assignee_account_id": null,
+  "suggestion_reason": "No Jira accountId history mapping is configured yet; route to search-platform for human confirmation.",
+  "audit_id": "audit-9ecc62afc1cd",
+  "anomaly_evidence": [
+    {
+      "detector": "log_keyword",
+      "service": "search-api",
+      "metric_name": "logs",
+      "severity": "medium",
+      "score": 0.2,
+      "reason": "1 error-like log entries; sample: synthetic probe timeout recovered on retry"
+    }
+  ],
+  "service_topology": {
+    "root_service": "search-api",
+    "nodes": [
+      "search-api"
+    ],
+    "edges": []
   },
-  "audit_id": "audit-9ecc62afc1cd"
+  "rca_candidates": [
+    {
+      "rank": 1,
+      "service": "search-api",
+      "score": 0.2,
+      "confidence": 0.2,
+      "reasons": [
+        "1 error-like log entries; sample: synthetic probe timeout recovered on retry"
+      ]
+    }
+  ],
+  "causal_hints": [
+    {
+      "type": "insufficient_points",
+      "score": 0.0,
+      "reason": "Causal hints require at least six aligned points per compared service."
+    }
+  ],
+  "investigation_summary": "Deterministic investigator summary: search-api produced 1 anomaly evidence item(s). Top RCA candidate is search-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "llm_metadata": {
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": [],
+      "fallback": false
+    },
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    }
+  }
 }

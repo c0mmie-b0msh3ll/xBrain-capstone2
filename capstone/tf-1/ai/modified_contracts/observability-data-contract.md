@@ -23,7 +23,7 @@ Production boundary:
 ```text
 Customer applications
   -> OpenTelemetry/exporters
-  -> customer-owned observability layer such as Prometheus/Loki/Jaeger/Grafana/OpenTelemetry
+  -> customer-owned observability layer such as Prometheus/Loki/Jaeger/CloudWatch/Grafana
   -> CDO/platform alert detection
   -> CDO pushes incident seed/context to AI Ops
   -> AI Ops requests bounded evidence if needed through allowlisted tools
@@ -92,8 +92,8 @@ AIOps needs bounded query/export capability:
 | Max default window | 15 minutes before alert and 5 minutes after alert. |
 | Max extended window | 60 minutes unless explicitly agreed. |
 | Max log snippets | Default 50 relevant lines per service per incident. |
-| Retention | Metrics 15 days, logs 14 days, traces 7 days, deploy events 30 days, ownership/runbook change history 90 days for W11/W12 demo planning unless the CDO platform has stricter retention. |
-| Auth | IAM/SigV4, service token, or platform-approved service auth. |
+| Retention | At least enough for demo scenarios and baseline comparison. |
+| Auth | Scoped Bearer Token (token format: `<tenant_id>.<random_secret>`) referencing the lookup/validation mechanism in [Deployment Contract](file:///home/huyvu/test/deployment-contract.md). |
 | Isolation | A tenant-scoped query must not return other tenants' data. |
 
 This contract does not require AI Ops to collect infrastructure metrics continuously or evaluate real-time platform health. Real-time observability collection, alert rules, platform SLOs, and monitoring dashboards remain CDO/platform responsibilities. AI Ops consumes incident-scoped evidence after an alert exists, then cleans and normalizes that evidence for RCA.
@@ -117,8 +117,8 @@ CDO/platform should treat the customer's existing observability stack as the sou
 
 | Data type | Preferred source systems | Notes |
 |---|---|---|
-| Metrics | Prometheus, Thanos, Mimir, or equivalent metrics backend | Query by tenant, service, environment, and bounded time window. |
-| Logs | Loki, Elasticsearch, OpenSearch, or equivalent log backend | Return redacted snippets, not unbounded raw dumps. |
+| Metrics | Prometheus, Thanos, Mimir, CloudWatch metrics | Query by tenant, service, environment, and bounded time window. |
+| Logs | Loki, Elasticsearch, OpenSearch, CloudWatch Logs | Return redacted snippets, not unbounded raw dumps. |
 | Traces | Jaeger, Tempo, X-Ray, OpenTelemetry backend | Query by `trace_id`, `correlation_id`, service, or time window where supported. |
 | Alerts/incidents | Alertmanager, EventBridge, event pipeline, webhook/API integration, monitoring system | Provides incident id, severity, labels, and start time. |
 | Deploy metadata | CI/CD system, deployment event table, GitOps controller, CloudTrail/EventBridge | Used for deploy correlation and rollback references. |
@@ -151,7 +151,7 @@ CDO should send enough metadata for AI Ops to query the right evidence without g
 
 **Recommended foundation - Bounded evidence access**
 
-In production, CDO should expose bounded incident-scoped evidence access in front of Loki/Prometheus/Jaeger/OpenTelemetry/OpenSearch or equivalent systems. This is not a replacement for raw observability backends; it is a safe access layer that lets AI Ops retrieve only the tenant/service/environment/time-window evidence needed for RCA.
+In production, CDO should expose bounded incident-scoped evidence access in front of Loki/Prometheus/Jaeger/CloudWatch/OpenSearch or equivalent systems. This is not a replacement for raw observability backends; it is a safe access layer that lets AI Ops retrieve only the tenant/service/environment/time-window evidence needed for RCA.
 
 CDO/platform responsibilities:
 
@@ -188,7 +188,7 @@ Minimal cleaned/curated log record produced by AI Ops:
 
 ### Required Evidence API Surface For AI Follow-Up
 
-If CDO chooses to support AI follow-up queries after the initial alert, expose a small read-only evidence API or equivalent storage access. This is the interface AI Ops needs; AI Ops should not call raw customer Prometheus/Loki/Jaeger/Datadog endpoints directly in production. AI Ops will clean and curate the bounded response before triage.
+If CDO chooses to support AI follow-up queries after the initial alert, expose a small read-only evidence API or equivalent storage access. This is the interface AI Ops needs; AI Ops should not call raw customer Prometheus/Loki/CloudWatch/Datadog endpoints directly in production. AI Ops will clean and curate the bounded response before triage.
 
 #### `GET /v1/evidence/incidents/{incident_id}`
 
@@ -198,7 +198,7 @@ Required request headers:
 
 | Header | Required | Notes |
 |---|---:|---|
-| `Authorization` | yes | CDO-approved service auth. |
+| `Authorization` | yes | Bearer Token (as defined in [Deployment Contract](file:///home/huyvu/test/deployment-contract.md)). |
 | `X-Tenant-Id` | yes | Tenant scope. |
 | `X-Correlation-Id` | yes | End-to-end workflow id. |
 
@@ -263,7 +263,7 @@ Response body:
 
 Rules:
 
-- Reject requests outside the tenant/service/environment/time window.
+- Reject requests outside the tenant/service/environment/time window. The gateway/proxy must parse the Bearer Token (token format: `<tenant_id>.<random_secret>`), lookup the secret at `tf1/ai-engine/tenant-{tenant_id}/auth-token` in Secrets Manager to authenticate the request (`401` on failure), and verify that the parsed `<tenant_id>` matches the `X-Tenant-Id` header, returning `403 Forbidden` on mismatch (returning 401 if token invalid/missing, 403 on tenant scope mismatch, and 400 on payload/query inconsistency).
 - Reject or clamp windows over 60 minutes unless explicitly approved.
 - Return bounded logs, not unbounded log dumps. AI Ops will clean/curate returned snippets before RCA.
 - Return trace summaries, not full trace exports.
@@ -347,13 +347,19 @@ Implementation handoff for CDO teams is documented in `../docs/06_cdo_evidence_h
 
 Draft targets for capstone review:
 
-| Quality item | Target |
-|---|---:|
-| Metric freshness | < 60 seconds delay for demo. |
-| Log freshness | < 120 seconds delay for demo. |
-| Required metadata completeness | >= 99% for demo fixtures/workloads. |
-| Query p95 latency | < 2 seconds for bounded incident windows. |
-| Cross-tenant leakage | 0 tolerated. |
+| Quality item | Target | Notes / Measurement |
+|---|---:|---|
+| Metric freshness | < 60 seconds delay for demo | Fallback: if metrics > 60s stale, return `INVESTIGATE` status, cap confidence at 0.50, and add stale metrics warning to evidence. |
+| Log freshness | < 120 seconds delay for demo | Fallback: if logs > 120s stale, return `INVESTIGATE` status, cap confidence at 0.50, and add stale logs warning to evidence. |
+| Required metadata completeness | >= 99% for demo fixtures/workloads | Calculated rolling window (24h in prod) as `(Samples with all required fields) / (Total samples) * 100`. Alerts on breach. |
+| Query p95 latency | < 2 seconds for bounded incident windows | Operational target. |
+| Cross-tenant leakage | 0 tolerated | Checked by mapping bearer token tenant scope against `X-Tenant-Id`. Returns `403` on mismatch. |
+| PII leakage in curated evidence | 0 tolerated | Curation engine must automatically scrub/redact PII logs (e.g. credit card, password, email). |
+
+### SLA Breach Fallback Behavior
+If telemetry data freshness target is breached (Metric freshness > 60s or Log freshness > 120s), the triage engine MUST flag the status as `INVESTIGATE` with a downgraded confidence score (capped at `0.50` or subtracted `0.20`), and explicitly populate the `suspected_root_cause.evidence` with:
+- `"Warning: Stale telemetry data detected (breaches freshness SLA)"`
+If critical context is completely missing, the engine falls back to `INSUFFICIENT_CONTEXT`.
 
 ## Handoff To Triage Context
 
@@ -370,12 +376,12 @@ observability data contract
 
 | Item | W11 decision |
 |---|---|
-| Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. |
+| Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. Both CDO platforms must use the identical test fixture dataset to ensure E2E scenario validation alignment. |
 | Alert delivery | Push-based from CDO/platform to AI Ops. Poll-based alert discovery by AI Ops is out of scope. |
 | Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. Customer observability remains the source of truth; CDO/platform owns hosting/access/query bounds for the integration path exposed to AI Ops. |
 | Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
-| Observability stack | CDO's planned Prometheus/Loki/Jaeger/Grafana/OpenTelemetry stack is acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
+| Observability stack | Prometheus/Loki/Jaeger/Grafana/CloudWatch/OpenTelemetry are acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
 | Jira assignee suggestion | Optional. AI may query bounded Jira history/accountId mapping and return a suggestion reason, but CDO must require human confirmation before assignment. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
 | Ownership/runbooks | RCAEval telemetry is primary for scenario evidence; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
-| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, with retention of metrics 15 days, logs 14 days, traces 7 days, deploy events 30 days, and ownership/runbook change history 90 days unless the CDO platform is stricter. |
+| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, and evidence retention long enough to replay all approved scenarios. |

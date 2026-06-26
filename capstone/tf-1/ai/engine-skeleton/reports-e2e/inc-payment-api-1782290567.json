@@ -1,0 +1,456 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "threshold",
+      "metric_name": "http_latency_p95_ms",
+      "reason": "http_latency_p95_ms breached latency threshold at 2800ms.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "http_latency_p95_ms",
+      "reason": "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "threshold",
+      "metric_name": "http_error_rate_percent",
+      "reason": "http_error_rate_percent breached error threshold at 12percent.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "threshold",
+      "metric_name": "redis_timeout_count",
+      "reason": "redis_timeout_count breached timeout threshold at 340count.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "log_keyword",
+      "metric_name": "logs",
+      "reason": "3 error-like log entries; sample: redis: i/o timeout while processing /checkout",
+      "score": 0.6,
+      "service": "payment-api",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-946726deea00",
+  "causal_hints": [
+    {
+      "reason": "Causal hints require at least six aligned points per compared service.",
+      "score": 0.0,
+      "type": "insufficient_points"
+    }
+  ],
+  "created_at": "2026-06-24T08:42:47.274508Z",
+  "detector_evidence": [
+    "http_latency_p95_ms=2800ms",
+    "http_error_rate_percent=12percent",
+    "redis_timeout_count=340count",
+    "redis: i/o timeout while processing /checkout",
+    "connection pool exhausted for redis client"
+  ],
+  "incident_id": "inc-payment-api-1782290567",
+  "investigation_summary": "Deterministic investigator summary: payment-api produced 5 anomaly evidence item(s). Top RCA candidate is payment-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "jira_payload": {
+    "description": "payment-api is showing latency degradation, likely related to timeout or recent change signals. Evidence: Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.; Representative log: redis: i/o timeout while processing /checkout; Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.; Runbook available: Synthetic scenario triage.",
+    "fields": {
+      "audit_id": "audit-946726deea00",
+      "confidence": 0.82,
+      "correlation_id": "corr-payment-api-1782290567",
+      "owner_team": "payments-platform",
+      "status": "DIAGNOSED"
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "payment-api",
+      "latency_degradation"
+    ],
+    "project": "PAY",
+    "summary": "[high] payment-api latency_degradation"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    },
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "fallback": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": []
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 1.0,
+      "rank": 1,
+      "reasons": [
+        "http_latency_p95_ms breached latency threshold at 2800ms.",
+        "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+        "http_error_rate_percent breached error threshold at 12percent.",
+        "redis_timeout_count breached timeout threshold at 340count."
+      ],
+      "score": 5.05,
+      "service": "payment-api"
+    },
+    {
+      "confidence": 0.069,
+      "rank": 2,
+      "reasons": [
+        "Dependency of impacted service payment-api via log_dependency_hint."
+      ],
+      "score": 0.35,
+      "service": "redis"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/inc-payment-api-1782290567",
+  "request_context": {
+    "alert": {
+      "alert_id": "alert-payment-api-1782290567",
+      "description": "http_latency_p95_ms=2800ms; http_error_rate_percent=12percent; redis_timeout_count=340count",
+      "labels": {
+        "detector": "threshold_baseline_log_trace_worker"
+      },
+      "service": "payment-api",
+      "severity": "high",
+      "source": "aiops-observability-worker",
+      "started_at": "2026-06-24T08:40:47.262215Z",
+      "title": "High p95 latency and timeout signals on payment-api"
+    },
+    "correlation_id": "corr-payment-api-1782290567",
+    "environment": "sandbox",
+    "incident_id": "inc-payment-api-1782290567",
+    "logs": [
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "redis: i/o timeout while processing /checkout",
+        "service": "payment-api",
+        "trace_id": "trace-latency-001",
+        "ts": "2026-06-22T10:05:22Z"
+      },
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "connection pool exhausted for redis client",
+        "service": "payment-api",
+        "trace_id": "trace-latency-002",
+        "ts": "2026-06-22T10:05:41Z"
+      },
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "context deadline exceeded calling redis dependency",
+        "service": "payment-api",
+        "trace_id": "trace-latency-003",
+        "ts": "2026-06-22T10:06:02Z"
+      }
+    ],
+    "metrics": [
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "http_latency_p95_ms",
+        "points": [
+          {
+            "ts": "2026-06-22T09:00:00Z",
+            "value": 220.0
+          },
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 2800.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "ms"
+      },
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "http_error_rate_percent",
+        "points": [
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 12.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "percent"
+      },
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "redis_timeout_count",
+        "points": [
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 340.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "count"
+      }
+    ],
+    "ownership": {
+      "jira_project": "PAY",
+      "owner_team": "payments-platform",
+      "runbooks": [
+        {
+          "excerpt": "Check service health, saturation, dependency failures, trace latency, and recent deploys before rollback.",
+          "title": "Synthetic scenario triage",
+          "url": "runbook://synthetic-scenario-triage"
+        }
+      ],
+      "service": "payment-api",
+      "slack_channel": "#oncall-payments"
+    },
+    "received_at": "2026-06-24T08:42:47.262215Z",
+    "recent_deploys": [
+      {
+        "change_summary": "changed redis connection pool config",
+        "deployed_at": "2026-06-22T09:58:00Z",
+        "deployed_by": "ci",
+        "rollback_ref": "v1.2.2",
+        "service": "payment-api",
+        "version": "v1.2.3"
+      }
+    ],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [
+      {
+        "evidence": "log_dependency_hint",
+        "source": "payment-api",
+        "target": "redis"
+      }
+    ],
+    "nodes": [
+      "payment-api",
+      "redis"
+    ],
+    "root_service": "payment-api"
+  },
+  "slack_payload": {
+    "channel": "#oncall-payments",
+    "text": "payment-api: latency_degradation (DIAGNOSED, confidence 0.82). Evidence: http_latency_p95_ms breached latency threshold at 2800ms.; http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.. Action: Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs. Audit: audit-946726deea00."
+  },
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "threshold",
+        "metric_name": "http_latency_p95_ms",
+        "reason": "http_latency_p95_ms breached latency threshold at 2800ms.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "http_latency_p95_ms",
+        "reason": "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "threshold",
+        "metric_name": "http_error_rate_percent",
+        "reason": "http_error_rate_percent breached error threshold at 12percent.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "threshold",
+        "metric_name": "redis_timeout_count",
+        "reason": "redis_timeout_count breached timeout threshold at 340count.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "log_keyword",
+        "metric_name": "logs",
+        "reason": "3 error-like log entries; sample: redis: i/o timeout while processing /checkout",
+        "score": 0.6,
+        "service": "payment-api",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-946726deea00",
+    "causal_hints": [
+      {
+        "reason": "Causal hints require at least six aligned points per compared service.",
+        "score": 0.0,
+        "type": "insufficient_points"
+      }
+    ],
+    "classification": "latency_degradation",
+    "confidence": 0.82,
+    "incident_id": "inc-payment-api-1782290567",
+    "investigation_summary": "Deterministic investigator summary: payment-api produced 5 anomaly evidence item(s). Top RCA candidate is payment-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic"
+      },
+      "enabled": false,
+      "provider": "deterministic",
+      "tool_investigation": {
+        "enabled": false,
+        "fallback": false,
+        "provider": "agentcore",
+        "runtime_arn_configured": false,
+        "tool_calls": []
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 1.0,
+        "rank": 1,
+        "reasons": [
+          "http_latency_p95_ms breached latency threshold at 2800ms.",
+          "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+          "http_error_rate_percent breached error threshold at 12percent.",
+          "redis_timeout_count breached timeout threshold at 340count."
+        ],
+        "score": 5.05,
+        "service": "payment-api"
+      },
+      {
+        "confidence": 0.069,
+        "rank": 2,
+        "reasons": [
+          "Dependency of impacted service payment-api via log_dependency_hint."
+        ],
+        "score": 0.35,
+        "service": "redis"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "logs[0]",
+          "anomaly_evidence[0]",
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]"
+        ],
+        "id": "dependency_timeout_triage",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Timeout and dependency evidence can explain latency without requiring immediate rollback or restart."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "latency_saturation_review",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Review saturation metrics, dependency latency, and trace samples before assigning remediation.",
+        "type": "HUMAN_REVIEW",
+        "why": "Latency degradation has supporting evidence, but the exact bottleneck still needs operator validation."
+      },
+      {
+        "approval_reason": "Rollback changes production state and must be approved by the owning team.",
+        "evidence_refs": [
+          "recent_deploys[0]",
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]"
+        ],
+        "id": "consider_recent_deploy_rollback",
+        "priority": 3,
+        "requires_human_approval": true,
+        "risk": "medium",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
+        "type": "ROLLBACK_CONSIDER",
+        "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation."
+      }
+    ],
+    "service_topology": {
+      "edges": [
+        {
+          "evidence": "log_dependency_hint",
+          "source": "payment-api",
+          "target": "redis"
+        }
+      ],
+      "nodes": [
+        "payment-api",
+        "redis"
+      ],
+      "root_service": "payment-api"
+    },
+    "severity": "high",
+    "slack_payload": {
+      "channel": "#oncall-payments",
+      "text": "payment-api: latency_degradation (DIAGNOSED, confidence 0.82). Evidence: http_latency_p95_ms breached latency threshold at 2800ms.; http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.. Action: Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs. Audit: audit-946726deea00."
+    },
+    "status": "DIAGNOSED",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.",
+        "Representative log: redis: i/o timeout while processing /checkout",
+        "Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.",
+        "Runbook available: Synthetic scenario triage."
+      ],
+      "summary": "payment-api is showing latency degradation, likely related to timeout or recent change signals."
+    },
+    "ticket_payload": {
+      "description": "payment-api is showing latency degradation, likely related to timeout or recent change signals. Evidence: Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.; Representative log: redis: i/o timeout while processing /checkout; Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.; Runbook available: Synthetic scenario triage.",
+      "fields": {
+        "audit_id": "audit-946726deea00",
+        "confidence": 0.82,
+        "correlation_id": "corr-payment-api-1782290567",
+        "owner_team": "payments-platform",
+        "status": "DIAGNOSED"
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "payment-api",
+        "latency_degradation"
+      ],
+      "project": "PAY",
+      "summary": "[high] payment-api latency_degradation"
+    }
+  }
+}

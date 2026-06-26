@@ -1,0 +1,2639 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "isolation_forest",
+      "metric_name": "user-db_cpu",
+      "reason": "user-db_cpu latest point was isolated against recent metric shape.",
+      "score": 0.634,
+      "service": "user-db",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "user-db_mem",
+      "reason": "user-db_mem latest point was isolated against recent metric shape.",
+      "score": 0.817,
+      "service": "user-db",
+      "severity": "medium"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "user_latency-50",
+      "reason": "user_latency-50 current value 0.00319011 is 6.7 sigma from baseline.",
+      "score": 1.0,
+      "service": "user",
+      "severity": "high"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "user_latency-50",
+      "reason": "user_latency-50 latest point was isolated against recent metric shape.",
+      "score": 0.851,
+      "service": "user",
+      "severity": "medium"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "user_latency-90",
+      "reason": "user_latency-90 current value 0.0049422 is 6.7 sigma from baseline.",
+      "score": 1.0,
+      "service": "user",
+      "severity": "high"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "user_latency-90",
+      "reason": "user_latency-90 latest point was isolated against recent metric shape.",
+      "score": 0.849,
+      "service": "user",
+      "severity": "medium"
+    },
+    {
+      "detector": "ewma_drift",
+      "metric_name": "user_workload",
+      "reason": "user_workload drifted from EWMA 68.53 to 118.324.",
+      "score": 0.727,
+      "service": "user",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "user_workload",
+      "reason": "user_workload latest point was isolated against recent metric shape.",
+      "score": 0.653,
+      "service": "user",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "carts-db_cpu",
+      "reason": "carts-db_cpu latest point was isolated against recent metric shape.",
+      "score": 0.827,
+      "service": "carts-db",
+      "severity": "medium"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "carts_cpu",
+      "reason": "carts_cpu current value 3.08327 is -5.9 sigma from baseline.",
+      "score": 0.986,
+      "service": "carts",
+      "severity": "high"
+    },
+    {
+      "detector": "ewma_drift",
+      "metric_name": "carts_cpu",
+      "reason": "carts_cpu drifted from EWMA 4.29 to 3.08327.",
+      "score": 0.281,
+      "service": "carts",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "carts_cpu",
+      "reason": "carts_cpu latest point was isolated against recent metric shape.",
+      "score": 0.853,
+      "service": "carts",
+      "severity": "medium"
+    },
+    {
+      "detector": "isolation_forest",
+      "metric_name": "carts_latency-50",
+      "reason": "carts_latency-50 latest point was isolated against recent metric shape.",
+      "score": 0.783,
+      "service": "carts",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-14efaa7d6dcf",
+  "causal_hints": [
+    {
+      "direction": "experimental",
+      "reason": "carts and carts-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.918,
+      "source": "carts",
+      "target": "carts-db",
+      "type": "lag_correlation"
+    },
+    {
+      "direction": "experimental",
+      "reason": "carts and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.917,
+      "source": "carts",
+      "target": "user-db",
+      "type": "lag_correlation"
+    },
+    {
+      "direction": "experimental",
+      "reason": "carts-db and user metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.917,
+      "source": "carts-db",
+      "target": "user",
+      "type": "lag_correlation"
+    },
+    {
+      "direction": "experimental",
+      "reason": "carts-db and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.917,
+      "source": "carts-db",
+      "target": "user-db",
+      "type": "lag_correlation"
+    },
+    {
+      "direction": "experimental",
+      "reason": "user and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+      "score": 0.917,
+      "source": "user",
+      "target": "user-db",
+      "type": "lag_correlation"
+    }
+  ],
+  "created_at": "2026-06-25T03:25:50.005757Z",
+  "data_source": "RCAEval adapted subset",
+  "detector_evidence": [
+    "RCAEval adapted request: critical-service-down/re1ss_user_loss_2.request.json"
+  ],
+  "incident_id": "rcaeval-re1ss_user_loss_2",
+  "investigation_summary": "Deterministic investigator summary: user produced 13 anomaly evidence item(s). Top RCA candidate is user. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints available.",
+  "jira_payload": {
+    "description": "user appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: user-db_cpu, user-db_mem, user_cpu.; Runbook available: RCAEval case investigation.",
+    "fields": {
+      "audit_id": "audit-14efaa7d6dcf",
+      "confidence": 0.86,
+      "correlation_id": "rcaeval-re1ss_user_loss_2",
+      "owner_team": "dataset-owner",
+      "status": "DIAGNOSED"
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "user",
+      "critical_service_down"
+    ],
+    "project": "AIOPS",
+    "summary": "[critical] user critical_service_down"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic"
+    },
+    "enabled": false,
+    "provider": "deterministic",
+    "tool_investigation": {
+      "enabled": false,
+      "fallback": false,
+      "provider": "agentcore",
+      "runtime_arn_configured": false,
+      "tool_calls": []
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 1.0,
+      "rank": 1,
+      "reasons": [
+        "user_latency-50 current value 0.00319011 is 6.7 sigma from baseline.",
+        "user_latency-50 latest point was isolated against recent metric shape.",
+        "user_latency-90 current value 0.0049422 is 6.7 sigma from baseline.",
+        "user_latency-90 latest point was isolated against recent metric shape."
+      ],
+      "score": 5.355,
+      "service": "user"
+    },
+    {
+      "confidence": 0.645,
+      "rank": 2,
+      "reasons": [
+        "carts_cpu current value 3.08327 is -5.9 sigma from baseline.",
+        "carts_cpu drifted from EWMA 4.29 to 3.08327.",
+        "carts_cpu latest point was isolated against recent metric shape.",
+        "carts_latency-50 latest point was isolated against recent metric shape."
+      ],
+      "score": 3.454,
+      "service": "carts"
+    },
+    {
+      "confidence": 0.271,
+      "rank": 3,
+      "reasons": [
+        "user-db_cpu latest point was isolated against recent metric shape.",
+        "user-db_mem latest point was isolated against recent metric shape."
+      ],
+      "score": 1.451,
+      "service": "user-db"
+    },
+    {
+      "confidence": 0.257,
+      "rank": 4,
+      "reasons": [
+        "carts-db_cpu latest point was isolated against recent metric shape.",
+        "carts-db and user metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "carts-db and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof."
+      ],
+      "score": 1.377,
+      "service": "carts-db"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/rcaeval-re1ss_user_loss_2",
+  "request_context": {
+    "alert": {
+      "alert_id": "rcaeval-re1ss_user_loss_2",
+      "description": "RCAEval loss-like fault adapted into the TF1 critical service down scenario.",
+      "labels": {
+        "case": "re1ss_user_loss_2",
+        "dataset": "RCAEval",
+        "fault": "loss",
+        "mapped_scenario": "critical-service-down"
+      },
+      "service": "user",
+      "severity": "critical",
+      "source": "RCAEval",
+      "started_at": "2023-08-27T18:54:58Z",
+      "title": "user is down from RCAEval loss fault"
+    },
+    "correlation_id": "rcaeval-re1ss_user_loss_2",
+    "environment": "sandbox",
+    "incident_id": "rcaeval-re1ss_user_loss_2",
+    "logs": [],
+    "metrics": [
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user-db_cpu",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 0.9924478860501924
+          },
+          {
+            "ts": "1693162469",
+            "value": 0.9924478860501924
+          },
+          {
+            "ts": "1693162470",
+            "value": 0.9924478860501924
+          },
+          {
+            "ts": "1693162471",
+            "value": 0.9891227494229284
+          },
+          {
+            "ts": "1693162472",
+            "value": 0.9891227494229284
+          },
+          {
+            "ts": "1693162473",
+            "value": 0.9891227494229284
+          },
+          {
+            "ts": "1693162474",
+            "value": 0.9891227494229284
+          },
+          {
+            "ts": "1693162475",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162476",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162477",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162478",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162479",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162480",
+            "value": 0.9891227494229287
+          },
+          {
+            "ts": "1693162481",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162482",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162483",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162484",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162485",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162486",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162487",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162488",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162489",
+            "value": 0.9785853668941972
+          },
+          {
+            "ts": "1693162490",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162491",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162492",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162493",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162494",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162495",
+            "value": 1.0097100964666084
+          },
+          {
+            "ts": "1693162496",
+            "value": 0.8418874170280464
+          },
+          {
+            "ts": "1693162497",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162498",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162499",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162500",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162501",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162502",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162503",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162504",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162505",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162506",
+            "value": 1.0292022213056802
+          },
+          {
+            "ts": "1693162507",
+            "value": 1.0079714455599964
+          }
+        ],
+        "service": "user-db",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user-db_mem",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 41254912.0
+          },
+          {
+            "ts": "1693162469",
+            "value": 41254912.0
+          },
+          {
+            "ts": "1693162470",
+            "value": 41254912.0
+          },
+          {
+            "ts": "1693162471",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162472",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162473",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162474",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162475",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162476",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162477",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162478",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162479",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162480",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162481",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162482",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162483",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162484",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162485",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162486",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162487",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162488",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162489",
+            "value": 41742336.0
+          },
+          {
+            "ts": "1693162490",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162491",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162492",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162493",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162494",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162495",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162496",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162497",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162498",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162499",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162500",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162501",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162502",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162503",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162504",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162505",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162506",
+            "value": 41988096.0
+          },
+          {
+            "ts": "1693162507",
+            "value": 42233856.0
+          }
+        ],
+        "service": "user-db",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user_cpu",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 2.2247530939199875
+          },
+          {
+            "ts": "1693162469",
+            "value": 2.180488943360341
+          },
+          {
+            "ts": "1693162470",
+            "value": 2.136224792800694
+          },
+          {
+            "ts": "1693162471",
+            "value": 2.684058583938755
+          },
+          {
+            "ts": "1693162472",
+            "value": 2.684058583938755
+          },
+          {
+            "ts": "1693162473",
+            "value": 2.684058583938755
+          },
+          {
+            "ts": "1693162474",
+            "value": 2.684058583938755
+          },
+          {
+            "ts": "1693162475",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162476",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162477",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162478",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162479",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162480",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162481",
+            "value": 2.7240018708578795
+          },
+          {
+            "ts": "1693162482",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162483",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162484",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162485",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162486",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162487",
+            "value": 2.6975765806618788
+          },
+          {
+            "ts": "1693162488",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162489",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162490",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162491",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162492",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162493",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162494",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162495",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162496",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162497",
+            "value": 2.6770465218580477
+          },
+          {
+            "ts": "1693162498",
+            "value": 2.2634582857608714
+          },
+          {
+            "ts": "1693162499",
+            "value": 2.7158617516463264
+          },
+          {
+            "ts": "1693162500",
+            "value": 2.7158617516463264
+          },
+          {
+            "ts": "1693162501",
+            "value": 2.7158617516463264
+          },
+          {
+            "ts": "1693162502",
+            "value": 2.7158617516463264
+          },
+          {
+            "ts": "1693162503",
+            "value": 2.7158617516463264
+          },
+          {
+            "ts": "1693162504",
+            "value": 2.715861751646326
+          },
+          {
+            "ts": "1693162505",
+            "value": 2.715861751646326
+          },
+          {
+            "ts": "1693162506",
+            "value": 2.715861751646326
+          },
+          {
+            "ts": "1693162507",
+            "value": 2.715861751646326
+          }
+        ],
+        "service": "user",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user_latency-50",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 0.003162443760359934
+          },
+          {
+            "ts": "1693162469",
+            "value": 0.003166459627329193
+          },
+          {
+            "ts": "1693162470",
+            "value": 0.0031603017444601605
+          },
+          {
+            "ts": "1693162471",
+            "value": 0.0031603017444601605
+          },
+          {
+            "ts": "1693162472",
+            "value": 0.0031628126474752246
+          },
+          {
+            "ts": "1693162473",
+            "value": 0.0031611756340365017
+          },
+          {
+            "ts": "1693162474",
+            "value": 0.00316600790513834
+          },
+          {
+            "ts": "1693162475",
+            "value": 0.00316146701595618
+          },
+          {
+            "ts": "1693162476",
+            "value": 0.003161410101689616
+          },
+          {
+            "ts": "1693162477",
+            "value": 0.0031591468666706496
+          },
+          {
+            "ts": "1693162478",
+            "value": 0.003159787807677248
+          },
+          {
+            "ts": "1693162479",
+            "value": 0.0031664596273291924
+          },
+          {
+            "ts": "1693162480",
+            "value": 0.003159639981051634
+          },
+          {
+            "ts": "1693162481",
+            "value": 0.003159639981051634
+          },
+          {
+            "ts": "1693162482",
+            "value": 0.0031603974449964513
+          },
+          {
+            "ts": "1693162483",
+            "value": 0.0031626591230551632
+          },
+          {
+            "ts": "1693162484",
+            "value": 0.003166585007349339
+          },
+          {
+            "ts": "1693162485",
+            "value": 0.00316208663251048
+          },
+          {
+            "ts": "1693162486",
+            "value": 0.0031620253564253486
+          },
+          {
+            "ts": "1693162487",
+            "value": 0.0031593197327113914
+          },
+          {
+            "ts": "1693162488",
+            "value": 0.0031661076191202516
+          },
+          {
+            "ts": "1693162489",
+            "value": 0.0031701304978250366
+          },
+          {
+            "ts": "1693162490",
+            "value": 0.0031660915573959053
+          },
+          {
+            "ts": "1693162491",
+            "value": 0.0031660915573959053
+          },
+          {
+            "ts": "1693162492",
+            "value": 0.0031665510062456625
+          },
+          {
+            "ts": "1693162493",
+            "value": 0.0031658536585365852
+          },
+          {
+            "ts": "1693162494",
+            "value": 0.0031720692176456246
+          },
+          {
+            "ts": "1693162495",
+            "value": 0.0031650303880317904
+          },
+          {
+            "ts": "1693162496",
+            "value": 0.0031649619484506297
+          },
+          {
+            "ts": "1693162497",
+            "value": 0.0031605226318245448
+          },
+          {
+            "ts": "1693162498",
+            "value": 0.003159176029962547
+          },
+          {
+            "ts": "1693162499",
+            "value": 0.0031641277641277638
+          },
+          {
+            "ts": "1693162500",
+            "value": 0.003157931844888367
+          },
+          {
+            "ts": "1693162501",
+            "value": 0.003157931844888367
+          },
+          {
+            "ts": "1693162502",
+            "value": 0.0031603595080416276
+          },
+          {
+            "ts": "1693162503",
+            "value": 0.003160984848484849
+          },
+          {
+            "ts": "1693162504",
+            "value": 0.003167243938644236
+          },
+          {
+            "ts": "1693162505",
+            "value": 0.003172774869109948
+          },
+          {
+            "ts": "1693162506",
+            "value": 0.0031727063538472084
+          },
+          {
+            "ts": "1693162507",
+            "value": 0.003190112738654017
+          }
+        ],
+        "service": "user",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user_latency-90",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 0.0048923987686478815
+          },
+          {
+            "ts": "1693162469",
+            "value": 0.004899627329192547
+          },
+          {
+            "ts": "1693162470",
+            "value": 0.00488854314002829
+          },
+          {
+            "ts": "1693162471",
+            "value": 0.00488854314002829
+          },
+          {
+            "ts": "1693162472",
+            "value": 0.004893062765455404
+          },
+          {
+            "ts": "1693162473",
+            "value": 0.004890116141265703
+          },
+          {
+            "ts": "1693162474",
+            "value": 0.004898814229249012
+          },
+          {
+            "ts": "1693162475",
+            "value": 0.0048906406287211246
+          },
+          {
+            "ts": "1693162476",
+            "value": 0.004890538183041309
+          },
+          {
+            "ts": "1693162477",
+            "value": 0.00488646436000717
+          },
+          {
+            "ts": "1693162478",
+            "value": 0.004887618053819046
+          },
+          {
+            "ts": "1693162479",
+            "value": 0.004899627329192546
+          },
+          {
+            "ts": "1693162480",
+            "value": 0.004887351965892941
+          },
+          {
+            "ts": "1693162481",
+            "value": 0.004887351965892941
+          },
+          {
+            "ts": "1693162482",
+            "value": 0.0048887154009936125
+          },
+          {
+            "ts": "1693162483",
+            "value": 0.0048927864214992935
+          },
+          {
+            "ts": "1693162484",
+            "value": 0.00489985301322881
+          },
+          {
+            "ts": "1693162485",
+            "value": 0.004891755938518864
+          },
+          {
+            "ts": "1693162486",
+            "value": 0.004891645641565628
+          },
+          {
+            "ts": "1693162487",
+            "value": 0.004886775518880505
+          },
+          {
+            "ts": "1693162488",
+            "value": 0.004898993714416452
+          },
+          {
+            "ts": "1693162489",
+            "value": 0.004906234896085066
+          },
+          {
+            "ts": "1693162490",
+            "value": 0.0048989648033126295
+          },
+          {
+            "ts": "1693162491",
+            "value": 0.0048989648033126295
+          },
+          {
+            "ts": "1693162492",
+            "value": 0.004899791811242192
+          },
+          {
+            "ts": "1693162493",
+            "value": 0.004898536585365853
+          },
+          {
+            "ts": "1693162494",
+            "value": 0.004909724591762124
+          },
+          {
+            "ts": "1693162495",
+            "value": 0.004897054698457223
+          },
+          {
+            "ts": "1693162496",
+            "value": 0.004896931507211133
+          },
+          {
+            "ts": "1693162497",
+            "value": 0.004888940737284181
+          },
+          {
+            "ts": "1693162498",
+            "value": 0.004886516853932584
+          },
+          {
+            "ts": "1693162499",
+            "value": 0.004895429975429975
+          },
+          {
+            "ts": "1693162500",
+            "value": 0.00488427732079906
+          },
+          {
+            "ts": "1693162501",
+            "value": 0.00488427732079906
+          },
+          {
+            "ts": "1693162502",
+            "value": 0.00488864711447493
+          },
+          {
+            "ts": "1693162503",
+            "value": 0.004889772727272728
+          },
+          {
+            "ts": "1693162504",
+            "value": 0.004901039089559625
+          },
+          {
+            "ts": "1693162505",
+            "value": 0.004910994764397907
+          },
+          {
+            "ts": "1693162506",
+            "value": 0.004910871436924975
+          },
+          {
+            "ts": "1693162507",
+            "value": 0.004942202929577231
+          }
+        ],
+        "service": "user",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user_mem",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 15032320.0
+          },
+          {
+            "ts": "1693162469",
+            "value": 15032320.0
+          },
+          {
+            "ts": "1693162470",
+            "value": 15032320.0
+          },
+          {
+            "ts": "1693162471",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162472",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162473",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162474",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162475",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162476",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162477",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162478",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162479",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162480",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162481",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162482",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162483",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162484",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162485",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162486",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162487",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162488",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162489",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162490",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162491",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162492",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162493",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162494",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162495",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162496",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162497",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162498",
+            "value": 15052800.0
+          },
+          {
+            "ts": "1693162499",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162500",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162501",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162502",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162503",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162504",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162505",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162506",
+            "value": 15060992.0
+          },
+          {
+            "ts": "1693162507",
+            "value": 15060992.0
+          }
+        ],
+        "service": "user",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "user_workload",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 74.0
+          },
+          {
+            "ts": "1693162469",
+            "value": 60.0
+          },
+          {
+            "ts": "1693162470",
+            "value": 44.0
+          },
+          {
+            "ts": "1693162471",
+            "value": 68.0
+          },
+          {
+            "ts": "1693162472",
+            "value": 58.0
+          },
+          {
+            "ts": "1693162473",
+            "value": 76.0
+          },
+          {
+            "ts": "1693162474",
+            "value": 68.0
+          },
+          {
+            "ts": "1693162475",
+            "value": 40.0
+          },
+          {
+            "ts": "1693162476",
+            "value": 100.0
+          },
+          {
+            "ts": "1693162477",
+            "value": 59.148
+          },
+          {
+            "ts": "1693162478",
+            "value": 64.061
+          },
+          {
+            "ts": "1693162479",
+            "value": 104.0
+          },
+          {
+            "ts": "1693162480",
+            "value": 72.0
+          },
+          {
+            "ts": "1693162481",
+            "value": 100.0
+          },
+          {
+            "ts": "1693162482",
+            "value": 74.0
+          },
+          {
+            "ts": "1693162483",
+            "value": 100.0
+          },
+          {
+            "ts": "1693162484",
+            "value": 92.0
+          },
+          {
+            "ts": "1693162485",
+            "value": 96.0
+          },
+          {
+            "ts": "1693162486",
+            "value": 150.0
+          },
+          {
+            "ts": "1693162487",
+            "value": 61.018
+          },
+          {
+            "ts": "1693162488",
+            "value": 72.0
+          },
+          {
+            "ts": "1693162489",
+            "value": 66.0
+          },
+          {
+            "ts": "1693162490",
+            "value": 86.0
+          },
+          {
+            "ts": "1693162491",
+            "value": 94.0
+          },
+          {
+            "ts": "1693162492",
+            "value": 58.0
+          },
+          {
+            "ts": "1693162493",
+            "value": 60.0
+          },
+          {
+            "ts": "1693162494",
+            "value": 26.0
+          },
+          {
+            "ts": "1693162495",
+            "value": 80.0
+          },
+          {
+            "ts": "1693162496",
+            "value": 90.0
+          },
+          {
+            "ts": "1693162497",
+            "value": 90.559
+          },
+          {
+            "ts": "1693162498",
+            "value": 54.0
+          },
+          {
+            "ts": "1693162499",
+            "value": 110.0
+          },
+          {
+            "ts": "1693162500",
+            "value": 102.0
+          },
+          {
+            "ts": "1693162501",
+            "value": 88.0
+          },
+          {
+            "ts": "1693162502",
+            "value": 50.0
+          },
+          {
+            "ts": "1693162503",
+            "value": 64.0
+          },
+          {
+            "ts": "1693162504",
+            "value": 102.0
+          },
+          {
+            "ts": "1693162505",
+            "value": 50.0
+          },
+          {
+            "ts": "1693162506",
+            "value": 64.0
+          },
+          {
+            "ts": "1693162507",
+            "value": 118.324
+          }
+        ],
+        "service": "user",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "carts-db_cpu",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162469",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162470",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162471",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162472",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162473",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162474",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162475",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162476",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162477",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162478",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162479",
+            "value": 5.461539429830296
+          },
+          {
+            "ts": "1693162480",
+            "value": 5.479792601180438
+          },
+          {
+            "ts": "1693162481",
+            "value": 5.479792601180438
+          },
+          {
+            "ts": "1693162482",
+            "value": 5.479792601180438
+          },
+          {
+            "ts": "1693162483",
+            "value": 5.479792601180438
+          },
+          {
+            "ts": "1693162484",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162485",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162486",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162487",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162488",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162489",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162490",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162491",
+            "value": 5.954572792325845
+          },
+          {
+            "ts": "1693162492",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162493",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162494",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162495",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162496",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162497",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162498",
+            "value": 6.170592890287478
+          },
+          {
+            "ts": "1693162499",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162500",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162501",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162502",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162503",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162504",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162505",
+            "value": 6.276747427151995
+          },
+          {
+            "ts": "1693162506",
+            "value": 5.516278570936141
+          },
+          {
+            "ts": "1693162507",
+            "value": 6.690351657417129
+          }
+        ],
+        "service": "carts-db",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "carts-db_mem",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162469",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162470",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162471",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162472",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162473",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162474",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162475",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162476",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162477",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162478",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162479",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162480",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162481",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162482",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162483",
+            "value": 74919936.0
+          },
+          {
+            "ts": "1693162484",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162485",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162486",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162487",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162488",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162489",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162490",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162491",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162492",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162493",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162494",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162495",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162496",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162497",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162498",
+            "value": 75374592.0
+          },
+          {
+            "ts": "1693162499",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162500",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162501",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162502",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162503",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162504",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162505",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162506",
+            "value": 75898880.0
+          },
+          {
+            "ts": "1693162507",
+            "value": 75898880.0
+          }
+        ],
+        "service": "carts-db",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "carts_cpu",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162469",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162470",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162471",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162472",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162473",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162474",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162475",
+            "value": 4.933427120395813
+          },
+          {
+            "ts": "1693162476",
+            "value": 4.760717384643881
+          },
+          {
+            "ts": "1693162477",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162478",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162479",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162480",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162481",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162482",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162483",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162484",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162485",
+            "value": 4.434671331336775
+          },
+          {
+            "ts": "1693162486",
+            "value": 4.369417423211327
+          },
+          {
+            "ts": "1693162487",
+            "value": 4.369417423211328
+          },
+          {
+            "ts": "1693162488",
+            "value": 4.369417423211328
+          },
+          {
+            "ts": "1693162489",
+            "value": 4.369417423211328
+          },
+          {
+            "ts": "1693162490",
+            "value": 4.369417423211328
+          },
+          {
+            "ts": "1693162491",
+            "value": 4.369417423211328
+          },
+          {
+            "ts": "1693162492",
+            "value": 4.622442006794113
+          },
+          {
+            "ts": "1693162493",
+            "value": 4.622442006794113
+          },
+          {
+            "ts": "1693162494",
+            "value": 4.622442006794113
+          },
+          {
+            "ts": "1693162495",
+            "value": 4.622442006794113
+          },
+          {
+            "ts": "1693162496",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162497",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162498",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162499",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162500",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162501",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162502",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162503",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162504",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162505",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162506",
+            "value": 4.284752548110839
+          },
+          {
+            "ts": "1693162507",
+            "value": 3.083266670734247
+          }
+        ],
+        "service": "carts",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "carts_error",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162469",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162470",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162471",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162472",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162473",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162474",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162475",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162476",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162477",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162478",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162479",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162480",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162481",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162482",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162483",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162484",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162485",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162486",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162487",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162488",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162489",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162490",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162491",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162492",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162493",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162494",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162495",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162496",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162497",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162498",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162499",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162500",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162501",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162502",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162503",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162504",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162505",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162506",
+            "value": 0.0
+          },
+          {
+            "ts": "1693162507",
+            "value": 0.0
+          }
+        ],
+        "service": "carts",
+        "unit": null
+      },
+      {
+        "labels": {
+          "fault": "loss",
+          "source_dataset": "RCAEval"
+        },
+        "metric_name": "carts_latency-50",
+        "points": [
+          {
+            "ts": "1693162468",
+            "value": 0.008198878343399482
+          },
+          {
+            "ts": "1693162469",
+            "value": 0.008198878343399482
+          },
+          {
+            "ts": "1693162470",
+            "value": 0.008198878343399482
+          },
+          {
+            "ts": "1693162471",
+            "value": 0.008198878343399482
+          },
+          {
+            "ts": "1693162472",
+            "value": 0.008249324932493248
+          },
+          {
+            "ts": "1693162473",
+            "value": 0.008261531766753698
+          },
+          {
+            "ts": "1693162474",
+            "value": 0.008261531766753698
+          },
+          {
+            "ts": "1693162475",
+            "value": 0.008261531766753698
+          },
+          {
+            "ts": "1693162476",
+            "value": 0.008261241501363883
+          },
+          {
+            "ts": "1693162477",
+            "value": 0.008305195776420105
+          },
+          {
+            "ts": "1693162478",
+            "value": 0.008298469271044486
+          },
+          {
+            "ts": "1693162479",
+            "value": 0.00829861111111111
+          },
+          {
+            "ts": "1693162480",
+            "value": 0.00829861111111111
+          },
+          {
+            "ts": "1693162481",
+            "value": 0.00829861111111111
+          },
+          {
+            "ts": "1693162482",
+            "value": 0.008326484018264841
+          },
+          {
+            "ts": "1693162483",
+            "value": 0.008315217391304348
+          },
+          {
+            "ts": "1693162484",
+            "value": 0.008315217391304348
+          },
+          {
+            "ts": "1693162485",
+            "value": 0.008315217391304348
+          },
+          {
+            "ts": "1693162486",
+            "value": 0.008314948288410232
+          },
+          {
+            "ts": "1693162487",
+            "value": 0.008400910706624956
+          },
+          {
+            "ts": "1693162488",
+            "value": 0.008390705679862307
+          },
+          {
+            "ts": "1693162489",
+            "value": 0.008390705679862307
+          },
+          {
+            "ts": "1693162490",
+            "value": 0.008390705679862307
+          },
+          {
+            "ts": "1693162491",
+            "value": 0.008390705679862307
+          },
+          {
+            "ts": "1693162492",
+            "value": 0.008441765241128298
+          },
+          {
+            "ts": "1693162493",
+            "value": 0.008429203539823009
+          },
+          {
+            "ts": "1693162494",
+            "value": 0.008429203539823009
+          },
+          {
+            "ts": "1693162495",
+            "value": 0.008429203539823009
+          },
+          {
+            "ts": "1693162496",
+            "value": 0.008428869966936894
+          },
+          {
+            "ts": "1693162497",
+            "value": 0.008484697320174704
+          },
+          {
+            "ts": "1693162498",
+            "value": 0.008479129662522202
+          },
+          {
+            "ts": "1693162499",
+            "value": 0.008479129662522202
+          },
+          {
+            "ts": "1693162500",
+            "value": 0.008479129662522202
+          },
+          {
+            "ts": "1693162501",
+            "value": 0.008479129662522202
+          },
+          {
+            "ts": "1693162502",
+            "value": 0.008532303370786516
+          },
+          {
+            "ts": "1693162503",
+            "value": 0.008540344514959202
+          },
+          {
+            "ts": "1693162504",
+            "value": 0.008540344514959202
+          },
+          {
+            "ts": "1693162505",
+            "value": 0.008540344514959202
+          },
+          {
+            "ts": "1693162506",
+            "value": 0.008540081287826403
+          },
+          {
+            "ts": "1693162507",
+            "value": 0.00863296556144894
+          }
+        ],
+        "service": "carts",
+        "unit": null
+      }
+    ],
+    "ownership": {
+      "jira_project": "AIOPS",
+      "owner_team": "dataset-owner",
+      "runbooks": [
+        {
+          "excerpt": "Review root-cause service, root-cause indicator, metrics, logs, and traces from the RCAEval case.",
+          "title": "RCAEval case investigation",
+          "url": "runbook://rcaeval-case"
+        }
+      ],
+      "service": "user",
+      "slack_channel": "#aiops-demo"
+    },
+    "received_at": "2023-08-27T18:54:58Z",
+    "recent_deploys": [],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [],
+    "nodes": [
+      "carts",
+      "carts-db",
+      "user",
+      "user-db"
+    ],
+    "root_service": "user"
+  },
+  "slack_payload": {
+    "channel": "#aiops-demo",
+    "text": "user: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: user-db_cpu latest point was isolated against recent metric shape.; user-db_mem latest point was isolated against recent metric shape.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-14efaa7d6dcf."
+  },
+  "source_request": "datapack/external/adapted/critical-service-down/re1ss_user_loss_2.request.json",
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "isolation_forest",
+        "metric_name": "user-db_cpu",
+        "reason": "user-db_cpu latest point was isolated against recent metric shape.",
+        "score": 0.634,
+        "service": "user-db",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "user-db_mem",
+        "reason": "user-db_mem latest point was isolated against recent metric shape.",
+        "score": 0.817,
+        "service": "user-db",
+        "severity": "medium"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "user_latency-50",
+        "reason": "user_latency-50 current value 0.00319011 is 6.7 sigma from baseline.",
+        "score": 1.0,
+        "service": "user",
+        "severity": "high"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "user_latency-50",
+        "reason": "user_latency-50 latest point was isolated against recent metric shape.",
+        "score": 0.851,
+        "service": "user",
+        "severity": "medium"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "user_latency-90",
+        "reason": "user_latency-90 current value 0.0049422 is 6.7 sigma from baseline.",
+        "score": 1.0,
+        "service": "user",
+        "severity": "high"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "user_latency-90",
+        "reason": "user_latency-90 latest point was isolated against recent metric shape.",
+        "score": 0.849,
+        "service": "user",
+        "severity": "medium"
+      },
+      {
+        "detector": "ewma_drift",
+        "metric_name": "user_workload",
+        "reason": "user_workload drifted from EWMA 68.53 to 118.324.",
+        "score": 0.727,
+        "service": "user",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "user_workload",
+        "reason": "user_workload latest point was isolated against recent metric shape.",
+        "score": 0.653,
+        "service": "user",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "carts-db_cpu",
+        "reason": "carts-db_cpu latest point was isolated against recent metric shape.",
+        "score": 0.827,
+        "service": "carts-db",
+        "severity": "medium"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "carts_cpu",
+        "reason": "carts_cpu current value 3.08327 is -5.9 sigma from baseline.",
+        "score": 0.986,
+        "service": "carts",
+        "severity": "high"
+      },
+      {
+        "detector": "ewma_drift",
+        "metric_name": "carts_cpu",
+        "reason": "carts_cpu drifted from EWMA 4.29 to 3.08327.",
+        "score": 0.281,
+        "service": "carts",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "carts_cpu",
+        "reason": "carts_cpu latest point was isolated against recent metric shape.",
+        "score": 0.853,
+        "service": "carts",
+        "severity": "medium"
+      },
+      {
+        "detector": "isolation_forest",
+        "metric_name": "carts_latency-50",
+        "reason": "carts_latency-50 latest point was isolated against recent metric shape.",
+        "score": 0.783,
+        "service": "carts",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-14efaa7d6dcf",
+    "causal_hints": [
+      {
+        "direction": "experimental",
+        "reason": "carts and carts-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.918,
+        "source": "carts",
+        "target": "carts-db",
+        "type": "lag_correlation"
+      },
+      {
+        "direction": "experimental",
+        "reason": "carts and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.917,
+        "source": "carts",
+        "target": "user-db",
+        "type": "lag_correlation"
+      },
+      {
+        "direction": "experimental",
+        "reason": "carts-db and user metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.917,
+        "source": "carts-db",
+        "target": "user",
+        "type": "lag_correlation"
+      },
+      {
+        "direction": "experimental",
+        "reason": "carts-db and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.917,
+        "source": "carts-db",
+        "target": "user-db",
+        "type": "lag_correlation"
+      },
+      {
+        "direction": "experimental",
+        "reason": "user and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+        "score": 0.917,
+        "source": "user",
+        "target": "user-db",
+        "type": "lag_correlation"
+      }
+    ],
+    "classification": "critical_service_down",
+    "confidence": 0.86,
+    "incident_id": "rcaeval-re1ss_user_loss_2",
+    "investigation_summary": "Deterministic investigator summary: user produced 13 anomaly evidence item(s). Top RCA candidate is user. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints available.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic"
+      },
+      "enabled": false,
+      "provider": "deterministic",
+      "tool_investigation": {
+        "enabled": false,
+        "fallback": false,
+        "provider": "agentcore",
+        "runtime_arn_configured": false,
+        "tool_calls": []
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 1.0,
+        "rank": 1,
+        "reasons": [
+          "user_latency-50 current value 0.00319011 is 6.7 sigma from baseline.",
+          "user_latency-50 latest point was isolated against recent metric shape.",
+          "user_latency-90 current value 0.0049422 is 6.7 sigma from baseline.",
+          "user_latency-90 latest point was isolated against recent metric shape."
+        ],
+        "score": 5.355,
+        "service": "user"
+      },
+      {
+        "confidence": 0.645,
+        "rank": 2,
+        "reasons": [
+          "carts_cpu current value 3.08327 is -5.9 sigma from baseline.",
+          "carts_cpu drifted from EWMA 4.29 to 3.08327.",
+          "carts_cpu latest point was isolated against recent metric shape.",
+          "carts_latency-50 latest point was isolated against recent metric shape."
+        ],
+        "score": 3.454,
+        "service": "carts"
+      },
+      {
+        "confidence": 0.271,
+        "rank": 3,
+        "reasons": [
+          "user-db_cpu latest point was isolated against recent metric shape.",
+          "user-db_mem latest point was isolated against recent metric shape."
+        ],
+        "score": 1.451,
+        "service": "user-db"
+      },
+      {
+        "confidence": 0.257,
+        "rank": 4,
+        "reasons": [
+          "carts-db_cpu latest point was isolated against recent metric shape.",
+          "carts-db and user metric movement is strongly lag-correlated; this is supporting evidence, not proof.",
+          "carts-db and user-db metric movement is strongly lag-correlated; this is supporting evidence, not proof."
+        ],
+        "score": 1.377,
+        "service": "carts-db"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "service_down_runbook",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://rcaeval-case",
+        "summary": "Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Critical availability alerts need bounded investigation before any remediation is attempted."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "page_service_owner",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://rcaeval-case",
+        "summary": "Page or notify the owning team for immediate human review.",
+        "type": "ESCALATE_OWNER",
+        "why": "Critical impact requires the accountable owner to validate and coordinate response."
+      }
+    ],
+    "service_topology": {
+      "edges": [],
+      "nodes": [
+        "carts",
+        "carts-db",
+        "user",
+        "user-db"
+      ],
+      "root_service": "user"
+    },
+    "severity": "critical",
+    "slack_payload": {
+      "channel": "#aiops-demo",
+      "text": "user: critical_service_down (DIAGNOSED, confidence 0.86). Evidence: user-db_cpu latest point was isolated against recent metric shape.; user-db_mem latest point was isolated against recent metric shape.. Action: Follow the service-down runbook and verify health checks, dependency availability, and recent deploy status. Audit: audit-14efaa7d6dcf."
+    },
+    "status": "DIAGNOSED",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: user-db_cpu, user-db_mem, user_cpu.",
+        "Runbook available: RCAEval case investigation."
+      ],
+      "summary": "user appears unavailable or critically degraded based on the alert and supporting context."
+    },
+    "ticket_payload": {
+      "description": "user appears unavailable or critically degraded based on the alert and supporting context. Evidence: Metrics provided: user-db_cpu, user-db_mem, user_cpu.; Runbook available: RCAEval case investigation.",
+      "fields": {
+        "audit_id": "audit-14efaa7d6dcf",
+        "confidence": 0.86,
+        "correlation_id": "rcaeval-re1ss_user_loss_2",
+        "owner_team": "dataset-owner",
+        "status": "DIAGNOSED"
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "user",
+        "critical_service_down"
+      ],
+      "project": "AIOPS",
+      "summary": "[critical] user critical_service_down"
+    }
+  }
+}
