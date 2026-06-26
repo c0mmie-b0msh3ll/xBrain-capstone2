@@ -315,11 +315,13 @@ Mapping type must be one of:
 
 This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
 
-| Role | Name | Status | Notes |
-|---|---|---|---|
-| AI lead | TBD | Ready for signature | Owns triage context schema and adapter behavior. |
-| CDO lead 1 | TBD | Ready for signature | Confirms platform can provide bounded evidence required by this contract. |
-| CDO lead 2 | TBD | Ready for signature | Confirms platform can integrate with the same normalized context boundary. |
-| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+| Role | Name | Signature | Date | Status | Notes |
+|---|---|---|---|---|---|
+| AI lead | Đinh Danh Nam |  |  | Ready for signature | Owns triage context schema and adapter behavior. |
+| CDO tech lead 1 | Nguyễn Đức Tiến |  |  | Ready for signature | Confirms platform can provide bounded evidence required by this contract. |
+| CDO tech lead 2 | Nguyễn Đỗ Khánh Hưng |  |  | Ready for signature | Confirms platform can integrate with the same normalized context boundary. |
+| Mentor witness | TBD |  |  | Pending onsite | Witnesses contract freeze. |
+
+Signature may be handwritten on the printed contract or added as an approved electronic signature.
 
 After sign-off, changes to required fields or response-breaking semantics require a formal ADR or curveball response.

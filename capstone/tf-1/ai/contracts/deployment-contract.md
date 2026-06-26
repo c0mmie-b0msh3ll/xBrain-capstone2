@@ -243,11 +243,13 @@ Abort and roll back if any of these occur during canary:
 
 This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
 
-| Role | Name | Status | Notes |
-|---|---|---|---|
-| AI lead | TBD | Ready for signature | Owns engine image, runtime behavior, health checks, and release notes. |
-| CDO lead 1 | TBD | Ready for signature | Confirms hosting/network/secrets approach for one CDO platform. |
-| CDO lead 2 | TBD | Ready for signature | Confirms hosting/network/secrets approach for the second CDO platform. |
-| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+| Role | Name | Signature | Date | Status | Notes |
+|---|---|---|---|---|---|
+| AI lead | Đinh Danh Nam |  |  | Ready for signature | Owns engine image, runtime behavior, health checks, and release notes. |
+| CDO tech lead 1 | Nguyễn Đức Tiến |  |  | Ready for signature | Confirms hosting/network/secrets approach for one CDO platform. |
+| CDO tech lead 2 | Nguyễn Đỗ Khánh Hưng |  |  | Ready for signature | Confirms hosting/network/secrets approach for the second CDO platform. |
+| Mentor witness | TBD |  |  | Pending onsite | Witnesses contract freeze. |
+
+Signature may be handwritten on the printed contract or added as an approved electronic signature.
 
 After sign-off, changes to endpoint hosting, network boundary, auth mechanism, or rollout/rollback behavior require a formal ADR or curveball response.

@@ -299,11 +299,13 @@ This behavior exists so the CDO/platform incident integration and Jira/Slack int
 
 This contract is the AI-owned draft for CDO review and onsite sign-off on 2026-06-25.
 
-| Role | Name | Status | Notes |
-|---|---|---|---|
-| AI lead | TBD | Ready for signature | Owns API schema, validation, response behavior, and safety boundary. |
-| CDO lead 1 | TBD | Ready for signature | Confirms platform can call `/healthz` and `/v1/triage` with required headers. |
-| CDO lead 2 | TBD | Ready for signature | Confirms platform can handle response statuses, retries, and payload limits. |
-| Mentor witness | TBD | Pending onsite | Witnesses contract freeze. |
+| Role | Name | Signature | Date | Status | Notes |
+|---|---|---|---|---|---|
+| AI lead | Đinh Danh Nam |  |  | Ready for signature | Owns API schema, validation, response behavior, and safety boundary. |
+| CDO tech lead 1 | Nguyễn Đức Tiến |  |  | Ready for signature | Confirms platform can call `/healthz` and `/v1/triage` with required headers. |
+| CDO tech lead 2 | Nguyễn Đỗ Khánh Hưng |  |  | Ready for signature | Confirms platform can handle response statuses, retries, and payload limits. |
+| Mentor witness | TBD |  |  | Pending onsite | Witnesses contract freeze. |
+
+Signature may be handwritten on the printed contract or added as an approved electronic signature.
 
 After sign-off, changes to paths, required fields, status semantics, or error handling require a formal ADR or curveball response.
