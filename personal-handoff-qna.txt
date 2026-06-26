@@ -6,6 +6,12 @@ Audience: for my own onsite/team/mentor replies
 
 TF1 AI Ops W11 package is ready for review: docs are updated, 3 signed/frozen contracts are ready, RCAEval-derived evidence bundles are prepared, AWS demo endpoint is deployed and smoke-tested, and Jira backlog/evidence tasks are created.
 
+Current CDO acceptance status:
+
+- CDO accepts the contract direction.
+- CDO will deploy the AI engine and own infrastructure concerns.
+- AI owns the engine artifact, runtime behavior, contracts, config docs, and smoke-test support.
+
 Demo endpoint:
 https://snpmtcwpys.us-east-1.awsapprunner.com
 
@@ -221,10 +227,10 @@ Answer:
 For W11/W12 handoff, CDO needs to:
 
 1. Confirm they can call `/healthz` and `/v1/triage`.
-2. Confirm how they will host or expose evidence bundles.
-3. Preserve tenant/service/environment/timestamp labels.
-4. Provide bounded metrics/logs/traces/deploy/ownership/runbook evidence.
-5. Confirm auth/network boundary.
+2. Deploy the AI engine artifact on their platform and own infra, auth/network, scaling, observability plumbing, and rollout/rollback.
+3. Confirm how they will host or expose evidence bundles.
+4. Preserve tenant/service/environment/timestamp labels.
+5. Provide bounded metrics/logs/traces/deploy/ownership/runbook evidence.
 6. Confirm Slack/Jira integration config if they want live send/create.
 7. Keep implementation transport details private if needed; shared AI contract only needs input/output/evidence boundary.
 
@@ -301,7 +307,7 @@ Recommended Jira updates:
 - A0X-19 to A0X-30: paste evidence comments from the update file and move completed implementation tasks to Done.
 - A0X-31: mark Duplicate / link to A0X-27.
 - A0X-32 to A0X-34: paste evidence comments and move to Done after reviewer acceptance.
-- A0X-35: keep In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.
+- A0X-35: keep In Progress until CDO confirms their deployed endpoint passes `/healthz` and `/v1/triage`, and Slack/Jira/evidence hosting are wired on their side.
 
 What to tell team:
 

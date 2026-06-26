@@ -378,7 +378,7 @@ Bundle count:
 
 ### A0X-34 - Demo Endpoint / Runtime Evidence
 
-Recommended status: `Done` for W11 demo endpoint; keep follow-up for CDO-hosted deployment
+Recommended status: `Done` for AI-owned W11 demo endpoint and artifact handoff; CDO-owned deployment is tracked by CDO
 
 Comment:
 
@@ -398,18 +398,19 @@ Documented smoke evidence:
 - POST /v1/triage with latency-degradation sample passed.
 - Image digest recorded in readiness checklist.
 
-Note:
-- CDO-hosted deployment remains a separate handoff/deployment step under deployment contract.
+Responsibility boundary:
+- AI owns the engine artifact, runtime behavior, contracts, config documentation, and smoke-test support.
+- CDO owns the deployment infrastructure, hosting platform, network, auth, observability plumbing, scaling, and rollout/rollback.
 ```
 
 ### A0X-35 - CDO Handoff / Remaining Integration Tasks
 
-Recommended status: `In Progress` until CDO confirms smoke test and evidence hosting
+Recommended status: `In Progress` until CDO confirms their deployment smoke test, Slack/Jira mapping, and evidence hosting
 
 Comment:
 
 ```text
-CDO handoff package is prepared. Remaining work is CDO confirmation and integration smoke test.
+CDO handoff package is prepared and contracts are accepted. Remaining work is CDO-owned deployment/infrastructure confirmation and integration smoke test.
 
 Evidence:
 - capstone/tf-1/ai/docs/06_cdo_evidence_handoff.md
@@ -419,8 +420,9 @@ Evidence:
 - Commit: 9ffc23e Clean contracts and add Vietnamese AI engine report
 
 Remaining CDO actions:
-- Confirm they can call GET /healthz.
-- Confirm they can call POST /v1/triage with required headers.
+- Deploy the AI engine artifact on their platform.
+- Confirm their deployed endpoint passes GET /healthz.
+- Confirm their deployed endpoint passes POST /v1/triage with required headers.
 - Confirm Slack mapping from raw AI fields.
 - Confirm Jira issue creation from ticket_payload.
 - Confirm where evidence bundles will be hosted or how inline evidence will be supplied.
@@ -435,4 +437,4 @@ These cannot be completed from the repo alone:
 | A0X-19..A0X-30 | Paste evidence comments and move completed implementation issues to Done. |
 | A0X-31 | Mark duplicate/link to A0X-27. |
 | A0X-32..A0X-34 | Paste evidence comments and move to Done if reviewer accepts. |
-| A0X-35 | Keep In Progress until CDO runs smoke test and confirms evidence hosting. |
+| A0X-35 | Keep In Progress until CDO runs their deployed-engine smoke test and confirms Slack/Jira/evidence hosting. |

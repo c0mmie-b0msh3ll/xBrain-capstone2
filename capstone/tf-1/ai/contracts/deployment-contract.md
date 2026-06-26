@@ -27,6 +27,16 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | Remediation boundary | AI never executes remediation; it only returns human-reviewed recommendations |
 | Evidence retrieval | AI may pull bounded evidence after an alert exists; CDO/platform owns evidence storage/API, AI Ops owns cleaning/curation before triage |
 
+## Ownership Boundary
+
+| Area | Owner | Requirement |
+|---|---|---|
+| AI engine code and container artifact | AI team | Provide the triage engine implementation, image/artifact reference, runtime behavior, config documentation, and smoke-test support. |
+| API behavior | AI team | Preserve `/healthz` and `/v1/triage` schema, response semantics, guardrails, and fallback behavior. |
+| Deployment infrastructure | CDO/platform | Deploy and operate the AI engine on the CDO platform. Own cluster/service runtime, ingress/load balancer, network, auth, secrets, scaling, observability plumbing, and rollout/rollback. |
+| Slack/Jira execution | CDO/platform | Render Slack, create Jira issues from `ticket_payload`, manage credentials/retries, and require human confirmation for personal assignment. |
+| Evidence hosting | CDO/platform | Host or expose bounded evidence bundles/sources and preserve tenant/service/environment/time-window isolation. |
+
 ## Compute
 
 | Aspect | Configuration |

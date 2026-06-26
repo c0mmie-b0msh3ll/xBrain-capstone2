@@ -70,4 +70,13 @@
 - Move A0X-19 through A0X-30 to Done where the implementation evidence is accepted.
 - Mark A0X-31 as duplicate of A0X-27.
 - Move A0X-32 through A0X-34 to Done after reviewer acceptance.
-- Keep A0X-35 In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.
+- Keep A0X-35 In Progress until CDO confirms their deployed engine passes `/healthz` and `/v1/triage`, and their Slack/Jira/evidence bundle integration is wired.
+
+## 2026-06-26 - CDO Contract Acceptance / Responsibility Boundary
+
+### Confirmed
+
+- CDO accepts the current contract direction.
+- CDO will deploy the AI engine and own infrastructure concerns.
+- AI team responsibility is the AI engine artifact, runtime behavior, contracts, environment/config documentation, and smoke-test support.
+- CDO responsibility is hosting platform, network/auth, observability plumbing, scaling, rollout/rollback, Slack rendering, Jira creation, and evidence bundle hosting.

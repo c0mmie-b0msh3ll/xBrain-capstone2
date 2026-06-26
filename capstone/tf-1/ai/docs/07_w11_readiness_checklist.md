@@ -117,14 +117,16 @@ Evidence update source:
 - A0X-19 through A0X-30 have implementation evidence mapped to code/docs/tests.
 - A0X-31 should be marked duplicate of A0X-27.
 - A0X-32 through A0X-34 can be moved to Done after reviewer acceptance.
-- A0X-35 should remain In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.
+- A0X-35 should remain In Progress until CDO confirms their deployed engine can pass `/healthz` and `/v1/triage`, and that Slack/Jira/evidence bundle integration is wired on the CDO side.
 
 ## Remaining External Dependencies
 
 | Dependency | Owner | Status |
 |---|---|---|
+| Contract acceptance | CDO | Accepted |
 | Bootstrap AWS endpoint | AI | Complete for demo endpoint; final W12 engine hosting remains per CDO deployment contract |
-| Per-CDO engine deployment | CDO + AI | Pending W12 handoff of image/artifact and CDO platform deployment |
+| AI engine artifact/config support | AI | Complete for handoff; AI owns engine behavior, contracts, env/config docs, and smoke-test support |
+| Per-CDO engine deployment and infrastructure | CDO | CDO owns hosting platform, network, auth, observability plumbing, scaling, and rollout/rollback |
 | CDO-hosted evidence bundle location | CDO | Pending CDO implementation |
 | Final auth mechanism beyond capstone token fallback | CDO + AI | Deferred after W11 sign-off |
 | Regenerate selected subset after RCAEval utility download succeeds | AI | Active follow-up; current scripts support copying RE2 logs/traces from official utility output |
