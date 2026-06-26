@@ -92,7 +92,7 @@ AIOps needs bounded query/export capability:
 | Max default window | 15 minutes before alert and 5 minutes after alert. |
 | Max extended window | 60 minutes unless explicitly agreed. |
 | Max log snippets | Default 50 relevant lines per service per incident. |
-| Retention | Metrics 15 days, logs 14 days, traces 7 days, deploy events 30 days, ownership/runbook change history 90 days for W11/W12 demo planning unless the CDO platform has stricter retention. |
+| Retention | Use the CDO platform's configured retention. For the demo, metrics/logs/traces/deploy/ownership data must remain available long enough to replay the selected incident scenarios. |
 | Auth | IAM/SigV4, service token, or platform-approved service auth. |
 | Isolation | A tenant-scoped query must not return other tenants' data. |
 
@@ -186,89 +186,16 @@ Minimal cleaned/curated log record produced by AI Ops:
 }
 ```
 
-### Required Evidence API Surface For AI Follow-Up
+### Evidence Access Interface
 
-If CDO chooses to support AI follow-up queries after the initial alert, expose a small read-only evidence API or equivalent storage access. This is the interface AI Ops needs; AI Ops should not call raw customer Prometheus/Loki/Jaeger/Datadog endpoints directly in production. AI Ops will clean and curate the bounded response before triage.
+This handoff does not require CDO to implement a new evidence API endpoint. CDO may provide the bounded evidence through any approved mechanism that satisfies the scope and safety rules, for example:
 
-#### `GET /v1/evidence/incidents/{incident_id}`
+- inline fields in the `/v1/triage` request,
+- a precomputed evidence bundle referenced by `alert.labels.evidence_uri`,
+- a CDO-owned read-only evidence proxy,
+- local demo files or object storage for replayable capstone scenarios.
 
-Returns the precomputed evidence bundle for one incident.
-
-Required request headers:
-
-| Header | Required | Notes |
-|---|---:|---|
-| `Authorization` | yes | CDO-approved service auth. |
-| `X-Tenant-Id` | yes | Tenant scope. |
-| `X-Correlation-Id` | yes | End-to-end workflow id. |
-
-Query parameters:
-
-| Field | Required | Notes |
-|---|---:|---|
-| `service` | recommended | Used to enforce scope when incident id alone is not globally unique. |
-| `environment` | recommended | `prod`, `staging`, or `sandbox`. |
-
-#### `POST /v1/evidence/query`
-
-Returns bounded extra evidence when the first triage context is insufficient.
-
-Request body:
-
-```json
-{
-  "tenant_id": "tenant-a",
-  "incident_id": "inc-123",
-  "service": "checkout-api",
-  "environment": "prod",
-  "start_time": "2026-06-22T07:45:00Z",
-  "end_time": "2026-06-22T08:10:00Z",
-  "include": ["metrics", "logs", "traces", "deploy_events", "ownership"],
-  "limits": {
-    "metrics": 20,
-    "logs": 50,
-    "traces": 20
-  },
-  "filters": {
-    "trace_id": "trace-123",
-    "metric_names": ["http_latency_p95_ms", "http_5xx_rate"]
-  }
-}
-```
-
-Response body:
-
-```json
-{
-  "tenant_id": "tenant-a",
-  "incident_id": "inc-123",
-  "service": "checkout-api",
-  "environment": "prod",
-  "time_window": {
-    "start": "2026-06-22T07:45:00Z",
-    "end": "2026-06-22T08:10:00Z"
-  },
-  "metrics": [],
-  "logs": [],
-  "traces": [],
-  "deploy_events": [],
-  "ownership": {},
-  "data_lineage": {
-    "metrics": "prometheus bounded query via CDO/platform access endpoint",
-    "logs": "bounded log query via CDO/platform access endpoint; cleaned by AI Ops",
-    "traces": "trace summary store"
-  }
-}
-```
-
-Rules:
-
-- Reject requests outside the tenant/service/environment/time window.
-- Reject or clamp windows over 60 minutes unless explicitly approved.
-- Return bounded logs, not unbounded log dumps. AI Ops will clean/curate returned snippets before RCA.
-- Return trace summaries, not full trace exports.
-- Return empty arrays for unavailable evidence instead of expanding scope silently.
-- Include `data_lineage` so AI and reviewers can tell raw-derived, curated, and supplemental evidence apart.
+Regardless of transport, the evidence access path must enforce tenant/service/environment/time-window bounds, return bounded logs and trace summaries, and avoid exposing raw backend credentials to AI Ops or AgentCore.
 
 **Option A - Read-only evidence proxy**
 
@@ -326,13 +253,9 @@ Expected bundle shape:
 }
 ```
 
-### MVP Recommendation
+### MVP Requirement
 
-For the capstone MVP, prefer **Option B: precomputed evidence bundle** first, optionally backed by a small bounded evidence/log store. It gives CDO a clear artifact to host, makes schema validation easier, avoids giving AIOps live backend credentials, and keeps demo behavior repeatable.
-
-If live follow-up queries are needed, add **Option A: read-only evidence proxy** behind the same bounds. The proxy should expose only approved operations, not arbitrary PromQL/LogQL from the LLM.
-
-Implementation handoff for CDO teams is documented in `../docs/06_cdo_evidence_handoff.md`.
+For the capstone MVP, CDO and AI Ops need at least one replayable bounded evidence path. The current preferred path is a precomputed evidence bundle or equivalent local/object-storage artifact.
 
 ### Non-Goals
 
@@ -366,16 +289,15 @@ observability data contract
   -> POST /v1/triage
 ```
 
-## W11 Decisions And Deferred Items
+## W11 Implementation Scope
 
-| Item | W11 decision |
+| Item | Requirement |
 |---|---|
 | Primary extra-data artifact | Precomputed evidence bundles are the W11 MVP because they are easy for CDO to host, validate, and replay. |
 | Alert delivery | Push-based from CDO/platform to AI Ops. Poll-based alert discovery by AI Ops is out of scope. |
 | Evidence cleaning | AI Ops owns cleaning/normalization/curation after bounded evidence retrieval. Customer observability remains the source of truth; CDO/platform owns hosting/access/query bounds for the integration path exposed to AI Ops. |
-| Optional live query path | A read-only evidence proxy is allowed after the bundle path works. It must expose approved operations only, not arbitrary LLM-generated PromQL/LogQL. |
 | Observability stack | CDO's planned Prometheus/Loki/Jaeger/Grafana/OpenTelemetry stack is acceptable as long as CDO exposes bounded metrics/logs/traces/deploy/ownership evidence through this contract. |
-| Jira assignee suggestion | Optional. AI may query bounded Jira history/accountId mapping and return a suggestion reason, but CDO must require human confirmation before assignment. |
+| Jira assignee suggestion | AI may return an advisory assignee suggestion only when bounded Jira history/accountId mapping is configured. CDO must require human confirmation before assignment. |
 | Deploy events | For W11, deploy metadata may come from repo fixtures, CI/CD export, or CDO-provided deployment event tables. Missing deploys lower confidence instead of blocking triage. |
 | Ownership/runbooks | RCAEval telemetry is primary for scenario evidence; ownership/runbooks may be TF1 supplemental records until a CDO service catalog or Jira/Confluence source is available. |
-| Freshness and retention | Demo target is metrics <60 seconds, logs <120 seconds, with retention of metrics 15 days, logs 14 days, traces 7 days, deploy events 30 days, and ownership/runbook change history 90 days unless the CDO platform is stricter. |
+| Freshness and retention | Demo evidence must be fresh enough and retained long enough to replay the selected scenarios. |

@@ -121,11 +121,11 @@ Minimum useful metric types for TF1:
 - Request rate.
 - Saturation signals: CPU, memory, queue depth, DB connection count, or equivalent.
 
-Signal operating target for W11/W12 planning:
+Implementation bounds:
 
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Metrics | 60 seconds | ~200 samples/hour/service | 15 days | ~$1.50/month for TF1 demo scope |
+- Metric windows should be bounded to the incident window.
+- Use 60-second samples when available.
+- The AI request should include only metrics needed for RCA, not full raw telemetry exports.
 
 ## Logs Window
 
@@ -149,11 +149,11 @@ Rules:
 - Preserve timestamp, service, level, and correlation/trace id when available.
 - Prefer AI-curated logs: meaningful, redacted snippets selected from noisy bounded log results by AI Ops cleaning/curation logic.
 
-Signal operating target for W11/W12 planning:
+Implementation bounds:
 
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Logs | Event-driven, sampled around alert window | ~200 relevant events/hour/service before curation; max 50 curated lines/service/incident | 14 days | ~$2.00/month for TF1 demo scope |
+- Logs are event-driven and sampled around the alert window.
+- The request should include at most 50 curated log lines per service per incident unless otherwise agreed.
+- The AI request should include relevant snippets, not full raw log dumps.
 
 ## AI-Curated Log Records
 
@@ -204,11 +204,10 @@ Rules:
 - Full trace dumps should be hosted as evidence bundles or evidence URIs, not inlined into `/v1/triage`.
 - RCAEval `traces.csv` rows are adapted into this normalized span-summary shape.
 
-Signal operating target for W11/W12 planning:
+Implementation bounds:
 
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Traces | Sampled; retain relevant spans around incidents | ~50 span summaries/hour/service after sampling | 7 days | ~$1.00/month for TF1 demo scope |
+- Traces are sampled and limited to relevant spans around the incident.
+- The request should include span summaries, not full trace exports.
 
 ## Recent Deploys
 
@@ -225,11 +224,10 @@ Signal operating target for W11/W12 planning:
 
 Required for deploy-related diagnosis. If not available, the context layer must pass an empty array and AI will lower confidence.
 
-Signal operating target for W11/W12 planning:
+Implementation bounds:
 
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Deploy events | On each deployment/change event | ~10 events/day/service | 30 days | <$0.50/month for TF1 demo scope |
+- Include recent deploy/change events for the incident service when available.
+- Missing deploy data should lower confidence instead of blocking triage.
 
 ## Ownership And Runbook Docs
 
@@ -251,11 +249,10 @@ Signal operating target for W11/W12 planning:
 
 Runbook/docs are preferred for AI suggestion quality. If the mentor data pack does not include runbooks, AI team may create minimal scenario runbooks and mark them as synthetic.
 
-Signal operating target for W11/W12 planning:
+Implementation bounds:
 
-| Signal | Frequency | Demo volume estimate | Retention | Demo cost estimate |
-|---|---:|---:|---:|---:|
-| Ownership/runbooks | Updated on ownership or runbook change | ~1-5 records/service | Until superseded; keep 90-day change history | <$0.50/month for TF1 demo scope |
+- Include the current owner team, Jira project, Slack channel, and runbooks when available.
+- Missing ownership/runbooks should lower confidence or produce owner-escalation actions instead of blocking triage.
 
 ## Context Sufficiency
 
@@ -311,7 +308,7 @@ Mapping type must be one of:
 | Runbooks/docs | If RCAEval does not provide runbooks or ownership, TF1 supplies minimal supplemental runbook/ownership records and marks them as supplemental in `data_lineage`. |
 | Evidence follow-up | Optional bounded access to the customer's observability/evidence layer can be used after alert delivery for follow-up context. AI Ops owns cleaning/curation before triage. Required operations are described in the supporting `observability-data-contract.md`. |
 | Jira history for suggestion | AI Ops may use bounded Jira history/accountId mapping to return an advisory assignee suggestion. CDO owns human confirmation and actual Jira assignment. |
-| Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. Higher platform load testing is deferred until CDO infrastructure is finalized. |
+| Load target for W11 skeleton | Initial capstone target is 30 triage requests/minute with API p99 under 2 seconds for bounded payloads. |
 | Deferred mentor item | If the mentor provides a different official datapack shape, create an adapter and mapping table instead of changing the triage contract unless a required concept is missing. |
 
 ## W11 Sign-Off

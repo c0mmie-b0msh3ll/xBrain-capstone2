@@ -9,7 +9,7 @@ Reviewers: AI Lead, CDO Leads, reviewer panel
 
 Define how the TF1 AIOps triage engine artifact is packaged, deployed, connected, observed, and rolled back. Platform/deployment owners use this contract to deploy the engine on their own platform while preserving one stable AI API and telemetry boundary.
 
-The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 deploys its own engine instance on its own EKS platform, with tenant isolation enforced by the API contract. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint only; it is not the final W12 hosting target.
+The AI team ships the engine as a container/code artifact plus this deployment specification. Each CDO team in TF1 can deploy the same engine instance on its own platform while preserving the API contract and tenant isolation. The W11 App Runner endpoint is a temporary bootstrap/demo endpoint for early integration and smoke tests.
 
 The AI engine is an event-driven triage compute service. Customer applications emit telemetry into the customer's observability stack; Platform/DevOps provides alert detection and bounded access to that metrics/logs/traces evidence. CDO/platform calls the AI Ops endpoint when an alert/anomaly/incident needs triage. The AIOps app performs validation, normalization, bounded context enrichment, RCA scoring, and optional synthesis after invocation.
 
@@ -49,23 +49,32 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | Scale-up cooldown | 60 seconds |
 | Scale-down cooldown | 300 seconds |
 | Load test input | W11 skeleton target: 30 triage requests/minute, p99 < 2 seconds |
-| W12 target load | 300 triage requests/minute after autoscaling, p99 < 2 seconds for bounded payloads |
 
 ## Configuration And Secrets
 
 | Name | Type | Source | Notes |
 |---|---|---|---|
 | `APP_ENV` | env var | Kubernetes Deployment or ConfigMap | `sandbox`, `staging`, or `prod` |
-| `LOG_LEVEL` | env var | Kubernetes Deployment or ConfigMap | Default `INFO` |
-| `AI_MODE` | env var | Kubernetes Deployment or ConfigMap | `rules` for skeleton; `hybrid` when optional Bedrock synthesis is enabled |
-| `BEDROCK_MODEL_ID` | env var | Kubernetes Deployment or ConfigMap | Required only when `AI_MODE=hybrid` |
+| `AIOPS_LOG_LEVEL` | env var | Kubernetes Deployment or ConfigMap | Default `INFO` |
+| `AIOPS_INVESTIGATION_MODE` | env var | Kubernetes Deployment or ConfigMap | `auto`, `deterministic_only`, `agent_assisted`, or `agent_platform`; default `auto` |
+| `AIOPS_ASSISTED_COMPLEXITY_THRESHOLD` | env var | Kubernetes Deployment or ConfigMap | Default `3` |
+| `AIOPS_AGENT_COMPLEXITY_THRESHOLD` | env var | Kubernetes Deployment or ConfigMap | Default `6` |
+| `AIOPS_AGENT_MAX_ITERATIONS` | env var | Kubernetes Deployment or ConfigMap | Default `2` |
+| `AIOPS_AGENT_MAX_TOOL_CALLS` | env var | Kubernetes Deployment or ConfigMap | Default `5` |
+| `AIOPS_TRIAGE_DEADLINE_SECONDS` | env var | Kubernetes Deployment or ConfigMap | Default `30` |
 | `AWS_REGION` | env var | Kubernetes Deployment or ConfigMap | `us-east-1` |
+| `AGENTCORE_RUNTIME_ARN` | env var | Kubernetes Deployment or ConfigMap | Required only when AgentCore modes are enabled |
+| `ENABLE_AGENTCORE_LLM` | env var | Kubernetes Deployment or ConfigMap | Enables AgentCore summary/action/platform calls |
+| `ENABLE_AGENTCORE_LLM_TOOLS` | env var | Kubernetes Deployment or ConfigMap | Enables assisted AgentCore tool proposals |
+| `BEDROCK_MODEL_ID` / `BEDROCK_MODEL_IDS` | env var | Kubernetes Deployment or ConfigMap | Optional model override for AgentCore/Bedrock calls |
 | `SERVICE_AUTH_TOKEN` | secret | AWS Secrets Manager `tf1/ai-engine/service-auth-token` | Capstone fallback if IAM/JWT is not ready |
-| `SLACK_SIGNING_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if W12 Slack two-way endpoints are enabled |
-| `EVIDENCE_API_BASE_URL` | env var | CDO platform config | Required only if AI follow-up evidence lookup is enabled. Points to a CDO/platform-approved bounded access endpoint for the customer's observability/evidence layer, not directly to customer applications. |
-| `EVIDENCE_API_AUTH_SECRET` | secret | AWS Secrets Manager or CDO platform secret store | Required only if `EVIDENCE_API_BASE_URL` is set. |
-| `EVIDENCE_API_TIMEOUT_SECONDS` | env var | Kubernetes Deployment or ConfigMap | Optional; default target 2-5 seconds for bounded incident windows. |
-| `EVIDENCE_API_MAX_WINDOW_MINUTES` | env var | Kubernetes Deployment or ConfigMap | Optional; default max 60 minutes unless approved. |
+| `PROMETHEUS_URL` | env var | Kubernetes Deployment or ConfigMap | Optional bounded metrics backend for context tools |
+| `LOKI_URL` | env var | Kubernetes Deployment or ConfigMap | Optional bounded logs backend for context tools |
+| `JAEGER_URL` | env var | Kubernetes Deployment or ConfigMap | Optional bounded traces backend for context tools |
+| `DEPLOY_METADATA_PATH` | env var | Kubernetes Deployment or ConfigMap | Optional deploy metadata JSON path |
+| `OWNERSHIP_PATH` | env var | Kubernetes Deployment or ConfigMap | Optional ownership/runbook JSON path |
+| `EVIDENCE_BUNDLE_BASE_PATH` | env var | Kubernetes Deployment or ConfigMap | Optional local evidence bundle base path |
+| `JIRA_HISTORY_PATH` | env var | Kubernetes Deployment or ConfigMap | Optional read-only Jira history/accountId mapping |
 
 No long-lived AWS access keys are stored in the service. Production AWS access uses IRSA with a scoped Kubernetes `ServiceAccount` and IAM role.
 
@@ -149,8 +158,8 @@ Each CDO team deploys the same AI engine artifact behind its own private endpoin
 
 | Platform | Endpoint URL | Auth draft | Notes |
 |---|---|---|---|
-| CDO platform 1 | `https://ai-engine.cdo-1.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for one CDO team. |
-| CDO platform 2 | `https://ai-engine.cdo-2.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | Final W12 hosting target for the second CDO team. |
+| CDO platform 1 | `https://ai-engine.cdo-1.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | CDO-owned deployment endpoint. |
+| CDO platform 2 | `https://ai-engine.cdo-2.tf1.internal` or equivalent | IAM SigV4 preferred; bearer token fallback | CDO-owned deployment endpoint. |
 | Bootstrap/demo | `https://snpmtcwpys.us-east-1.awsapprunner.com` | Scoped bearer token fallback | Temporary W11 endpoint for early integration and mentor smoke tests only. |
 
 ## Health Check
@@ -187,7 +196,7 @@ Abort and roll back if any of these occur during canary:
 | Primary method | `kubectl rollout undo deployment/tf1-ai-triage-engine` or revert Helm/Kustomize image tag to previous immutable digest |
 | Secondary method | Roll back deployment pipeline release |
 | Target RTO | < 60 seconds for capstone rollback when only the image tag/digest changes |
-| Data migration | None for skeleton; future persistent audit schema changes need ADR before freeze |
+| Data migration | None for skeleton/demo; current report artifacts are JSON files |
 
 ## Observability
 
@@ -196,7 +205,7 @@ Abort and roll back if any of these occur during canary:
 | Logs | Structured JSON logs to Loki or CloudWatch Logs, 14-day capstone retention |
 | Metrics | Prometheus metrics for request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures, and rate limiting |
 | Traces | Accept and propagate `X-Correlation-Id`; export OpenTelemetry traces to the CDO Jaeger/OTel stack when enabled |
-| Audit | Every successful triage response includes `audit_id`; persistent audit store is design target |
+| Audit | Every successful triage response includes `audit_id`; local report JSON can store demo audit artifacts |
 
 ## Failure Modes And Response
 
@@ -209,20 +218,16 @@ Abort and roll back if any of these occur during canary:
 | Tenant mismatch | API validation | Return `400`; caller must fix request |
 | Missing context | AI validation | Return successful triage response with `INSUFFICIENT_CONTEXT` |
 
-## W11 Decisions And Deferred Items
+## W11 Implementation Scope
 
-| Item | W11 decision |
+| Item | Contract requirement |
 |---|---|
 | Demo auth | Use private networking or protected gateway. Scoped bearer token is allowed as a capstone fallback; IAM SigV4 or service-to-service JWT is preferred when CDO infra supports it. |
-| Load target | 30 triage requests/minute for W11 skeleton validation and 300 triage requests/minute for W12 after HPA/autoscaling, p99 < 2 seconds on bounded payloads. |
-| Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. Production design target is object storage or DynamoDB/Postgres with report metadata. |
+| Load target | 30 triage requests/minute for W11 skeleton validation, p99 < 2 seconds on bounded payloads. |
+| Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. |
 | Bootstrap endpoint evidence | The W11 App Runner endpoint is recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
-| Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own EKS platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
-| Production auth finalization | Before W12 integration, AI and CDO must choose either IAM SigV4 or service-to-service JWT for the CDO-hosted engine. `SERVICE_AUTH_TOKEN` remains a demo fallback only. |
-| W12 burst behavior | The deployment must support bounded retries, rate limiting, and idempotent replay for alert storms. Platform-specific buffering is allowed but must stay behind the same API contract. |
 | Alert delivery model | CDO/platform pushes alerts/incidents to the AI endpoint. AI Ops must not depend on continuous polling to discover incidents. |
-| Evidence cleaning layer | Optional but recommended. CDO/platform owns production storage, retention, auth, and query API; AI Ops owns cleaning, normalization, curation criteria, and RCA consumption behavior. |
-| Follow-up evidence API | Optional W12 integration. If enabled, CDO exposes bounded read-only evidence endpoints and sets `EVIDENCE_API_BASE_URL`; otherwise CDO sends evidence inline or via precomputed bundle. |
+| Evidence cleaning layer | CDO/platform owns production storage, retention, auth, and bounded evidence access; AI Ops owns cleaning, normalization, curation criteria, and RCA consumption behavior. |
 
 ## W11 Sign-Off
 

@@ -194,6 +194,30 @@ Assignee suggestions are advisory only. CDO may show them in Slack, but a human 
 
 The API must not return auto-executing action types.
 
+### Jira And Slack Integration Requirements
+
+Jira and Slack are core consumers of this contract. The AI engine must return stable raw fields that CDO can use across the project for ticket creation and notification rendering.
+
+AI engine responsibilities:
+
+- Return `ticket_payload` for Jira issue creation.
+- Return `recommended_actions` as advisory action objects.
+- Return `suggested_assignee_account_id` and `suggestion_reason` when bounded Jira history/accountId evidence is configured.
+- Return `audit_id` so Jira/Slack artifacts can reference the AI decision.
+- Return evidence and confidence fields so Slack/Jira messages remain explainable.
+- Never return executable remediation actions.
+- Never perform Jira mutation or Slack posting directly.
+
+CDO/platform responsibilities:
+
+- Render Slack Block Kit from the raw AI response fields.
+- Create Jira issues from `ticket_payload`.
+- Attach `audit_id`, confidence, evidence, and recommended action summaries to Slack/Jira surfaces.
+- Require human confirmation before assigning Jira to a person from `suggested_assignee_account_id`.
+- Own Slack/Jira credentials, retries, UI actions, and message formatting.
+
+The response intentionally does not include a rendered `slack_payload`; this keeps Slack presentation owned by CDO while preserving a stable AI data contract.
+
 ### Response Status Values
 
 | Status | Meaning | Integration action |
@@ -216,51 +240,6 @@ Before LLM integration, the skeleton service returns rule-based deterministic re
 
 This behavior exists so the CDO/platform incident integration and Jira/Slack integration layers can integrate against stable raw response shapes before the final AI logic is added.
 
-## Reserved W12 Optional Interfaces
-
-These endpoints reserve the W12 interface surface so CDO and AI can build without changing the frozen `/v1` contract. They are not required for the W11 skeleton demo. If not implemented yet, they must return `404` or `501` consistently and must not change `/v1/triage` behavior.
-
-### Slack Two-Way Read-Only API
-
-Slack endpoints are for read-only follow-up questions and button actions against an existing incident/report. They must not expose remediation execution.
-
-| Endpoint | Purpose | Required verification |
-|---|---|---|
-| `POST /v1/slack/events` | Receive Slack app event callbacks. | Verify Slack signing secret before processing. |
-| `POST /v1/slack/commands` | Receive slash command payloads such as incident lookup or RCA explanation. | Verify Slack signing secret before processing. |
-| `POST /v1/slack/actions` | Receive interactive button payloads such as Explain RCA, Show Evidence, Show Actions, or Show Jira Payload. | Verify Slack signing secret before processing. |
-
-Slack request verification requirements:
-
-- Use `SLACK_SIGNING_SECRET`.
-- Validate `X-Slack-Signature`.
-- Validate `X-Slack-Request-Timestamp`.
-- Reject stale timestamps before parsing business payload.
-- Reject invalid signatures with `401` or `403`.
-- Process only authorized Slack channels/users configured for the incident tenant.
-
-Slack responses must stay read-only and scoped to bounded report/evidence context. They may post a threaded reply, but must not trigger rollback, restart, scale, database, or shell actions.
-
-### Jira Lifecycle Sync API
-
-The W11 contract returns `ticket_payload` plus optional assignee suggestion fields only. W12 may add a callback/update endpoint for Jira lifecycle synchronization.
-
-| Endpoint | Purpose | Notes |
-|---|---|---|
-| `PATCH /v1/incidents/{incident_id}/lifecycle` | Update incident lifecycle metadata when Jira status changes or a human closes the ticket. | Optional W12 extension; caller must provide `audit_id` or Jira issue key. |
-
-Accepted lifecycle states should be limited to non-destructive workflow metadata such as `OPEN`, `ACKNOWLEDGED`, `IN_REVIEW`, `RESOLVED`, and `CLOSED`. Jira remains the source of truth for Jira issue status; AI stores only audit/report metadata.
-
-### Audit Query API
-
-W11 audit data is available through report JSON. W12 may expose audit lookup by `audit_id` for external reviewers and integration flows.
-
-| Endpoint | Purpose | Notes |
-|---|---|---|
-| `GET /v1/audit/{audit_id}` | Return the stored triage decision, evidence references, report link, and integration metadata for one audit id. | Must enforce tenant isolation and may return `404` when the audit record is not retained. |
-
-The audit response must not expose raw unbounded logs, secrets, tokens, or cross-tenant data.
-
 ## Error Codes
 
 | Code | Meaning | Integration action |
@@ -276,7 +255,7 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Metric | Target | Measurement |
 |---|---:|---|
 | P99 latency | < 2 seconds for demo | Measured over 5-minute windows at the API ingress or service metrics endpoint. |
-| Availability | >= 99.5% design target | Measured from 5-minute request/error-rate metrics: successful `/healthz` plus non-5xx `/v1/triage` responses divided by total eligible requests. |
+| Availability | >= 99.5% for demo target | Measured from 5-minute request/error-rate metrics: successful `/healthz` plus non-5xx `/v1/triage` responses divided by total eligible requests. |
 | Rate limit | 60 requests/minute/tenant for W11 demo capacity | Measured by tenant-scoped ingress or app counter; excess returns `429`. |
 | Max payload size | 512 KB unless changed by platform constraints | Enforced before RCA/LLM processing. |
 
@@ -287,9 +266,9 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 - AI should not recommend destructive actions on databases or production infrastructure unless phrased as human-reviewed escalation and backed by runbook/docs.
 - Low confidence must return `INVESTIGATE` or `INSUFFICIENT_CONTEXT`, not a strong root cause.
 
-## W11 Decisions And Deferred Items
+## W11 Implementation Scope
 
-| Item | W11 decision |
+| Item | Contract requirement |
 |---|---|
 | Auth for W11 demo | Private network or protected gateway plus scoped bearer token fallback. IAM SigV4 or service-to-service JWT remains the production-preferred mechanism. |
 | Slack/Jira ownership | AI response includes raw diagnosis fields, `ticket_payload`, and optional assignee suggestion fields. CDO owns Slack Block Kit rendering, Jira issue creation, and human-confirmed personal assignment. |
@@ -297,7 +276,6 @@ The audit response must not expose raw unbounded logs, secrets, tokens, or cross
 | Endpoint behavior | `/v1/triage` must not query customer applications directly. Extra data retrieval happens in the AIOps context layer through the observability contract and approved Jira history access. |
 | Alert delivery | CDO/platform pushes alerts/incidents to `/v1/triage`; AI Ops does not poll CDO/customer systems continuously for alert discovery. |
 | Evidence retrieval | After alert delivery, AI Ops may pull bounded evidence from the customer observability/evidence layer through CDO/platform-approved access when the initial request has insufficient context. |
-| Evidence API | If live follow-up is enabled, CDO should expose `GET /v1/evidence/incidents/{incident_id}` and/or `POST /v1/evidence/query` as described in `observability-data-contract.md`. |
 | Evidence cleaning | AI Ops owns cleaning, normalization, curation criteria, sample processors, and how cleaned evidence affects RCA confidence. |
 | Trace input | `traces` is an optional non-breaking field. RCAEval `traces.csv` and platform trace exports must be normalized into bounded span summaries before calling `/v1/triage`. |
 | Slack rendering | CDO renders Slack Block Kit from raw response fields; AI does not return pre-rendered Slack text in the contract response. |
