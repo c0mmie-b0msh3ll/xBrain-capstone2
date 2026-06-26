@@ -14,6 +14,8 @@ Status: Ready for design/contract review, live demo endpoint smoke-tested
 | `docs/04_eval_report.md` | Ready | Skeleton tests verified; RCAEval subset evidence bundle readiness documented. |
 | `docs/05_adrs.md` | Ready | ADRs accepted for W11, including RCAEval primary data and transport-neutral handoff. |
 | `docs/06_cdo_evidence_handoff.md` | Ready | Explains extra evidence source, hosting model, and CDO responsibilities. |
+| `docs/ai_engine_detailed_report_vi.md` | Ready | Vietnamese AI engine flow, algorithms, thresholds, modes, guardrails, fallback, and observability report. |
+| `docs/jira_task_evidence_updates.md` | Ready | Paste-ready Jira evidence comments/status suggestions for A0X tasks. |
 | `contracts/telemetry-contract.md` | Ready | Normalized incident context contract. |
 | `contracts/ai-api-contract.md` | Ready | `/healthz` and `/v1/triage` contract plus Jira ticket fields, Slack Block Kit rendering boundary, and advisory assignee suggestion. |
 | `contracts/deployment-contract.md` | Ready | AI artifact handoff, per-CDO deployment expectation, auth fallback, scaling, rollout, and smoke test requirements. |
@@ -108,6 +110,14 @@ Each team member should:
 - Move Jira status from To Do to In Progress before coding.
 - Comment the related commit or PR link daily.
 - Move the issue to Done only after verification evidence is available.
+
+Evidence update source:
+
+- Use `docs/jira_task_evidence_updates.md` for paste-ready comments and evidence links.
+- A0X-19 through A0X-30 have implementation evidence mapped to code/docs/tests.
+- A0X-31 should be marked duplicate of A0X-27.
+- A0X-32 through A0X-34 can be moved to Done after reviewer acceptance.
+- A0X-35 should remain In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.
 
 ## Remaining External Dependencies
 

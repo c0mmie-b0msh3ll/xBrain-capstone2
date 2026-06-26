@@ -54,3 +54,20 @@
 - W11 MVP is precomputed evidence bundles; live read-only proxy can come after bundle hosting works.
 - RCAEval subset is the primary data source; supplemental records fill fields the local subset does not contain.
 - The triage engine remains event-driven and compute-first; Bedrock is optional grounded synthesis, not the first decision-maker.
+
+## 2026-06-26 - Jira Evidence Update
+
+### Done
+
+- Added paste-ready Jira evidence comments and status recommendations in `capstone/tf-1/ai/docs/jira_task_evidence_updates.md`.
+- Mapped A0X-19 through A0X-35 to concrete repo evidence, commits, tests, screenshots, contracts, and report artifacts.
+- Refreshed `capstone/tf-1/ai/docs/07_w11_readiness_checklist.md` so Jira evidence hygiene points to the new update doc.
+- Refreshed `personal-handoff-qna.txt` with the latest pushed commit and Jira evidence update location.
+
+### Jira Actions Needed
+
+- Paste evidence comments from `docs/jira_task_evidence_updates.md` into the matching A0X issues.
+- Move A0X-19 through A0X-30 to Done where the implementation evidence is accepted.
+- Mark A0X-31 as duplicate of A0X-27.
+- Move A0X-32 through A0X-34 to Done after reviewer acceptance.
+- Keep A0X-35 In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.

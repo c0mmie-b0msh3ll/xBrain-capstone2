@@ -10,7 +10,10 @@ Demo endpoint:
 https://snpmtcwpys.us-east-1.awsapprunner.com
 
 Latest pushed commit:
-2d81531 Clarify CDO handoff routing wording
+9ffc23e Clean contracts and add Vietnamese AI engine report
+
+Latest Jira evidence update doc:
+capstone/tf-1/ai/docs/jira_task_evidence_updates.md
 
 2. What we currently have
 
@@ -25,6 +28,8 @@ Docs ready:
 - capstone/tf-1/ai/docs/07_w11_readiness_checklist.md
 - capstone/tf-1/ai/docs/08_discovery_debrief.md
 - capstone/tf-1/ai/docs/09_w12_delivery_plan.md
+- capstone/tf-1/ai/docs/ai_engine_detailed_report_vi.md
+- capstone/tf-1/ai/docs/jira_task_evidence_updates.md
 
 3 contracts to sign/freeze:
 
@@ -287,6 +292,17 @@ Backlog:
 - A0X-32 to A0X-35: W11 docs/deploy/datapack/evidence tasks.
 - A0X-31 is duplicate of A0X-27.
 
+Evidence update file:
+
+- capstone/tf-1/ai/docs/jira_task_evidence_updates.md
+
+Recommended Jira updates:
+
+- A0X-19 to A0X-30: paste evidence comments from the update file and move completed implementation tasks to Done.
+- A0X-31: mark Duplicate / link to A0X-27.
+- A0X-32 to A0X-34: paste evidence comments and move to Done after reviewer acceptance.
+- A0X-35: keep In Progress until CDO confirms `/healthz`, `/v1/triage`, Slack mapping, Jira creation, and evidence bundle hosting.
+
 What to tell team:
 
 Everyone should pick a task, assign to self, move To Do -> In Progress, then attach evidence/commit/PR/screenshot before Done. Mentor tracks Jira history for W11/W12 grading and individual defense.
@@ -351,4 +367,3 @@ Assignment policy:
 19. Quick script if I need to explain in 30 seconds
 
 TF1 AI Ops currently has a working skeleton triage endpoint and complete W11 handoff package. The flow is incident seed -> bounded evidence from CDO -> `/v1/triage` -> compute-first RCA -> report + Slack/Jira payload. Primary data is RCAEval subset, packaged into 9 evidence bundles for CDO to host or expose. We have exactly 3 signed contracts for W11: telemetry, ai-api, deployment. The observability data contract is only supporting handoff to explain evidence hosting. Demo endpoint is live and smoke-tested. W12 work is final eval, deeper Slack/Jira integration, and CDO-hosted evidence integration.
-
