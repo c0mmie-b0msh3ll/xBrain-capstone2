@@ -708,6 +708,7 @@ Audit trail ben vung toi thieu cho W11:
 - `GET /v1/audit/{audit_id}` tra lai decision lineage theo audit id;
 - audit record luu request/evidence SHA-256 hash, counts, mode selection, model/tool lineage, ticket lineage, action ids, va guardrail flags;
 - audit record khong luu raw log message, metric payload, trace dump, Slack post, Jira mutation, hoac remediation command.
+- audit endpoint/store nay la implementation handoff note, khong phai thay doi frozen W11 contract tai commit `ccbb47f`.
 
 ## 18. Public Response Contract
 

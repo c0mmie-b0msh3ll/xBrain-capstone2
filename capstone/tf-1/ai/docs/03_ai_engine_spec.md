@@ -144,14 +144,14 @@ Disallowed LLM outputs:
 | Correlation | `X-Correlation-Id` header and body `correlation_id`. |
 | Validation | Header values must match body values or return `400`. |
 | Context isolation | Per-request stateless processing; no cross-tenant memory. |
-| Audit | Every successful response includes `audit_id` and appends a metadata-only audit record queryable through `GET /v1/audit/{audit_id}`. |
+| Audit | Every successful response includes `audit_id`; implementation also appends a metadata-only audit record for local review without changing the frozen W11 contract. |
 
 ## 8. Governance Controls
 
 | Control | Requirement | Evidence |
 |---|---|---|
 | Explainability | Response includes evidence and root-cause summary. | Sample response fixtures. |
-| Auditability | Response includes deterministic `audit_id`; local append-only audit JSONL stores request/evidence hashes, mode/model/tool lineage, ticket lineage, decision metadata, and guardrail flags. | `app/audit_store.py`, `/v1/audit/{audit_id}`, eval report, tests. |
+| Auditability | Response includes deterministic `audit_id`; local append-only audit JSONL stores request/evidence hashes, mode/model/tool lineage, ticket lineage, decision metadata, and guardrail flags. | `app/audit_store.py`, eval report, tests. |
 | Confidence gating | Low confidence maps to `INVESTIGATE` or `INSUFFICIENT_CONTEXT`. | Skeleton fixtures and eval report. |
 | Human feedback | Engineer confirmation/correction is audit metadata only; retrain trigger is design-only. | Future feedback endpoint or Jira/Slack callback export. |
 | No auto-remediation | Response actions are advisory only. | API contract action allowlist. |

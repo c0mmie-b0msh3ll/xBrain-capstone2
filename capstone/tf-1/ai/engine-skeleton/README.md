@@ -67,7 +67,7 @@ The worker queries Prometheus/Loki/Jaeger with tenant, service, environment, and
 
 Slack is the alert surface: the worker sends or prints a concise summary with top evidence, confidence, and the report URL. Grafana remains the raw observability dashboard. The React report UI is the full investigation and audit surface, backed by JSON reports written under `reports/{incident_id}.json`.
 
-Every successful `/v1/triage` response also appends a metadata-only audit record to `audit/audit-log.jsonl` by default. `GET /v1/audit/{audit_id}` requires `X-Tenant-Id` and returns the latest tenant-matching record for that ID with request/evidence SHA-256 hashes, counts, mode selection, model/tool lineage, ticket lineage, and guardrail flags. Raw customer log messages, metric payloads, trace dumps, Slack posts, Jira mutations, and remediation commands are not written to the audit store. Override the store path and minimum retention target with:
+Every successful `/v1/triage` response also appends a metadata-only audit record to `audit/audit-log.jsonl` by default. This is an implementation/handoff capability, not a change to the frozen W11 contract at `ccbb47f`. `GET /v1/audit/{audit_id}` requires `X-Tenant-Id` and returns the latest tenant-matching record for local review/demo use with request/evidence SHA-256 hashes, counts, mode selection, model/tool lineage, ticket lineage, and guardrail flags. Raw customer log messages, metric payloads, trace dumps, Slack posts, Jira mutations, and remediation commands are not written to the audit store. Override the store path and minimum retention target with:
 
 ```bash
 AIOPS_AUDIT_LOG_PATH=audit/audit-log.jsonl

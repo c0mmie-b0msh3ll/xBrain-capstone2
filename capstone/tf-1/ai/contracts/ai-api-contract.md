@@ -232,64 +232,6 @@ CDO/platform responsibilities:
 
 The response intentionally does not include a rendered `slack_payload`; this keeps Slack presentation owned by CDO while preserving a stable AI data contract.
 
-## Endpoint: `GET /v1/audit/{audit_id}`
-
-### Purpose
-
-Return the stored AI decision audit artifact for a triage response. Jira and Slack should persist or display the `audit_id` returned by `/v1/triage`; CDO/platform can use this endpoint to retrieve the corresponding decision lineage during review, demo sign-off, or incident follow-up.
-
-The audit record is metadata-only. It includes tenant/correlation/incident identifiers, decision status, selected investigation mode, model/tool lineage, ticket lineage, guardrail flags, and SHA-256 hashes/counts for request and evidence sections. It must not include raw customer log messages, metric payloads, trace dumps, remediation commands, Slack posts, or Jira mutations.
-
-### Request Headers
-
-| Header | Required | Notes |
-|---|---:|---|
-| `X-Tenant-Id` | yes | Must match the audit record tenant; tenant mismatch returns `404`. |
-| `Authorization` | yes | Same service authentication rule as `/v1/triage`. |
-
-### Response Body
-
-```json
-{
-  "schema_version": "tf1.audit.v1",
-  "record_type": "triage_decision",
-  "audit_id": "audit-001",
-  "tenant_id": "tenant-a",
-  "incident_id": "inc-001",
-  "correlation_id": "corr-001",
-  "service": "checkout-api",
-  "environment": "sandbox",
-  "retention_days": 90,
-  "request_hash": "sha256...",
-  "evidence_hashes": {
-    "logs": {"present": true, "count": 1, "sha256": "sha256..."}
-  },
-  "decision": {
-    "classification": "latency_degradation",
-    "status": "DIAGNOSED",
-    "confidence": 0.82,
-    "recommended_action_ids": ["dependency_timeout_triage"]
-  },
-  "mode_selection": {
-    "selected_mode": "deterministic_only",
-    "complexity_score": 1
-  },
-  "tool_lineage": [],
-  "ticket_lineage": {
-    "project": "PAY",
-    "fields": {"audit_id": "audit-001", "correlation_id": "corr-001"}
-  },
-  "guardrails": {
-    "raw_customer_evidence_logged": false,
-    "remediation_executed": false,
-    "jira_mutation_executed": false,
-    "slack_post_executed": false
-  }
-}
-```
-
-If no local audit artifact is found, return `404`.
-
 ### Response Status Values
 
 | Status | Meaning | Integration action |

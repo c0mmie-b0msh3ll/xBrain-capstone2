@@ -199,21 +199,6 @@ Assignee suggestions are advisory only. CDO may show them in Slack, but a human 
 
 The API must not return auto-executing action types.
 
-## Endpoint: `GET /v1/audit/{audit_id}`
-
-Return the stored AI decision audit artifact for a triage response. Jira and Slack should persist or display the `audit_id` returned by `/v1/triage`; CDO/platform can use this endpoint to retrieve the corresponding decision lineage during review, demo sign-off, or incident follow-up.
-
-The audit record is metadata-only. It includes tenant/correlation/incident identifiers, decision status, selected investigation mode, model/tool lineage, ticket lineage, guardrail flags, and SHA-256 hashes/counts for request and evidence sections. It must not include raw customer log messages, metric payloads, trace dumps, remediation commands, Slack posts, or Jira mutations.
-
-Request headers:
-
-| Header | Required | Notes |
-|---|---:|---|
-| `X-Tenant-Id` | yes | Must match the audit record tenant; tenant mismatch returns `404`. |
-| `Authorization` | yes | Same service authentication rule as `/v1/triage`. |
-
-If no local audit artifact is found, return `404`.
-
 ### Response Status Values
 
 | Status | Meaning | Integration action |
@@ -273,11 +258,11 @@ Accepted lifecycle states should be limited to non-destructive workflow metadata
 
 ### Audit Query API
 
-W11 audit data is available through report JSON and `GET /v1/audit/{audit_id}`. CDO should link Jira/Slack artifacts back to the returned `audit_id`.
+W11 audit data is available through report JSON. W12 may expose audit lookup by `audit_id` for external reviewers and integration flows.
 
 | Endpoint | Purpose | Notes |
 |---|---|---|
-| `GET /v1/audit/{audit_id}` | Return stored triage decision metadata, evidence hashes/counts, model/tool lineage, ticket lineage, and guardrail flags for one audit id. | Implemented in W11 skeleton with local append-only JSONL; production hosting may move this to S3 Object Lock, DynamoDB, or another CDO-approved durable store. |
+| `GET /v1/audit/{audit_id}` | Return the stored triage decision, evidence references, report link, and integration metadata for one audit id. | Must enforce tenant isolation and may return `404` when the audit record is not retained. |
 
 The audit response must not expose raw unbounded logs, secrets, tokens, or cross-tenant data.
 

@@ -18,7 +18,7 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | Aspect | Decision |
 |---|---|
 | Service type | Dockerized HTTP API |
-| API surface | `GET /healthz`, `POST /v1/triage`, `GET /v1/audit/{audit_id}` |
+| API surface | `GET /healthz`, `POST /v1/triage` |
 | Invocation pattern | Event-driven after CDO/platform alert detection, not AI polling or continuous telemetry streaming into triage |
 | AI pattern | Compute-first RCA, optional Bedrock synthesis |
 | Port | `8080` |
@@ -185,7 +185,7 @@ Abort and roll back if any of these occur during canary:
 | Logs | Structured JSON logs to CloudWatch Logs, 14-day capstone retention |
 | Metrics | Request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures |
 | Traces | Accept and propagate `X-Correlation-Id`; OpenTelemetry recommended for the AIOps platform |
-| Audit | Every triage response includes a unique `audit_id` generated at request start; successful decisions append metadata-only lineage to local audit JSONL and are queryable through `GET /v1/audit/{audit_id}`. |
+| Audit | Every triage response (successful or failed 4xx/5xx) includes a unique `audit_id` generated at the request start. Failure audits include error details. |
 
 ## Failure Modes And Response
 
@@ -206,7 +206,7 @@ Abort and roll back if any of these occur during canary:
 |---|---|
 | Demo auth | Finalized for capstone demo: Scoped Bearer Token authentication via the `Authorization: Bearer <tenant_id>.<random_secret>` header. Token value is parsed to extract `tenant_id`, and validated against the secret stored at `tf1/ai-engine/tenant-{tenant_id}/auth-token` in Secrets Manager. |
 | Load target | 30 triage requests/minute for skeleton validation, p99 < 2 seconds on bounded payloads. |
-| Audit storage | Local append-only JSONL/report store is accepted for W11 skeleton/demo; CDO production hosting may mount durable storage or replace it with S3 Object Lock/DynamoDB while preserving `/v1/audit/{audit_id}` behavior. |
+| Audit storage | Every transaction (including 400/401/403/429/500/503 errors) must generate an `audit_id` and write to the audit logs. Local JSON/report store is accepted for W11. |
 | Bootstrap endpoint evidence | The W11 App Runner endpoint is recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
 | Final hosting target | W12 requires each CDO team to deploy the AI engine artifact on its own platform according to this contract; switching from bootstrap endpoint to CDO-owned endpoint must not change the API schema. |
 | Production auth finalization | Before W12 integration, AI and CDO must transition from bearer token to service-to-service JWT or IAM SigV4 for the CDO-hosted engine. |
