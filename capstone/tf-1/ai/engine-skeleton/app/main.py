@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.action_catalog import select_actions
+from app.audit_store import append_audit_record, build_failure_audit_record, build_success_audit_record, latest_audit_record
 from app.agent_runtime import agent_platform_enabled, run_agent_platform
 from app.context_enrichment import enrich_triage_context
 from app.context_tools import ToolRegistry, ToolScopeError, scope_from_request
@@ -231,6 +232,23 @@ def get_raw_report(incident_id: str) -> JSONResponse:
     )
 
 
+@app.get("/v1/audit/{audit_id}")
+def get_audit_record(
+    audit_id: str,
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> dict[str, Any]:
+    record = latest_audit_record(audit_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Audit record not found")
+    expected_token = os.getenv("SERVICE_AUTH_TOKEN")
+    if expected_token and authorization != f"Bearer {expected_token}":
+        raise HTTPException(status_code=401, detail="Invalid service token")
+    if record.get("tenant_id") != x_tenant_id:
+        raise HTTPException(status_code=404, detail="Audit record not found")
+    return record
+
+
 @app.post("/v1/triage", response_model=TriageResponse)
 def triage(
     request: TriageRequest,
@@ -238,9 +256,16 @@ def triage(
     x_correlation_id: str = Header(..., alias="X-Correlation-Id"),
     authorization: str | None = Header(default=None, alias="Authorization"),
 ) -> TriageResponse:
-    with span("request_validation", tenant_id=request.tenant_id, service=request.alert.service, environment=request.environment):
-        validate_headers(request, x_tenant_id, x_correlation_id, authorization)
-        audit_id = build_audit_id(request)
+    audit_id = build_audit_id(request)
+    started = time.perf_counter()
+    try:
+        with span("request_validation", audit_id=audit_id, tenant_id=request.tenant_id, service=request.alert.service, environment=request.environment):
+            validate_headers(request, x_tenant_id, x_correlation_id, authorization)
+    except HTTPException as exc:
+        _append_audit_record_safely(
+            build_failure_audit_record(request, audit_id, type(exc).__name__, round((time.perf_counter() - started) * 1000, 2))
+        )
+        raise
     return triage_request(request, audit_id)
 
 
@@ -329,10 +354,12 @@ def triage_request(request: TriageRequest, audit_id: str | None = None) -> Triag
                 agent_iterations=(agent_metadata or {}).get("iterations"),
                 fallback_reason=(agent_metadata or {}).get("fallback_reason"),
             )
+            _append_audit_record_safely(build_success_audit_record(request, response, round((time.perf_counter() - started) * 1000, 2)))
             return response
     except Exception as exc:
         DEGRADED_MODE_TOTAL.labels(reason="triage_exception").inc()
         log_triage_stage(request, audit_id, "failed", "error", error_class=type(exc).__name__, started=started)
+        _append_audit_record_safely(build_failure_audit_record(request, audit_id, type(exc).__name__, round((time.perf_counter() - started) * 1000, 2)))
         raise
     finally:
         duration = time.perf_counter() - started
@@ -342,6 +369,22 @@ def triage_request(request: TriageRequest, audit_id: str | None = None) -> Triag
         TRIAGE_REQUEST_DURATION_SECONDS.observe(duration)
         TRIAGE_REQUESTS_TOTAL.labels(status=status, classification=classification).inc()
         TRIAGE_INFLIGHT_REQUESTS.dec()
+
+
+def _append_audit_record_safely(record: dict[str, Any]) -> None:
+    try:
+        append_audit_record(record)
+    except OSError as exc:
+        log_event(
+            "audit_write_failed",
+            audit_id=record.get("audit_id"),
+            tenant_id=record.get("tenant_id"),
+            correlation_id=record.get("correlation_id"),
+            incident_id=record.get("incident_id"),
+            service=record.get("service"),
+            environment=record.get("environment"),
+            error_class=type(exc).__name__,
+        )
 
 
 def validate_headers(

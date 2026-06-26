@@ -212,7 +212,7 @@ python scripts/build_rcaeval_evidence_bundles.py
 - The current 1.00 precision/recall/F1 result is valid only for the 9 checked-in adapted RCAEval subset cases; it must not be presented as full RCAEval benchmark performance.
 - Current benchmark route is deterministic unless AgentCore runtime is configured; final eval should separately benchmark `deterministic_only`, `agent_assisted`, and `agent_platform`.
 - Cost per call is not meaningful until the deployed model/runtime path is fixed by CDO.
-- Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
+- Persistent audit storage is implemented for W11 as local append-only JSONL through `app/audit_store.py`; `GET /v1/audit/{audit_id}` returns metadata-only decision lineage with request/evidence hashes, mode/model/tool lineage, ticket lineage, guardrail flags, and a retention target of at least 90 days. Production hosting can replace the local path with CDO-approved durable storage such as S3 Object Lock or DynamoDB without changing `/v1/triage`.
 
 ## 6. Final Eval Plan
 

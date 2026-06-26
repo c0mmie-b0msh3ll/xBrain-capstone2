@@ -700,6 +700,15 @@ Structured logs theo metadata-only policy. Logs include:
 
 Raw customer evidence không được log.
 
+Audit trail ben vung toi thieu cho W11:
+
+- moi response thanh cong co `audit_id`;
+- engine append mot record vao `audit/audit-log.jsonl` hoac path tu `AIOPS_AUDIT_LOG_PATH`;
+- retention target toi thieu la `AIOPS_AUDIT_RETENTION_DAYS=90`;
+- `GET /v1/audit/{audit_id}` tra lai decision lineage theo audit id;
+- audit record luu request/evidence SHA-256 hash, counts, mode selection, model/tool lineage, ticket lineage, action ids, va guardrail flags;
+- audit record khong luu raw log message, metric payload, trace dump, Slack post, Jira mutation, hoac remediation command.
+
 ## 18. Public Response Contract
 
 Public `/v1/triage` response vẫn giữ shape hiện tại:

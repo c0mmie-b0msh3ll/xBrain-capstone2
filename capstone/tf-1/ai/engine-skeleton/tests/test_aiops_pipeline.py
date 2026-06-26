@@ -594,6 +594,34 @@ def test_report_json_is_written_and_report_apis_return_data(tmp_path, monkeypatc
     assert detail_response.json()["triage_response"]["recommended_actions"][0]["id"]
 
 
+def test_audit_record_is_persisted_and_queryable_without_raw_evidence(tmp_path, monkeypatch) -> None:
+    audit_path = tmp_path / "audit-log.jsonl"
+    monkeypatch.setenv("AIOPS_AUDIT_LOG_PATH", str(audit_path))
+    client = TestClient(app)
+    body = json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8"))
+
+    response = client.post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+    payload = response.json()
+    audit_response = client.get(f"/v1/audit/{payload['audit_id']}", headers={"X-Tenant-Id": body["tenant_id"]})
+    cross_tenant_response = client.get(f"/v1/audit/{payload['audit_id']}", headers={"X-Tenant-Id": "tenant-b"})
+
+    assert response.status_code == 200
+    assert audit_response.status_code == 200
+    record = audit_response.json()
+    assert record["audit_id"] == payload["audit_id"]
+    assert record["record_type"] == "triage_decision"
+    assert record["retention_days"] >= 90
+    assert record["decision"]["classification"] == payload["classification"]
+    assert record["evidence_hashes"]["logs"]["count"] == len(body["logs"])
+    assert record["tool_lineage"] == [] or all("args_hash" in item for item in record["tool_lineage"])
+    assert body["logs"][0]["message"] not in json.dumps(record)
+    assert cross_tenant_response.status_code == 404
+
+
 def test_incident_seed_builds_bounded_triage_request_from_registry() -> None:
     seed = IncidentSeed.model_validate(
         {

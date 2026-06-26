@@ -17,7 +17,7 @@ graph LR
     F --> K[Clean normalize curate evidence]
     K -->|POST /v1/triage| G[Compute-first RCA and confidence gate]
     G -->|Optional grounded synthesis| H[Bedrock LLM]
-    G --> I[Report JSON audit artifact]
+    G --> I[Append-only audit JSONL + report JSON artifact]
     I --> J[Raw response fields Jira payload React report UI]
     J --> L[CDO Slack Block Kit renderer]
     H --> I
@@ -125,7 +125,7 @@ Chosen: Option B. Customer observability remains the telemetry source of truth. 
 | Item | W11 decision |
 |---|---|
 | Auth | Private network or protected gateway with scoped bearer token fallback for capstone. IAM SigV4 or service-to-service JWT remains production-preferred. |
-| Persistent audit store | JSON/report store is accepted for W11 skeleton/demo; object storage or database-backed metadata is the production target. |
+| Persistent audit store | Local append-only JSONL/report store is implemented for W11 skeleton/demo; object storage or database-backed metadata is the production hosting target. |
 | Local demo path | Simulator/evidence bundles -> bounded observability/context -> `/v1/triage` -> report JSON/API -> React report UI. Slack text in local dry-run is a demo convenience, not the signed API response contract. |
 | Production telemetry mix | Any CDO-approved Prometheus/Loki/Jaeger/CloudWatch/OpenTelemetry mix is acceptable if it satisfies the supporting `observability-data-contract.md`. |
 | Alert delivery model | CDO/platform pushes incident seed/context to AI Ops. AI Ops does not continuously poll CDO/customer systems for alert discovery. |

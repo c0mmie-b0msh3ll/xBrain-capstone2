@@ -18,7 +18,7 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | Aspect | Decision |
 |---|---|
 | Service type | Dockerized HTTP API |
-| API surface | `GET /healthz`, `POST /v1/triage` |
+| API surface | `GET /healthz`, `POST /v1/triage`, `GET /v1/audit/{audit_id}` |
 | Invocation pattern | Event-driven after CDO/platform alert detection, not AI polling or continuous telemetry streaming into triage |
 | AI pattern | Compute-first RCA, optional Bedrock synthesis |
 | Port | `8080` |
@@ -68,6 +68,8 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | `AIOPS_LOG_LEVEL` | env var | Kubernetes Deployment or ConfigMap | Default `INFO` |
 | `AIOPS_INVESTIGATION_MODE` | env var | Kubernetes Deployment or ConfigMap | `auto`, `deterministic_only`, `agent_assisted`, or `agent_platform`; default `auto` |
 | `AIOPS_ASSISTED_COMPLEXITY_THRESHOLD` | env var | Kubernetes Deployment or ConfigMap | Default `3` |
+| `AIOPS_AUDIT_LOG_PATH` | env var | Kubernetes Deployment, ConfigMap, or mounted volume path | Local append-only audit JSONL path; default `audit/audit-log.jsonl`. |
+| `AIOPS_AUDIT_RETENTION_DAYS` | env var | Kubernetes Deployment or ConfigMap | Minimum retention target; default and floor `90`. |
 | `AIOPS_AGENT_COMPLEXITY_THRESHOLD` | env var | Kubernetes Deployment or ConfigMap | Default `6` |
 | `AIOPS_AGENT_MAX_ITERATIONS` | env var | Kubernetes Deployment or ConfigMap | Default `2` |
 | `AIOPS_AGENT_MAX_TOOL_CALLS` | env var | Kubernetes Deployment or ConfigMap | Default `5` |
@@ -215,7 +217,7 @@ Abort and roll back if any of these occur during canary:
 | Logs | Structured JSON logs to Loki or CloudWatch Logs, 14-day capstone retention |
 | Metrics | Prometheus metrics for request count, 2xx/4xx/5xx, latency p50/p95/p99, validation failures, and rate limiting |
 | Traces | Accept and propagate `X-Correlation-Id`; export OpenTelemetry traces to the CDO Jaeger/OTel stack when enabled |
-| Audit | Every successful triage response includes `audit_id`; local report JSON can store demo audit artifacts |
+| Audit | Every successful triage response includes `audit_id`; local append-only audit JSONL stores metadata-only decision lineage and is queryable through `GET /v1/audit/{audit_id}` |
 
 ## Failure Modes And Response
 
@@ -234,7 +236,7 @@ Abort and roll back if any of these occur during canary:
 |---|---|
 | Demo auth | Use private networking or protected gateway. Scoped bearer token is allowed as a capstone fallback; IAM SigV4 or service-to-service JWT is preferred when CDO infra supports it. |
 | Load target | 30 triage requests/minute for W11 skeleton validation, p99 < 2 seconds on bounded payloads. |
-| Audit storage | Local JSON/report store is accepted for W11 skeleton/demo. |
+| Audit storage | Local append-only JSONL/report store is accepted for W11 skeleton/demo; CDO production hosting may mount durable storage or replace it with S3 Object Lock/DynamoDB while preserving `/v1/audit/{audit_id}` behavior. |
 | Bootstrap endpoint evidence | The W11 App Runner endpoint is recorded in the readiness checklist only after `/healthz` and one `/v1/triage` smoke test pass. |
 | Alert delivery model | CDO/platform pushes alerts/incidents to the AI endpoint. AI Ops must not depend on continuous polling to discover incidents. |
 | Evidence cleaning layer | CDO/platform owns production storage, retention, auth, and bounded evidence access; AI Ops owns cleaning, normalization, curation criteria, and RCA consumption behavior. |
