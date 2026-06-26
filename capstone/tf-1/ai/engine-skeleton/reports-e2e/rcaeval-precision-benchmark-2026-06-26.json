@@ -1,0 +1,354 @@
+{
+  "generated_at": "2026-06-26T07:30:25.876546+00:00",
+  "scope": "Checked-in RCAEval adapted subset only; not a full RCAEval benchmark.",
+  "dataset": {
+    "total_cases": 9,
+    "scenario_counts": {
+      "critical-service-down": 3,
+      "latency-degradation": 3,
+      "noisy-false-alert": 3
+    }
+  },
+  "healthz": {
+    "status_code": 200,
+    "body": {
+      "status": "ok",
+      "service": "tf1-ai-triage-engine",
+      "version": "v1"
+    }
+  },
+  "readyz": {
+    "status_code": 200,
+    "body": {
+      "status": "ready",
+      "service": "tf1-ai-triage-engine",
+      "observability": "true",
+      "qa_max_iterations": 1
+    }
+  },
+  "metrics_endpoint": {
+    "before_status_code": 200,
+    "after_status_code": 200,
+    "contains_triage_metric": true,
+    "contains_mode_metric": true
+  },
+  "classification": {
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "per_class": {
+      "critical_service_down": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency_degradation": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "noisy_or_ambiguous_alert": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "critical_service_down": 3
+      },
+      "latency_degradation": {
+        "latency_degradation": 3
+      },
+      "noisy_or_ambiguous_alert": {
+        "noisy_or_ambiguous_alert": 3
+      }
+    }
+  },
+  "status_accuracy": 1.0,
+  "contract": {
+    "passed": true,
+    "failures": [],
+    "required_fields_checked": [
+      "anomaly_evidence",
+      "audit_id",
+      "classification",
+      "confidence",
+      "incident_id",
+      "llm_metadata",
+      "rca_candidates",
+      "recommended_actions",
+      "severity",
+      "status",
+      "suspected_root_cause",
+      "ticket_payload"
+    ]
+  },
+  "actions": {
+    "cases_with_recommended_actions": 9,
+    "action_ids": [
+      "auth_failure_triage",
+      "consult_internal_runbooks",
+      "disk_pressure_triage",
+      "human_review_noisy_alert",
+      "latency_saturation_review",
+      "observe_user_impact",
+      "page_service_owner",
+      "queue_backlog_triage",
+      "resource_saturation_triage",
+      "service_down_runbook"
+    ]
+  },
+  "latency_ms": {
+    "min": 744.493,
+    "p50": 1201.144,
+    "p90": 1326.816,
+    "p99": 1375.557,
+    "max": 1375.557
+  },
+  "cases": [
+    {
+      "request": "datapack/external/adapted/critical-service-down/re1ss_user_loss_2.request.json",
+      "scenario": "critical-service-down",
+      "case": "re1ss_user_loss_2",
+      "status_code": 200,
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 1223.388,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 5,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks"
+      ],
+      "recommended_action_count": 5,
+      "anomaly_evidence_count": 13,
+      "top_rca_candidate": "user",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2ss_orders_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "case": "re2ss_orders_loss_1",
+      "status_code": 200,
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 1081.112,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 3,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "consult_internal_runbooks"
+      ],
+      "recommended_action_count": 5,
+      "anomaly_evidence_count": 4,
+      "top_rca_candidate": "orders",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2tt_ts-auth-service_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "case": "re2tt_ts-auth-service_loss_1",
+      "status_code": 200,
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 1201.144,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 2,
+      "action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "queue_backlog_triage",
+        "auth_failure_triage",
+        "consult_internal_runbooks"
+      ],
+      "recommended_action_count": 7,
+      "anomaly_evidence_count": 10,
+      "top_rca_candidate": "ts-auth-service",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ob_cartservice_delay_3.request.json",
+      "scenario": "latency-degradation",
+      "case": "re1ob_cartservice_delay_3",
+      "status_code": 200,
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 1295.133,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 5,
+      "action_ids": [
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ],
+      "recommended_action_count": 4,
+      "anomaly_evidence_count": 2,
+      "top_rca_candidate": "cartservice",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ss_carts_delay_1.request.json",
+      "scenario": "latency-degradation",
+      "case": "re1ss_carts_delay_1",
+      "status_code": 200,
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 1326.816,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 5,
+      "action_ids": [
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ],
+      "recommended_action_count": 4,
+      "anomaly_evidence_count": 4,
+      "top_rca_candidate": "carts-db",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re2ss_catalogue_delay_2.request.json",
+      "scenario": "latency-degradation",
+      "case": "re2ss_catalogue_delay_2",
+      "status_code": 200,
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 744.493,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 3,
+      "action_ids": [
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ],
+      "recommended_action_count": 4,
+      "anomaly_evidence_count": 7,
+      "top_rca_candidate": "catalogue",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ob_cartservice_mem_1.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1ob_cartservice_mem_1",
+      "status_code": 200,
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 1173.11,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 10,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "recommended_action_count": 2,
+      "anomaly_evidence_count": 10,
+      "top_rca_candidate": "cartservice",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ss_user_cpu_3.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1ss_user_cpu_3",
+      "status_code": 200,
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 1375.557,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 10,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "recommended_action_count": 2,
+      "anomaly_evidence_count": 9,
+      "top_rca_candidate": "user",
+      "contract_ok": true
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1tt_ts-route-service_disk_3.request.json",
+      "scenario": "noisy-false-alert",
+      "case": "re1tt_ts-route-service_disk_3",
+      "status_code": 200,
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 963.998,
+      "investigation_mode": "deterministic_only",
+      "complexity_score": 10,
+      "action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ],
+      "recommended_action_count": 2,
+      "anomaly_evidence_count": 7,
+      "top_rca_candidate": "ts-route-service",
+      "contract_ok": true
+    }
+  ]
+}

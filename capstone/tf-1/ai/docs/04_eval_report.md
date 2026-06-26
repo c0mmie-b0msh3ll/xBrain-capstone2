@@ -1,8 +1,8 @@
 # Eval Report - TF1 Triage Hub
 
 Owner: AI team TF1
-Status: Skeleton verified + RCAEval subset evidence bundles prepared
-Last updated: 2026-06-24
+Status: Skeleton verified + RCAEval subset benchmark executed
+Last updated: 2026-06-26
 
 ## 1. Test Scenarios
 
@@ -93,15 +93,57 @@ Synthetic fixture verification command:
 python scripts/validate_datapack.py
 ```
 
-### 3.2 RCAEval Subset Evidence Bundle Readiness
+### 3.2 RCAEval Subset API Benchmark
 
-The W11 handoff includes 9 RCAEval-derived evidence bundles across the three required scenario categories.
+The W11 handoff includes 9 RCAEval-derived adapted triage requests across the three required scenario categories. On 2026-06-26, each checked-in adapted request was replayed through `POST /v1/triage` with FastAPI `TestClient`.
 
 | Scenario category | Bundle count | Source |
 |---|---:|---|
 | `critical-service-down` | 3 | RCAEval subset telemetry as primary evidence |
 | `latency-degradation` | 3 | RCAEval subset telemetry as primary evidence |
 | `noisy-false-alert` | 3 | RCAEval subset telemetry as primary evidence |
+
+Measured subset result:
+
+| Metric | Result |
+|---|---:|
+| Cases replayed | 9 |
+| HTTP 200 rate | 9/9 |
+| Required response contract fields present | 9/9 |
+| Cases with recommended actions | 9/9 |
+| Classification accuracy | 1.00 |
+| Macro precision | 1.00 |
+| Macro recall | 1.00 |
+| Macro F1 | 1.00 |
+| Status accuracy | 1.00 |
+| P50 latency | 1201.144 ms |
+| P90 latency | 1326.816 ms |
+| P99 latency | 1375.557 ms |
+
+Per-class benchmark:
+
+| Classification | TP | FP | FN | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| `critical_service_down` | 3 | 0 | 0 | 1.00 | 1.00 | 1.00 |
+| `latency_degradation` | 3 | 0 | 0 | 1.00 | 1.00 | 1.00 |
+| `noisy_or_ambiguous_alert` | 3 | 0 | 0 | 1.00 | 1.00 | 1.00 |
+
+Evidence artifact:
+
+```text
+../engine-skeleton/reports-e2e/rcaeval-precision-benchmark-2026-06-26.json
+```
+
+Verification command used:
+
+```powershell
+python -m compileall app scripts
+python -m pytest tests -q
+python scripts/validate_datapack.py
+docker compose -f docker-compose.observability.yml config --quiet
+cd report-ui
+npm run build
+```
 
 RCAEval is the primary scenario source. For selected RE2/RE3 cases, logs and traces should come from official RCAEval `logs.csv` and `traces.csv` after the RCAEval utility download succeeds. For selected RE1 cases, or for operational records RCAEval does not provide, evidence bundles include `data_lineage` that marks deploy events, ownership, and runbooks as TF1 supplemental records.
 
@@ -123,10 +165,11 @@ python scripts/build_rcaeval_evidence_bundles.py
 
 ## 5. Gaps Before Final Eval
 
-- RCAEval subset evidence bundles now cover the 3 required demo scenario categories, but final quality claims still need a larger labeled set.
+- RCAEval subset evidence bundles now cover the 3 required demo scenario categories and pass the checked-in API benchmark, but final quality claims still need a larger labeled set.
 - The checked-in RCAEval subset must be regenerated from official RCAEval utility output to include RE2/RE3 `logs.csv` and `traces.csv` when the network path to Zenodo is available.
-- Precision, recall, F1, P50/P99 latency, and cost per call are not meaningful until RCAEval mapping and final AI logic exist.
-- Current logic is deterministic scenario routing, not LLM reasoning.
+- The current 1.00 precision/recall/F1 result is valid only for the 9 checked-in adapted RCAEval subset cases; it must not be presented as full RCAEval benchmark performance.
+- Current benchmark route is deterministic unless AgentCore runtime is configured; final eval should separately benchmark `deterministic_only`, `agent_assisted`, and `agent_platform`.
+- Cost per call is not meaningful until the deployed model/runtime path is fixed by CDO.
 - Persistent audit storage is not implemented; responses include deterministic `audit_id` only.
 
 ## 6. Final Eval Plan
