@@ -1,0 +1,290 @@
+{
+  "generated_at": "2026-06-26T08:47:56.024285+00:00",
+  "scope": "Live AgentCore runtime benchmark on checked-in 9-case RCAEval adapted subset.",
+  "agentcore_runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:589077667575:runtime/tf1_ai_investigator-D48STMEUHo",
+  "model_id": "us.amazon.nova-micro-v1:0",
+  "bounds": {
+    "AIOPS_AGENT_MAX_ITERATIONS": 1,
+    "AIOPS_AGENT_MAX_TOOL_CALLS": 1
+  },
+  "classification": {
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "per_class": {
+      "critical_service_down": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency_degradation": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "noisy_or_ambiguous_alert": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "critical_service_down": 3
+      },
+      "latency_degradation": {
+        "latency_degradation": 3
+      },
+      "noisy_or_ambiguous_alert": {
+        "noisy_or_ambiguous_alert": 3
+      }
+    }
+  },
+  "status_accuracy": 1.0,
+  "agent": {
+    "cases_with_fallback": 1,
+    "cases_with_final_validation": 8,
+    "total_iterations": 9
+  },
+  "latency_ms": {
+    "min": 3927.74,
+    "p50": 4274.27,
+    "p90": 4796.78,
+    "p99": 5490.31,
+    "max": 5490.31
+  },
+  "cases": [
+    {
+      "request": "datapack/external/adapted/critical-service-down/re1ss_user_loss_2.request.json",
+      "scenario": "critical-service-down",
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 4513.88,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2ss_orders_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 4796.78,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "consult_internal_runbooks"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/critical-service-down/re2tt_ts-auth-service_loss_1.request.json",
+      "scenario": "critical-service-down",
+      "expected_classification": "critical_service_down",
+      "classification": "critical_service_down",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.86,
+      "latency_ms": 4051.21,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "service_down_runbook",
+        "page_service_owner",
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "queue_backlog_triage",
+        "auth_failure_triage",
+        "consult_internal_runbooks"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ob_cartservice_delay_3.request.json",
+      "scenario": "latency-degradation",
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 4306.05,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re1ss_carts_delay_1.request.json",
+      "scenario": "latency-degradation",
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 5490.31,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "resource_saturation_triage",
+        "queue_backlog_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/latency-degradation/re2ss_catalogue_delay_2.request.json",
+      "scenario": "latency-degradation",
+      "expected_classification": "latency_degradation",
+      "classification": "latency_degradation",
+      "classification_correct": true,
+      "expected_status": "DIAGNOSED",
+      "status": "DIAGNOSED",
+      "status_correct": true,
+      "confidence": 0.82,
+      "latency_ms": 4213.83,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "resource_saturation_triage",
+        "disk_pressure_triage",
+        "consult_internal_runbooks",
+        "latency_saturation_review"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ob_cartservice_mem_1.request.json",
+      "scenario": "noisy-false-alert",
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 4189.46,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1ss_user_cpu_3.request.json",
+      "scenario": "noisy-false-alert",
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 4274.27,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": false,
+      "agent_fallback_reason": null,
+      "agent_final_validation": {
+        "passed": true
+      },
+      "recommended_action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ]
+    },
+    {
+      "request": "datapack/external/adapted/noisy-false-alert/re1tt_ts-route-service_disk_3.request.json",
+      "scenario": "noisy-false-alert",
+      "expected_classification": "noisy_or_ambiguous_alert",
+      "classification": "noisy_or_ambiguous_alert",
+      "classification_correct": true,
+      "expected_status": "INVESTIGATE",
+      "status": "INVESTIGATE",
+      "status_correct": true,
+      "confidence": 0.45,
+      "latency_ms": 3927.74,
+      "investigation_mode": "agent_platform",
+      "agent_iterations": 1,
+      "agent_fallback": true,
+      "agent_fallback_reason": "invalid_final_diagnosis",
+      "agent_final_validation": null,
+      "recommended_action_ids": [
+        "observe_user_impact",
+        "human_review_noisy_alert"
+      ]
+    }
+  ]
+}

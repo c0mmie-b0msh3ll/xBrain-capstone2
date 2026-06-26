@@ -134,6 +134,48 @@ Evidence artifact:
 ../engine-skeleton/reports-e2e/rcaeval-precision-benchmark-2026-06-26.json
 ```
 
+### 3.3 Live AgentCore Runtime Benchmark
+
+On 2026-06-26, a dedicated AgentCore investigator runtime was deployed for the paid `agent_platform` path:
+
+```text
+arn:aws:bedrock-agentcore:us-east-1:589077667575:runtime/tf1_ai_investigator-D48STMEUHo
+```
+
+Runtime settings:
+
+| Setting | Value |
+|---|---|
+| Model | `us.amazon.nova-micro-v1:0` |
+| Mode | forced `agent_platform` |
+| Max agent iterations | 1 |
+| Max tool calls | 1 |
+| Dataset | Same 9 checked-in adapted RCAEval requests |
+
+Measured live AgentCore subset result:
+
+| Metric | Result |
+|---|---:|
+| Cases replayed | 9 |
+| Agent iterations | 9 |
+| Agent fallback count | 1 |
+| Classification accuracy | 1.00 |
+| Macro precision | 1.00 |
+| Macro recall | 1.00 |
+| Macro F1 | 1.00 |
+| Status accuracy | 1.00 |
+| P50 latency | 4274.27 ms |
+| P90 latency | 4796.78 ms |
+| P99 latency | 5490.31 ms |
+
+The single fallback was caused by an invalid AgentCore final diagnosis on `noisy-false-alert/re1tt_ts-route-service_disk_3`; the engine policy layer correctly rejected it and returned the deterministic fallback decision, preserving the public response contract and expected classification/status.
+
+Evidence artifact:
+
+```text
+../engine-skeleton/reports-e2e/rcaeval-agentcore-benchmark-2026-06-26.json
+```
+
 Verification command used:
 
 ```powershell
