@@ -59,6 +59,58 @@ CDO/platform should provide the following for deployed environments:
 - Platform metrics/logs/traces collection for `/metrics` and structured logs.
 - Rollout/rollback/canary process for the AI image.
 
+## AgentCore Runtime Options
+
+AgentCore is optional for the EKS deployment. The engine can run without AgentCore in deterministic mode.
+
+### Option A - No AgentCore For Initial Deploy
+
+Use this for the fastest CDO smoke/E2E path.
+
+```text
+AIOPS_INVESTIGATION_MODE=auto
+# Do not set AGENTCORE_RUNTIME_ARN
+```
+
+Behavior:
+
+- `/v1/triage` still works.
+- The engine uses deterministic RCA, bounded context enrichment, action catalog, audit, idempotency, and metrics.
+- If auto mode would have selected AgentCore, the engine records fallback/planned mode metadata and stays deterministic.
+
+### Option B - CDO Calls AIO-Owned AgentCore Runtime
+
+This is possible only if AIO and CDO configure cross-account AWS permissions.
+
+Required from AIO:
+
+- provide `AGENTCORE_RUNTIME_ARN`;
+- allow the CDO EKS workload role/account to invoke that runtime;
+- confirm region and model/runtime availability.
+
+Required from CDO:
+
+- configure the EKS pod IAM role/IRSA with permission to invoke the runtime;
+- set env vars:
+
+```text
+AGENTCORE_RUNTIME_ARN=<AIO provided runtime arn>
+ENABLE_AGENTCORE_LLM=true
+ENABLE_AGENTCORE_LLM_TOOLS=true   # only if assisted tool proposals are needed
+AIOPS_INVESTIGATION_MODE=auto     # or agent_assisted / agent_platform for explicit tests
+AWS_REGION=us-east-1
+```
+
+If these permissions are not configured, the engine must be deployed without `AGENTCORE_RUNTIME_ARN` and will run deterministic/fallback mode.
+
+### Option C - CDO-Owned AgentCore Runtime
+
+CDO can deploy/configure its own AgentCore runtime and pass its ARN through `AGENTCORE_RUNTIME_ARN`. The same safety rules still apply: AgentCore never receives raw backend credentials and can only request allowlisted read-only tools through the AI engine gateway.
+
+### Not Implemented In v1.0.0
+
+There is no separate AIO-hosted HTTP proxy endpoint for AgentCore calls in this release. CDO EKS pods either call AWS AgentCore Runtime directly with IAM permissions, or run without AgentCore.
+
 ## Runtime Configuration Summary
 
 Core:
