@@ -24,6 +24,13 @@ DEFAULT_TRIAGE_URL = os.getenv("TRIAGE_URL", "http://localhost:8080/v1/triage")
 DEFAULT_REPORT_BASE_URL = os.getenv("REPORT_BASE_URL", "http://localhost:5173/#/reports")
 
 
+def env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Query observability backends, detect anomalies, and call /v1/triage.")
     parser.add_argument("--scenario", default=os.getenv("AIOPS_SCENARIO", "latency-degradation"))
@@ -41,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=int, default=0)
     parser.add_argument("--offline-scenario", action="store_true")
     parser.add_argument("--dry-run-slack", action="store_true", default=os.getenv("SLACK_WEBHOOK_URL") is None)
+    parser.add_argument("--dry-run-triage-hub-sqs", action="store_true", default=env_flag("TRIAGE_HUB_NOTIFY_SQS_DRY_RUN"))
     parser.add_argument("--sqs-queue-url", default=os.getenv("SQS_QUEUE_URL"))
     parser.add_argument("--sqs-wait-seconds", type=int, default=int(os.getenv("SQS_WAIT_SECONDS", "5")))
     parser.add_argument("--sqs-max-messages", type=int, default=int(os.getenv("SQS_MAX_MESSAGES", "1")))
@@ -414,6 +422,55 @@ def publish_slack(response: dict[str, Any], dry_run: bool, report_url: str) -> N
     slack_response.raise_for_status()
 
 
+def build_triage_hub_notify_payload(response: dict[str, Any], request_context: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "incident_id": response.get("incident_id") or request_context.get("incident_id"),
+        "tenant_id": request_context.get("tenant_id") or response.get("tenant_id"),
+        "alert": request_context.get("alert"),
+        "ownership": request_context.get("ownership"),
+        "classification": response.get("classification"),
+        "confidence": response.get("confidence"),
+        "status": response.get("status"),
+        "suspected_root_cause": response.get("suspected_root_cause"),
+        "recommended_actions": response.get("recommended_actions", []),
+        "suggested_assignee_account_id": response.get("suggested_assignee_account_id"),
+        "suggestion_reason": response.get("suggestion_reason"),
+    }
+
+
+def publish_to_triage_hub_sqs(
+    response: dict[str, Any],
+    request_context: dict[str, Any],
+    dry_run: bool = False,
+    sqs_client: Any | None = None,
+) -> None:
+    queue_url = os.getenv("TRIAGE_HUB_NOTIFY_SQS_URL")
+    payload = build_triage_hub_notify_payload(response, request_context)
+    if dry_run or not queue_url:
+        print(
+            json.dumps(
+                {
+                    "triage_hub_sqs_dry_run": payload,
+                    "reason": "dry_run_enabled" if dry_run else "missing_TRIAGE_HUB_NOTIFY_SQS_URL",
+                },
+                indent=2,
+            )
+        )
+        return
+
+    if sqs_client is None:
+        import boto3
+
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+        sqs_client = boto3.client("sqs", region_name=region)
+    sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload, separators=(",", ":")))
+    print(json.dumps({"triage_hub_sqs_published": True, "incident_id": payload["incident_id"]}, indent=2))
+
+
+def should_dry_run_triage_hub(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "dry_run_triage_hub_sqs", False))
+
+
 def run_once(args: argparse.Namespace) -> bool:
     deploys: list[dict[str, Any]] = []
     if args.offline_scenario:
@@ -442,6 +499,7 @@ def run_once(args: argparse.Namespace) -> bool:
     report_path = write_report(report, Path(args.report_dir))
     print(json.dumps({"report_written": str(report_path), "report_url": report_url}, indent=2))
     publish_slack(response, args.dry_run_slack, report_url)
+    publish_to_triage_hub_sqs(response, body, should_dry_run_triage_hub(args))
     return True
 
 
@@ -476,6 +534,7 @@ def process_sqs_message(
         )
     )
     publish_slack(response, args.dry_run_slack, report_url)
+    publish_to_triage_hub_sqs(response, body, should_dry_run_triage_hub(args))
     return True
 
 

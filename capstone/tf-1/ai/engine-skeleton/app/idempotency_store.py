@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from app import dynamodb_store
 from app.audit_store import audit_log_path
+from app.dynamodb_store import IdempotencyCompletedError, IdempotencyInProgressError, use_dynamodb_backend
 
 
 DEFAULT_STALE_SECONDS = 120
@@ -42,6 +44,9 @@ def idempotency_path(audit_id: str) -> Path:
 
 
 def read_record(audit_id: str) -> dict[str, Any] | None:
+    if use_dynamodb_backend():
+        return dynamodb_store.read_idempotency_record(audit_id)
+
     path = idempotency_path(audit_id)
     if not path.exists():
         return None
@@ -56,16 +61,21 @@ def read_record(audit_id: str) -> dict[str, Any] | None:
 def start_record(audit_id: str, request_hash_value: str) -> dict[str, Any]:
     existing = read_record(audit_id) or {}
     attempt = int(existing.get("attempt") or 0) + 1
+    timestamp = now_iso()
     record = {
         "schema_version": "tf1.idempotency.v1",
         "audit_id": audit_id,
         "status": "in_progress",
-        "started_at": now_iso(),
-        "updated_at": now_iso(),
+        "started_at": timestamp,
+        "updated_at": timestamp,
         "attempt": attempt,
         "owner_process_id": os.getpid(),
         "request_hash": request_hash_value,
     }
+    if use_dynamodb_backend():
+        dynamodb_store.start_idempotency_record(audit_id, record, stale_cutoff_iso())
+        return record
+
     write_record(audit_id, record)
     return record
 
@@ -103,6 +113,10 @@ def fail_record(audit_id: str, request_hash_value: str, error_class: str) -> Non
 
 
 def write_record(audit_id: str, record: dict[str, Any]) -> None:
+    if use_dynamodb_backend():
+        dynamodb_store.write_idempotency_record(audit_id, record)
+        return
+
     path = idempotency_path(audit_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(".tmp")
@@ -124,6 +138,11 @@ def stale_threshold_seconds() -> int:
         return max(1, int(os.getenv("AIOPS_IDEMPOTENCY_STALE_SECONDS", str(DEFAULT_STALE_SECONDS))))
     except ValueError:
         return DEFAULT_STALE_SECONDS
+
+
+def stale_cutoff_iso() -> str:
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_threshold_seconds())
+    return cutoff.isoformat().replace("+00:00", "Z")
 
 
 def sha256_json(value: Any) -> str:

@@ -22,6 +22,8 @@ from app.context_tools import ToolRegistry, ToolScopeError, scope_from_request
 from app.idempotency_store import (
     complete_record,
     fail_record,
+    IdempotencyCompletedError,
+    IdempotencyInProgressError,
     is_stale,
     read_record,
     request_hash,
@@ -356,7 +358,17 @@ def triage_with_local_guards(request: TriageRequest, audit_id: str) -> TriageRes
         elif record and record.get("status") == "failed_retryable":
             IDEMPOTENCY_EVENTS_TOTAL.labels(result="failed_retryable_reprocessed").inc()
 
-        start_record(audit_id, hash_value)
+        try:
+            start_record(audit_id, hash_value)
+        except IdempotencyCompletedError as exc:
+            if isinstance(exc.record.get("response"), dict):
+                IDEMPOTENCY_EVENTS_TOTAL.labels(result="replayed_completed").inc()
+                return TriageResponse.model_validate(exc.record["response"])
+            raise
+        except IdempotencyInProgressError:
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="in_progress_rejected").inc()
+            TRIAGE_REJECTED_TOTAL.labels(reason="idempotency_in_progress").inc()
+            raise HTTPException(status_code=409, detail="Triage is already in progress for this audit_id")
         response = triage_request(request, audit_id, idempotency_metadata)
         complete_record(audit_id, hash_value, response)
         IDEMPOTENCY_EVENTS_TOTAL.labels(result="completed").inc()

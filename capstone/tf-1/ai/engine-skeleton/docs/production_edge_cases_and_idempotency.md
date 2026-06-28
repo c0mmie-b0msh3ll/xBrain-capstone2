@@ -8,7 +8,7 @@ Instead, idempotency is achieved at the API processing boundary:
 
 1. The engine computes the deterministic `audit_id` from `tenant_id:correlation_id:incident_id`.
 2. It computes a `request_hash` from the request body plus selected runtime-affecting settings.
-3. On first processing, it writes `audit/idempotency/{audit_id}.json` as `in_progress`.
+3. On first processing, it writes the idempotency record as `in_progress`. File mode writes `audit/idempotency/{audit_id}.json`; DynamoDB mode writes `PK=IDEMPOTENCY#{audit_id}`, `SK=STATE`.
 4. On successful completion, it stores `completed` with the exact response payload and response hash.
 5. If CDO retries the same `audit_id` with the same `request_hash`, the engine returns the stored response immediately and does not call AgentCore again.
 
@@ -20,7 +20,7 @@ If the first pod/process dies before completion, the record remains `in_progress
 
 ### Idempotency Race
 
-Two identical requests can arrive at the same time before either writes `in_progress`. The JSON-file store uses atomic replacement for writes, but it is not a distributed conditional lock. This is acceptable for the W11 demo, but production should use DynamoDB conditional writes, Postgres row locks, S3 conditional writes, or another durable compare-and-set primitive.
+Two identical requests can arrive at the same time before either writes `in_progress`. The JSON-file store uses atomic replacement for writes, but it is not a distributed conditional lock. DynamoDB mode uses a conditional put for `start_record`, so only one active non-stale request can acquire an audit ID across replicas. A losing duplicate receives the same `409` response as a normal non-stale `in_progress` retry.
 
 ### Completed Response Staleness
 
@@ -30,9 +30,9 @@ A completed idempotency replay returns the original stored response for the same
 
 The request hash includes the request body and selected runtime-affecting settings, but not every possible environment variable or the contents of every configured data file. If ownership or Jira files change without the path changing, a same-hash retry can replay the previous response. Production can address this with versioned context snapshots, context version fields, or explicit force-reprocess semantics.
 
-### Local File Durability
+### Persistence Durability
 
-The idempotency store must be backed by durable storage in production/EKS. If the pod uses ephemeral storage and dies, replay protection is lost. CDO owns durable volume or object-store provisioning.
+File mode must be backed by durable storage in production/EKS. If the pod uses ephemeral storage and dies, replay protection is lost. CDO owns durable volume provisioning. DynamoDB mode is the recommended production backend for shared audit and idempotency state; the table needs string `PK` and `SK` keys plus TTL enabled on `expires_at`.
 
 ### Partial Audit Or Idempotency Write Failure
 
@@ -66,5 +66,5 @@ Stale `in_progress` detection uses local wall-clock time. If idempotency files a
 
 1. Add caps for all user-controlled non-evidence structures before RCA and response assembly.
 2. Add secret/PII redaction before response evidence and ticket description generation.
-3. Replace the file idempotency store with a conditional-write durable store for production.
+3. Use DynamoDB persistence in production, or another backend with equivalent conditional writes and tenant-scoped audit lookup.
 4. Add tests for oversized labels, topology, anomaly evidence, runbook excerpts, and redaction.

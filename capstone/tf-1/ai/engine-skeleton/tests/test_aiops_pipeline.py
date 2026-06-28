@@ -7,14 +7,25 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 
 from app.action_catalog import select_actions
 from app.agent_runtime import run_agent_platform
-from app.aiops_worker import build_report, build_triage_request, detect_incident, offline_raw_observability, process_sqs_message
+from app.aiops_worker import (
+    build_report,
+    build_triage_hub_notify_payload,
+    build_triage_request,
+    detect_incident,
+    offline_raw_observability,
+    process_sqs_message,
+    publish_slack,
+    publish_to_triage_hub_sqs,
+)
 from app.context_tools import ContextClient, ToolRegistry, ToolScope, ToolScopeError
 from app.evidence_budget import compact_request_evidence
-from app.idempotency_store import read_record, request_hash, write_record
+from app.audit_store import append_audit_record, latest_audit_record
+from app.idempotency_store import complete_record, fail_record, read_record, request_hash, start_record, write_record
 from app.incident_seed import IncidentSeed, build_triage_request_from_seed
 from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, build_prompt_payload, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
@@ -22,6 +33,29 @@ from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits,
 from app.observability import sanitize_log_fields
 from app.rca import analyze_request, detect_metric_anomalies, infer_causal_hints
 from app.report_store import write_report
+
+
+class FakeDynamoTable:
+    def __init__(self) -> None:
+        self.items: dict[tuple[str, str], dict[str, Any]] = {}
+        self.fail_conditional_put = False
+        self.hidden_gets_remaining = 0
+
+    def put_item(self, Item: dict[str, Any], ConditionExpression: Any | None = None) -> None:
+        if ConditionExpression is not None and self.fail_conditional_put:
+            raise ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+        self.items[(Item["PK"], Item["SK"])] = Item
+
+    def get_item(self, Key: dict[str, str]) -> dict[str, Any]:
+        if self.hidden_gets_remaining:
+            self.hidden_gets_remaining -= 1
+            return {}
+        item = self.items.get((Key["PK"], Key["SK"]))
+        return {"Item": item} if item else {}
+
+    def query(self, **kwargs: Any) -> dict[str, Any]:
+        audit_items = [item for (pk, _sk), item in self.items.items() if pk.startswith("AUDIT#")]
+        return {"Items": sorted(audit_items, key=lambda item: item["SK"], reverse=not kwargs.get("ScanIndexForward", True))}
 
 
 def test_offline_scenario_detects_and_triages_latency_degradation() -> None:
@@ -684,6 +718,84 @@ def test_audit_record_is_persisted_and_queryable_without_raw_evidence(tmp_path, 
     assert cross_tenant_response.status_code == 404
 
 
+def test_dynamodb_audit_record_is_persisted_with_expected_keys(monkeypatch) -> None:
+    table = FakeDynamoTable()
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "aiops-audit")
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+    first = {
+        "audit_id": "audit-001",
+        "record_type": "triage_failure",
+        "recorded_at": "2026-06-24T09:00:00Z",
+        "tenant_id": "tenant-a",
+        "duration_ms": 12.5,
+    }
+    second = {**first, "record_type": "triage_decision", "recorded_at": "2026-06-24T09:01:00Z", "duration_ms": 13.75}
+
+    append_audit_record(first)
+    append_audit_record(second)
+    latest = latest_audit_record("audit-001")
+
+    assert ("AUDIT#audit-001", "RECORDED#2026-06-24T09:00:00Z#triage_failure") in table.items
+    item = table.items[("AUDIT#audit-001", "RECORDED#2026-06-24T09:01:00Z#triage_decision")]
+    assert item["record"]["audit_id"] == "audit-001"
+    assert item["expires_at"] > 0
+    assert latest
+    assert latest["record_type"] == "triage_decision"
+    assert latest["duration_ms"] == 13.75
+    assert latest["matching_records"] == 2
+
+
+def test_dynamodb_idempotency_lifecycle_matches_file_shape(monkeypatch) -> None:
+    table = FakeDynamoTable()
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "aiops-audit")
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+
+    started = start_record("audit-002", "hash-1")
+    complete_record("audit-002", "hash-1", {"audit_id": "audit-002", "status": "DIAGNOSED"})
+    completed = read_record("audit-002")
+    fail_record("audit-003", "hash-2", "RuntimeError")
+    failed = read_record("audit-003")
+
+    assert started["status"] == "in_progress"
+    assert completed
+    assert completed["status"] == "completed"
+    assert completed["response"] == {"audit_id": "audit-002", "status": "DIAGNOSED"}
+    assert completed["response_hash"]
+    assert failed
+    assert failed["status"] == "failed_retryable"
+    assert failed["error_class"] == "RuntimeError"
+    assert ("IDEMPOTENCY#audit-002", "STATE") in table.items
+
+
+def test_dynamodb_conditional_in_progress_conflict_returns_409(monkeypatch) -> None:
+    table = FakeDynamoTable()
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "aiops-audit")
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+    body = metadata_only_triage_body()
+    body["incident_id"] = "inc-dynamodb-race"
+    body["correlation_id"] = "corr-dynamodb-race"
+    request = TriageRequest.model_validate(body)
+    audit_id = build_audit_id(request)
+    write_record(
+        audit_id,
+        {
+            "audit_id": audit_id,
+            "status": "in_progress",
+            "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "request_hash": "hash-in-flight",
+        },
+    )
+    table.hidden_gets_remaining = 1
+    table.fail_conditional_put = True
+
+    response = TestClient(app).post("/v1/triage", json=body, headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]})
+
+    assert response.status_code == 409
+
+
 def test_large_inline_logs_are_truncated_and_audit_stays_metadata_only(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("AIOPS_AUDIT_LOG_PATH", str(tmp_path / "audit-log.jsonl"))
     monkeypatch.setenv("AIOPS_MAX_LOG_RECORDS", "3")
@@ -1203,6 +1315,113 @@ def test_agentcore_response_reader_and_session_id_are_stable() -> None:
     assert len(agentcore_session_id(request)) == 36
 
 
+def test_triage_hub_notify_payload_maps_request_and_response() -> None:
+    request_context = metadata_only_triage_body()
+    request_context["ownership"] = {
+        "service": "checkout-api",
+        "owner_team": "payments-platform",
+        "slack_channel": "#oncall-payments",
+        "jira_project": "PAY",
+    }
+    response = {
+        "incident_id": "inc-001",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "status": "DIAGNOSED",
+        "suspected_root_cause": {"summary": "Database timeout", "evidence": ["timeout log"]},
+        "recommended_actions": [{"id": "dependency_timeout_triage", "summary": "Review dependency timeout signals."}],
+        "suggested_assignee_account_id": "acct-123",
+        "suggestion_reason": "Most recent checkout-api incidents were handled by this account.",
+    }
+
+    payload = build_triage_hub_notify_payload(response, request_context)
+
+    assert payload == {
+        "incident_id": "inc-001",
+        "tenant_id": "tenant-a",
+        "alert": request_context["alert"],
+        "ownership": request_context["ownership"],
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "status": "DIAGNOSED",
+        "suspected_root_cause": {"summary": "Database timeout", "evidence": ["timeout log"]},
+        "recommended_actions": [{"id": "dependency_timeout_triage", "summary": "Review dependency timeout signals."}],
+        "suggested_assignee_account_id": "acct-123",
+        "suggestion_reason": "Most recent checkout-api incidents were handled by this account.",
+    }
+
+
+def test_triage_hub_sqs_dry_run_prints_payload_and_skips_aws(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("TRIAGE_HUB_NOTIFY_SQS_URL", raising=False)
+    sqs = FakeSQS()
+    request_context = metadata_only_triage_body()
+    response = {"incident_id": "inc-001", "classification": "latency_degradation", "confidence": 0.82, "status": "DIAGNOSED"}
+
+    publish_to_triage_hub_sqs(response, request_context, dry_run=True, sqs_client=sqs)
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["triage_hub_sqs_dry_run"]["incident_id"] == "inc-001"
+    assert output["triage_hub_sqs_dry_run"]["tenant_id"] == "tenant-a"
+    assert output["reason"] == "dry_run_enabled"
+    assert sqs.sent == []
+
+
+def test_triage_hub_sqs_live_publish_sends_json_body(monkeypatch) -> None:
+    monkeypatch.setenv("TRIAGE_HUB_NOTIFY_SQS_URL", "https://sqs.example/notify")
+    sqs = FakeSQS()
+    request_context = metadata_only_triage_body()
+    response = {
+        "incident_id": "inc-001",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "status": "DIAGNOSED",
+        "recommended_actions": [{"summary": "Review dependency timeout signals."}],
+    }
+
+    publish_to_triage_hub_sqs(response, request_context, sqs_client=sqs)
+
+    assert len(sqs.sent) == 1
+    queue_url, body = sqs.sent[0]
+    assert queue_url == "https://sqs.example/notify"
+    payload = json.loads(body)
+    assert payload["incident_id"] == "inc-001"
+    assert payload["tenant_id"] == "tenant-a"
+    assert payload["alert"] == request_context["alert"]
+    assert payload["recommended_actions"] == [{"summary": "Review dependency timeout signals."}]
+
+
+def test_legacy_slack_webhook_publish_still_works(monkeypatch) -> None:
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+    def fake_post(url: str, json: dict[str, Any], timeout: int) -> FakeResponse:
+        calls.append((url, json))
+        assert timeout == 5
+        return FakeResponse()
+
+    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.example/test")
+    monkeypatch.setattr("app.aiops_worker.requests.post", fake_post)
+    response = {
+        "incident_id": "inc-001",
+        "severity": "high",
+        "classification": "latency_degradation",
+        "status": "DIAGNOSED",
+        "confidence": 0.82,
+        "anomaly_evidence": [{"reason": "http_latency_p95_ms breached threshold"}],
+        "recommended_actions": [{"summary": "Review dependency timeout signals."}],
+    }
+
+    publish_slack(response, dry_run=False, report_url="http://localhost:5173/#/reports/inc-001")
+
+    assert calls
+    assert calls[0][0] == "https://hooks.slack.example/test"
+    assert "latency_degradation" in calls[0][1]["text"]
+    assert "Report: http://localhost:5173/#/reports/inc-001" in calls[0][1]["text"]
+
+
 def test_sqs_seed_success_deletes_message_after_report_write(tmp_path, monkeypatch) -> None:
     args = argparse.Namespace(
         sqs_queue_url="https://sqs.example/queue",
@@ -1434,6 +1653,10 @@ class ScopedBundleContextClient(ContextClient):
 class FakeSQS:
     def __init__(self) -> None:
         self.deleted: list[tuple[str, str]] = []
+        self.sent: list[tuple[str, str]] = []
 
     def delete_message(self, QueueUrl: str, ReceiptHandle: str) -> None:
         self.deleted.append((QueueUrl, ReceiptHandle))
+
+    def send_message(self, QueueUrl: str, MessageBody: str) -> None:
+        self.sent.append((QueueUrl, MessageBody))

@@ -41,6 +41,7 @@ Implemented API surface:
   - structured completed log field `estimated_cost_usd`
   - audit metadata `cost_estimate`
   - Prometheus `aiops_llm_estimated_cost_usd_total`.
+- Optional Triage-Hub notify SQS publisher in `app.aiops_worker` for demo/worker flows. This is additive to the legacy Slack webhook demo publisher and provides a payload-level unified Slack/Jira handoff; CDO dispatchers own downstream transport, rendering, buttons, and ticket mutation.
 
 ## CDO-Owned Integration Inputs
 
@@ -56,6 +57,7 @@ CDO/platform should provide the following for deployed environments:
   - read-only bounded evidence proxy or backend env vars.
 - Durable audit/idempotency storage mount or production replacement store. This is required for production/EKS because retry safety depends on persisted state.
 - Slack rendering and Jira issue creation from AI response fields.
+- Optional Triage-Hub notify SQS queue URL for worker-based Slack/Jira event delivery.
 - Platform metrics/logs/traces collection for `/metrics` and structured logs.
 - Rollout/rollback/canary process for the AI image.
 
@@ -93,13 +95,15 @@ Deploy these for production/EKS:
 |---|---:|---|---|
 | AI triage engine API container | Yes | AI supplies source/image, CDO deploys | Serves `/healthz`, `/readyz`, `/metrics`, `/v1/triage`, audit/report read endpoints. |
 | AgentCore investigator runtime | Yes | AI supplies source/image, CDO or AIO deploys runtime | Source is `engine-skeleton/agentcore_investigator`; engine calls it through `AGENTCORE_RUNTIME_ARN`. |
-| Durable storage for engine files | Yes | CDO | Mount EFS for multi-replica or EBS only for single replica at `/var/lib/tf1-ai`. |
+| Durable audit/idempotency backend | Yes | CDO | Use DynamoDB for production/multi-replica. File fallback requires EFS for multi-replica or EBS only for single replica. |
+| Report JSON storage | Optional for production API, yes for report UI/demo | CDO | Mount durable storage at `/var/lib/tf1-ai` when retaining local report JSON files. |
 | Engine Kubernetes Service/Ingress | Yes | CDO | Private/internal only; preserve port `8080` and API paths. |
 | Engine ServiceAccount/IRSA | Yes | CDO | Needs `bedrock-agentcore:InvokeAgentRuntime` on the runtime ARN. |
 | Evidence access integration | Yes | CDO + AI | Either inline evidence, `evidence_uri`/bundle base path, or bounded read-only Prometheus/Loki/Jaeger/proxy env vars. |
 | Secrets/config | Yes | CDO | Auth token/JWT/SigV4, runtime ARN, model/cost env, evidence backend env. |
 | Metrics/log collection | Yes | CDO | Scrape `/metrics` and collect structured app logs. |
-| Slack/Jira execution | Yes for end-to-end workflow | CDO | AI returns fields only; CDO renders Slack and creates Jira. |
+| Slack/Jira execution | Yes for end-to-end workflow | CDO | AI returns fields only; CDO renders Slack and creates Jira. Worker/demo flows can publish the same fields to a CDO Triage-Hub notify SQS queue. |
+| Triage-Hub notify SQS queue | Optional | CDO | Required only when CDO wants event delivery from `app.aiops_worker`; AI sends one unified JSON payload and does not depend on dispatcher internals. |
 
 Do not deploy these as production AI engine components unless CDO explicitly wants the demo stack:
 
@@ -118,9 +122,10 @@ Do not deploy these as production AI engine components unless CDO explicitly wan
 3. Grant the AgentCore runtime execution role permission to call the configured Bedrock model.
 4. Capture the created `AGENTCORE_RUNTIME_ARN`.
 5. Build/push the AI triage engine artifact.
-6. Create durable audit/idempotency storage and mount it into the AI engine pod.
-7. Deploy the AI triage engine with `AGENTCORE_RUNTIME_ARN`, storage env vars, evidence access env vars, and auth secrets.
-8. Smoke test `/healthz`, `/readyz`, `/metrics`, and `POST /v1/triage`.
+6. Create the audit/idempotency backend: DynamoDB table for production/multi-replica, or a durable mounted file store for fallback.
+7. Mount report storage if CDO wants local report JSON retention or the demo report UI.
+8. Deploy the AI triage engine with `AGENTCORE_RUNTIME_ARN`, persistence env vars, evidence access env vars, and auth secrets.
+9. Smoke test `/healthz`, `/readyz`, `/metrics`, and `POST /v1/triage`.
 
 ## AgentCore Runtime Requirement
 
@@ -207,15 +212,32 @@ AgentCore investigator runtime execution role needs permission to call the selec
 
 Scope the model resource tighter if the target AWS account uses model-specific ARNs/policies.
 
+If CDO enables the optional Triage-Hub notify SQS publisher for `app.aiops_worker`, that worker runtime role also needs:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sqs:SendMessage",
+    "Resource": "<TRIAGE_HUB_NOTIFY_QUEUE_ARN>"
+  }]
+}
+```
+
 ## Required Persistent Storage
 
-Current `v1.0.0` stores audit, reports, and idempotency as local files. In EKS, this must be backed by durable storage.
+Reports are still stored as local JSON files. Audit and idempotency can use either the default file backend or the DynamoDB backend.
 
-Recommended for current file-based implementation:
+The engine supports two audit/idempotency persistence backends:
+
+- `AIOPS_PERSISTENCE_BACKEND=file` is the default and keeps the existing JSONL audit log plus per-audit idempotency files.
+- `AIOPS_PERSISTENCE_BACKEND=dynamodb` is recommended for production or multi-replica EKS, because all pods share audit records and conditional idempotency state without a shared filesystem.
+
+For file persistence:
 
 - Use EFS when running more than one replica, because all pods must see the same idempotency records.
 - Use EBS only for a single-replica deployment, because normal EBS PVCs are ReadWriteOnce and do not give shared idempotency across replicas.
-- For production hardening, CDO can replace the file store with DynamoDB/Postgres later, but the current image expects filesystem paths.
 
 Mount one durable volume at:
 
@@ -226,12 +248,33 @@ Mount one durable volume at:
 Set:
 
 ```text
+AIOPS_PERSISTENCE_BACKEND=file
 AIOPS_AUDIT_LOG_PATH=/var/lib/tf1-ai/audit/audit-log.jsonl
 AIOPS_IDEMPOTENCY_DIR=/var/lib/tf1-ai/audit/idempotency
 REPORTS_DIR=/var/lib/tf1-ai/reports
 ```
 
-Minimum directories created by the app:
+For DynamoDB persistence, create one table with string partition key `PK`, string sort key `SK`, and TTL enabled on `expires_at`. Set:
+
+```text
+AIOPS_PERSISTENCE_BACKEND=dynamodb
+AIOPS_DYNAMODB_TABLE=<table name>
+AWS_REGION=<region>
+AIOPS_AUDIT_RETENTION_DAYS=90
+AIOPS_IDEMPOTENCY_STALE_SECONDS=120
+REPORTS_DIR=/var/lib/tf1-ai/reports
+```
+
+Required IAM actions on the configured table:
+
+```text
+dynamodb:GetItem
+dynamodb:PutItem
+dynamodb:UpdateItem
+dynamodb:Query
+```
+
+Minimum directories created by the app when file persistence/report storage is enabled:
 
 ```text
 /var/lib/tf1-ai/audit
@@ -285,6 +328,10 @@ spec:
               value: us-east-1
             - name: AIOPS_INVESTIGATION_MODE
               value: auto
+            - name: AIOPS_PERSISTENCE_BACKEND
+              value: dynamodb
+            - name: AIOPS_DYNAMODB_TABLE
+              value: tf1-aiops-audit
             - name: AGENTCORE_RUNTIME_ARN
               valueFrom:
                 secretKeyRef:
@@ -294,10 +341,6 @@ spec:
               value: "true"
             - name: ENABLE_AGENTCORE_LLM_TOOLS
               value: "true"
-            - name: AIOPS_AUDIT_LOG_PATH
-              value: /var/lib/tf1-ai/audit/audit-log.jsonl
-            - name: AIOPS_IDEMPOTENCY_DIR
-              value: /var/lib/tf1-ai/audit/idempotency
             - name: REPORTS_DIR
               value: /var/lib/tf1-ai/reports
           volumeMounts:
@@ -345,6 +388,14 @@ KNOWN_ERRORS_PATH=<known errors json path>
 AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS=3
 ```
 
+Triage-Hub notify publisher for worker/demo event delivery:
+
+```text
+TRIAGE_HUB_NOTIFY_SQS_URL=<CDO notify queue URL>
+TRIAGE_HUB_NOTIFY_SQS_DRY_RUN=false
+AWS_REGION=<queue region>
+```
+
 Evidence budget:
 
 ```text
@@ -373,10 +424,19 @@ AIOPS_LLM_OUTPUT_COST_PER_1K=0
 Audit/idempotency:
 
 ```text
-AIOPS_AUDIT_LOG_PATH=<durable mounted path>/audit-log.jsonl
+AIOPS_PERSISTENCE_BACKEND=dynamodb
+AIOPS_DYNAMODB_TABLE=<table name>
+AWS_REGION=<region>
 AIOPS_AUDIT_RETENTION_DAYS=90
-AIOPS_IDEMPOTENCY_DIR=<durable mounted path>/idempotency
 AIOPS_IDEMPOTENCY_STALE_SECONDS=120
+```
+
+File backend fallback only:
+
+```text
+AIOPS_PERSISTENCE_BACKEND=file
+AIOPS_AUDIT_LOG_PATH=<durable mounted path>/audit-log.jsonl
+AIOPS_IDEMPOTENCY_DIR=<durable mounted path>/idempotency
 ```
 
 ## Verification
@@ -400,7 +460,7 @@ Latest result:
 
 ```text
 compileall -> passed
-pytest -> 64 passed
+pytest -> 71 passed
 datapack validation -> passed
 docker compose config -> passed
 report UI build -> passed

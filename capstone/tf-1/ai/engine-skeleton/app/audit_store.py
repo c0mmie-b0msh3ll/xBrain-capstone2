@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app import dynamodb_store
+from app.dynamodb_store import use_dynamodb_backend
+
 
 DEFAULT_AUDIT_LOG_PATH = "audit/audit-log.jsonl"
 DEFAULT_RETENTION_DAYS = 90
@@ -24,6 +27,10 @@ def retention_days() -> int:
 
 
 def append_audit_record(record: dict[str, Any], path: Path | None = None) -> None:
+    if path is None and use_dynamodb_backend():
+        dynamodb_store.append_audit_record(record, retention_days())
+        return
+
     target = path or audit_log_path()
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
@@ -32,6 +39,9 @@ def append_audit_record(record: dict[str, Any], path: Path | None = None) -> Non
 
 
 def latest_audit_record(audit_id: str, path: Path | None = None) -> dict[str, Any] | None:
+    if path is None and use_dynamodb_backend():
+        return dynamodb_store.latest_audit_record(audit_id)
+
     target = path or audit_log_path()
     if not target.exists():
         return None

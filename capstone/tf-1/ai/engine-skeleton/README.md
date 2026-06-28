@@ -67,12 +67,24 @@ The worker queries Prometheus/Loki/Jaeger with tenant, service, environment, and
 
 Slack is the alert surface: the worker sends or prints a concise summary with top evidence, confidence, and the report URL. Grafana remains the raw observability dashboard. The React report UI is the full investigation and audit surface, backed by JSON reports written under `reports/{incident_id}.json`.
 
-Every successful `/v1/triage` response also appends a metadata-only audit record to `audit/audit-log.jsonl` by default. This is an implementation/handoff capability, not a change to the frozen W11 contract at `ccbb47f`. `GET /v1/audit/{audit_id}` requires `X-Tenant-Id` and returns the latest tenant-matching record for local review/demo use with request/evidence SHA-256 hashes, counts, mode selection, model/tool lineage, ticket lineage, and guardrail flags. Raw customer log messages, metric payloads, trace dumps, Slack posts, Jira mutations, and remediation commands are not written to the audit store. Override the store path and minimum retention target with:
+Every successful `/v1/triage` response also appends a metadata-only audit record to `audit/audit-log.jsonl` by default. This is an implementation/handoff capability, not a change to the frozen W11 contract at `ccbb47f`. `GET /v1/audit/{audit_id}` requires `X-Tenant-Id` and returns the latest tenant-matching record for local review/demo use with request/evidence SHA-256 hashes, counts, mode selection, model/tool lineage, ticket lineage, and guardrail flags. Raw customer log messages, metric payloads, trace dumps, Slack posts, Jira mutations, and remediation commands are not written to the audit store. Override the file store path and minimum retention target with:
 
 ```bash
 AIOPS_AUDIT_LOG_PATH=audit/audit-log.jsonl
 AIOPS_AUDIT_RETENTION_DAYS=90
 ```
+
+For production or multi-replica EKS deployments, use DynamoDB for shared audit and idempotency persistence:
+
+```bash
+AIOPS_PERSISTENCE_BACKEND=dynamodb
+AIOPS_DYNAMODB_TABLE=tf1-aiops-audit
+AWS_REGION=us-east-1
+AIOPS_AUDIT_RETENTION_DAYS=90
+AIOPS_IDEMPOTENCY_STALE_SECONDS=120
+```
+
+The table uses `PK` and `SK` string keys, stores audit records under `AUDIT#{audit_id}`, idempotency state under `IDEMPOTENCY#{audit_id}`, and writes TTL values to `expires_at`.
 
 ## Connect Slack
 
