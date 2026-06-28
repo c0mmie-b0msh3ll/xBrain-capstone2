@@ -1,7 +1,5 @@
 # AI Engine Handoff Message
 
-Anh em ơi, phần AI engine handoff đã ready nhé.
-
 Source commit:
 
 ```text
@@ -13,6 +11,7 @@ GitHub source:
 - Main handoff doc: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/blob/ac21f60589752d977eff229745316bcf859f1396/capstone/tf-1/ai/docs/11_v1_0_0_handoff.md
 - Slack/Jira SQS handoff: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/blob/ac21f60589752d977eff229745316bcf859f1396/capstone/tf-1/ai/docs/slack_integration_migration.md
 - Production idempotency / DynamoDB notes: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/blob/ac21f60589752d977eff229745316bcf859f1396/capstone/tf-1/ai/engine-skeleton/docs/production_edge_cases_and_idempotency.md
+- Production env template: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/blob/main/capstone/tf-1/ai/docs/ai_engine_production.env.example
 - AI triage engine API source: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/tree/ac21f60589752d977eff229745316bcf859f1396/capstone/tf-1/ai/engine-skeleton
 - AgentCore investigator runtime source: https://github.com/c0mmie-b0msh3ll/xBrain-capstone2/tree/ac21f60589752d977eff229745316bcf859f1396/capstone/tf-1/ai/engine-skeleton/agentcore_investigator
 
@@ -22,6 +21,7 @@ Local paths nếu cần mở trực tiếp:
 E:\xBrain-capstone2\capstone\tf-1\ai\docs\11_v1_0_0_handoff.md
 E:\xBrain-capstone2\capstone\tf-1\ai\docs\slack_integration_migration.md
 E:\xBrain-capstone2\capstone\tf-1\ai\engine-skeleton\docs\production_edge_cases_and_idempotency.md
+E:\xBrain-capstone2\capstone\tf-1\ai\docs\ai_engine_production.env.example
 E:\xBrain-capstone2\capstone\tf-1\ai\engine-skeleton
 E:\xBrain-capstone2\capstone\tf-1\ai\engine-skeleton\agentcore_investigator
 ```
