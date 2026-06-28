@@ -85,6 +85,32 @@ docker build -t tf1-ai-triage-engine:v1.0.0 capstone/tf-1/ai/engine-skeleton
 docker build -t tf1-agentcore-investigator:v1.0.0 capstone/tf-1/ai/engine-skeleton/agentcore_investigator
 ```
 
+## Production Deployment Inventory
+
+Deploy these for production/EKS:
+
+| Item | Required | Owner | Notes |
+|---|---:|---|---|
+| AI triage engine API container | Yes | AI supplies source/image, CDO deploys | Serves `/healthz`, `/readyz`, `/metrics`, `/v1/triage`, audit/report read endpoints. |
+| AgentCore investigator runtime | Yes | AI supplies source/image, CDO or AIO deploys runtime | Source is `engine-skeleton/agentcore_investigator`; engine calls it through `AGENTCORE_RUNTIME_ARN`. |
+| Durable storage for engine files | Yes | CDO | Mount EFS for multi-replica or EBS only for single replica at `/var/lib/tf1-ai`. |
+| Engine Kubernetes Service/Ingress | Yes | CDO | Private/internal only; preserve port `8080` and API paths. |
+| Engine ServiceAccount/IRSA | Yes | CDO | Needs `bedrock-agentcore:InvokeAgentRuntime` on the runtime ARN. |
+| Evidence access integration | Yes | CDO + AI | Either inline evidence, `evidence_uri`/bundle base path, or bounded read-only Prometheus/Loki/Jaeger/proxy env vars. |
+| Secrets/config | Yes | CDO | Auth token/JWT/SigV4, runtime ARN, model/cost env, evidence backend env. |
+| Metrics/log collection | Yes | CDO | Scrape `/metrics` and collect structured app logs. |
+| Slack/Jira execution | Yes for end-to-end workflow | CDO | AI returns fields only; CDO renders Slack and creates Jira. |
+
+Do not deploy these as production AI engine components unless CDO explicitly wants the demo stack:
+
+| Item | Production status | Reason |
+|---|---|---|
+| `app.aiops_worker` | Demo/local helper, not required for deployed API | In production, CDO alerting/correlator calls `POST /v1/triage`. The worker only simulates that flow locally. |
+| `app.simulator` | Demo/local only | Generates scenario telemetry for demo. Customer apps/observability replace it in production. |
+| `report-ui` Vite app | Demo/review UI, not required for triage API | Production contract is API/Jira/Slack. Deploy only if CDO wants a separate internal report viewer. |
+| Local Prometheus/Loki/Jaeger/Grafana compose stack | Demo/local only | CDO uses its own observability stack and bounded evidence access path. |
+| `docker-compose.observability.yml` | Demo/local only | Validates local E2E; not the EKS production manifest. |
+
 ## Production Deploy Order
 
 1. Build/push the AgentCore investigator artifact.
