@@ -163,6 +163,9 @@ def _audit_llm_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             "skipped_reason": tool_investigation.get("skipped_reason"),
             "fallback_reason": tool_investigation.get("fallback_reason"),
         },
+        "evidence_budget": metadata.get("evidence_budget"),
+        "idempotency": metadata.get("idempotency"),
+        "cost_estimate": metadata.get("cost_estimate"),
         "qa": metadata.get("qa"),
         "action_wording": metadata.get("action_wording"),
     }
@@ -184,10 +187,25 @@ def _tool_lineage(metadata: dict[str, Any]) -> list[dict[str, Any]]:
                     "status": item.get("status"),
                     "blocked_reason": item.get("blocked_reason") or item.get("error"),
                     "result_count": item.get("result_count"),
+                    "truncated": item.get("truncated"),
+                    "evidence_budget": _tool_budget_summary(item.get("evidence_budget")),
                     "args_hash": _sha256_json(item.get("args", {})),
                 }
             )
     return lineage
+
+
+def _tool_budget_summary(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    return {
+        "truncated": value.get("truncated"),
+        "counts_before": value.get("counts_before"),
+        "counts_after": value.get("counts_after"),
+        "bytes_before": value.get("bytes_before"),
+        "bytes_after": value.get("bytes_after"),
+        "reasons": value.get("reasons", []),
+    }
 
 
 def _evidence_hashes(request_body: dict[str, Any]) -> dict[str, dict[str, Any]]:

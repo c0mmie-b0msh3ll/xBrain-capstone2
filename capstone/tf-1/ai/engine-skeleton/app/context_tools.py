@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 import requests
 
+from app.evidence_budget import compact_tool_result
 from app.observability import CIRCUIT_BREAKER_OPEN, CONTEXT_TOOL_CALLS_TOTAL, CONTEXT_TOOL_DURATION_SECONDS, span, timed
 from app import rca
 
@@ -78,14 +79,19 @@ class ToolRegistry:
                 try:
                     bounded_scope = validate_and_build_scope(args, scope)
                     result = self._tools[name](args, scope, request)
+                    compacted_result, budget_metadata = compact_tool_result(name, to_jsonable(result))
                     CONTEXT_TOOL_CALLS_TOTAL.labels(tool=name, status="ok").inc()
                     CIRCUIT_BREAKER_OPEN.labels(dependency=name).set(0)
-                    return {
+                    response = {
                         "name": name,
                         "status": "ok",
                         "bounded_scope": bounded_scope,
-                        "result": to_jsonable(result),
+                        "result": compacted_result,
                     }
+                    if budget_metadata.get("truncated"):
+                        response["truncated"] = True
+                        response["evidence_budget"] = budget_metadata
+                    return response
                 except Exception:
                     CONTEXT_TOOL_CALLS_TOTAL.labels(tool=name, status="error").inc()
                     raise

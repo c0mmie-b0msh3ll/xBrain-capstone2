@@ -291,7 +291,7 @@ Validation run:
 - docker compose -f docker-compose.observability.yml config --quiet
 
 Latest known result:
-- 51 passed
+- 64 passed
 ```
 
 ### A0X-30 - README / Handoff Documentation

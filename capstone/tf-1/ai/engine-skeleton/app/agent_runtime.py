@@ -84,7 +84,7 @@ def run_agent_platform(
                 try:
                     final_decision, advisory_action_ids = validate_final_diagnosis(payload, current_rca)
                 except ValueError as exc:
-                    metadata["error"] = f"{type(exc).__name__}: {exc}"
+                    metadata["error"] = type(exc).__name__
                     return fallback(current_request, current_rca, decision, metadata, "invalid_final_diagnosis")
                 AGENT_ITERATIONS_TOTAL.labels(result="final").inc()
                 metadata["final_validation"] = {"passed": True}
@@ -117,7 +117,7 @@ def run_agent_platform(
                         current_request = merge_tool_result_into_request(current_request, result)
                         AGENT_TOOL_REQUESTS_TOTAL.labels(tool=str(name), status="ok").inc()
                     except Exception as exc:
-                        call_record["error"] = f"{type(exc).__name__}: {exc}"
+                        call_record["error"] = type(exc).__name__
                         metadata["tool_calls"].append(call_record)
                         observations.append(call_record)
                         AGENT_TOOL_REQUESTS_TOTAL.labels(tool=str(name or "unknown"), status="blocked").inc()
@@ -126,10 +126,10 @@ def run_agent_platform(
         AGENT_ITERATIONS_TOTAL.labels(result="budget_exceeded").inc()
         return fallback(current_request, current_rca, decision, metadata, "max_iterations")
     except (json.JSONDecodeError, ValueError, TypeError) as exc:
-        metadata["error"] = f"{type(exc).__name__}: {exc}"
+        metadata["error"] = type(exc).__name__
         return fallback(current_request, current_rca, decision, metadata, "malformed_agent_json")
     except Exception as exc:
-        metadata["error"] = f"{type(exc).__name__}: {exc}"
+        metadata["error"] = type(exc).__name__
         return fallback(current_request, current_rca, decision, metadata, "agent_runtime_error")
 
 

@@ -72,6 +72,16 @@ Run from `capstone/tf-1/ai/engine-skeleton/report-ui`:
 npm run build
 ```
 
+Latest `v1.0.0` local verification:
+
+```text
+python -m compileall app scripts -> passed
+python -m pytest tests -q -> 64 passed
+python scripts/validate_datapack.py -> datapack validation passed
+docker compose -f docker-compose.observability.yml config --quiet -> passed
+npm run build -> passed
+```
+
 ## Bootstrap AWS Endpoint Evidence
 
 This endpoint is the W11 bootstrap/demo endpoint for early CDO integration and mentor smoke tests. It is not the final W12 hosting target; each CDO team is expected to deploy its own AI engine instance from the AI-provided artifact according to `contracts/deployment-contract.md`.
@@ -81,7 +91,7 @@ This endpoint is the W11 bootstrap/demo endpoint for early CDO integration and m
 | Endpoint URL | `https://snpmtcwpys.us-east-1.awsapprunner.com` |
 | Runtime | AWS App Runner demo service |
 | Service ARN | `arn:aws:apprunner:us-east-1:589077667575:service/tf1-ai-triage-engine/540fcd194a144db09c63786d3d28c8f9` |
-| `/healthz` result | Passed, returned `{"status":"ok","service":"tf1-ai-triage-engine","version":"v1"}` |
+| `/healthz` result | Passed locally for `v1.0.0`; previous bootstrap endpoint returned `{"status":"ok","service":"tf1-ai-triage-engine","version":"v1"}` before final release bump |
 | `/v1/triage` sample result | Passed with `latency-degradation.request.json`, returned `DIAGNOSED / latency_degradation` |
 | Image tag | `589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest` |
 | Image digest | `sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909` |

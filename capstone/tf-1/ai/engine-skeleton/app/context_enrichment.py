@@ -67,7 +67,7 @@ def scope_from_body(body: dict[str, Any]) -> ToolScope:
 def load_evidence_bundle(registry: ToolRegistry, evidence_uri: str, scope: ToolScope) -> dict[str, Any] | None:
     try:
         bundle = registry.client.get_evidence_bundle(evidence_uri, scope)
-    except (AttributeError, OSError, ValueError, RuntimeError, ToolScopeError):
+    except Exception:
         return None
     return bundle if isinstance(bundle, dict) else None
 
@@ -111,7 +111,7 @@ def apply_tool_fallbacks(body: dict[str, Any], registry: ToolRegistry, scope: To
 def execute_context_tool(registry: ToolRegistry, tool_name: str, scope: ToolScope) -> Any:
     try:
         return registry.execute(tool_name, {}, scope).get("result")
-    except (ToolScopeError, OSError, ValueError, RuntimeError):
+    except Exception:
         DEGRADED_MODE_TOTAL.labels(reason="context_tool_failure").inc()
         return None
 

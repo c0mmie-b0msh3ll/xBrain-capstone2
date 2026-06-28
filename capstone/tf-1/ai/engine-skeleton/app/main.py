@@ -2,26 +2,40 @@ from __future__ import annotations
 
 import hashlib
 import os
+import threading
 import time
+from collections import defaultdict, deque
+from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
-from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.action_catalog import select_actions
 from app.audit_store import append_audit_record, build_failure_audit_record, build_success_audit_record, latest_audit_record
+from app.evidence_budget import compact_request_evidence
 from app.agent_runtime import agent_platform_enabled, run_agent_platform
 from app.context_enrichment import enrich_triage_context
 from app.context_tools import ToolRegistry, ToolScopeError, scope_from_request
+from app.idempotency_store import (
+    complete_record,
+    fail_record,
+    is_stale,
+    read_record,
+    request_hash,
+    start_record,
+)
 from app.investigation_router import select_investigation_mode
-from app.llm import investigate_with_tools, reword_catalog_actions, synthesize_investigation_summary
+from app.llm import current_llm_usage_summary, investigate_with_tools, reset_llm_usage, reword_catalog_actions, synthesize_investigation_summary
 from app.observability import (
     BUDGET_EXCEEDED_TOTAL,
     DEGRADED_MODE_TOTAL,
     INVESTIGATION_MODE_SELECTED_TOTAL,
+    IDEMPOTENCY_EVENTS_TOTAL,
     QA_ITERATIONS_TOTAL,
+    TRIAGE_REJECTED_TOTAL,
     TRIAGE_INFLIGHT_REQUESTS,
     TRIAGE_REQUEST_DURATION_SECONDS,
     TRIAGE_REQUESTS_TOTAL,
@@ -38,7 +52,9 @@ from app.report_store import list_reports, read_report
 configure_logging()
 configure_tracing()
 
-app = FastAPI(title="TF1 AI Triage Engine", version="v1")
+RELEASE_VERSION = "v1.0.0"
+
+app = FastAPI(title="TF1 AI Triage Engine", version=RELEASE_VERSION)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -46,6 +62,38 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+_triage_semaphore: threading.BoundedSemaphore | None = None
+_triage_semaphore_size: int | None = None
+_rate_limit_lock = threading.Lock()
+_rate_limit_hits: dict[str, deque[float]] = defaultdict(deque)
+
+
+@app.middleware("http")
+async def triage_ingress_guards(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    if request.url.path != "/v1/triage":
+        return await call_next(request)
+
+    max_bytes = env_int("AIOPS_MAX_REQUEST_BYTES", 512 * 1024)
+    content_length = request.headers.get("content-length")
+    if max_bytes > 0 and content_length and int_or_none(content_length) and int(content_length) > max_bytes:
+        TRIAGE_REJECTED_TOTAL.labels(reason="request_too_large").inc()
+        return JSONResponse(status_code=413, content={"detail": "Request payload exceeds configured limit"})
+
+    limit = env_int("AIOPS_RATE_LIMIT_PER_MINUTE", 60)
+    if limit > 0:
+        tenant_id = request.headers.get("X-Tenant-Id", "unknown")
+        now = time.time()
+        with _rate_limit_lock:
+            hits = _rate_limit_hits[tenant_id]
+            while hits and now - hits[0] >= 60:
+                hits.popleft()
+            if len(hits) >= limit:
+                TRIAGE_REJECTED_TOTAL.labels(reason="rate_limited").inc()
+                return JSONResponse(status_code=429, content={"detail": "Triage rate limit exceeded"})
+            hits.append(now)
+
+    return await call_next(request)
 
 
 Severity = Literal["critical", "high", "medium", "low", "unknown"]
@@ -189,7 +237,7 @@ class TriageResponse(BaseModel):
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
-    return {"status": "ok", "service": "tf1-ai-triage-engine", "version": "v1"}
+    return {"status": "ok", "service": "tf1-ai-triage-engine", "version": RELEASE_VERSION}
 
 
 @app.get("/readyz")
@@ -266,21 +314,94 @@ def triage(
             build_failure_audit_record(request, audit_id, type(exc).__name__, round((time.perf_counter() - started) * 1000, 2))
         )
         raise
-    return triage_request(request, audit_id)
+    return triage_with_local_guards(request, audit_id)
 
 
-def triage_request(request: TriageRequest, audit_id: str | None = None) -> TriageResponse:
+def triage_with_local_guards(request: TriageRequest, audit_id: str) -> TriageResponse:
+    semaphore = triage_semaphore()
+    acquired = False
+    if semaphore is not None:
+        acquired = semaphore.acquire(blocking=False)
+        if not acquired:
+            TRIAGE_REJECTED_TOTAL.labels(reason="concurrency_cap").inc()
+            raise HTTPException(status_code=503, detail="Triage concurrency limit reached")
+
+    hash_value = request_hash(
+        {
+            "request": request.model_dump(mode="json"),
+            "runtime_hooks": {
+                "agent_platform_enabled": repr(agent_platform_enabled),
+                "run_agent_platform": repr(run_agent_platform),
+                "enrich_triage_context": repr(enrich_triage_context),
+            },
+        }
+    )
+    idempotency_metadata: dict[str, Any] = {"request_hash": hash_value}
+    try:
+        record = read_record(audit_id)
+        if record and record.get("status") == "completed" and record.get("request_hash") == hash_value and isinstance(record.get("response"), dict):
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="replayed_completed").inc()
+            return TriageResponse.model_validate(record["response"])
+        if record and record.get("status") == "completed" and record.get("request_hash") != hash_value:
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="conflict_reprocessed").inc()
+            idempotency_metadata["conflict"] = True
+            idempotency_metadata["previous_request_hash"] = record.get("request_hash")
+        elif record and record.get("status") == "in_progress" and not is_stale(record):
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="in_progress_rejected").inc()
+            TRIAGE_REJECTED_TOTAL.labels(reason="idempotency_in_progress").inc()
+            raise HTTPException(status_code=409, detail="Triage is already in progress for this audit_id")
+        elif record and record.get("status") == "in_progress":
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="stale_reprocessed").inc()
+            idempotency_metadata["stale_reprocess"] = True
+        elif record and record.get("status") == "failed_retryable":
+            IDEMPOTENCY_EVENTS_TOTAL.labels(result="failed_retryable_reprocessed").inc()
+
+        start_record(audit_id, hash_value)
+        response = triage_request(request, audit_id, idempotency_metadata)
+        complete_record(audit_id, hash_value, response)
+        IDEMPOTENCY_EVENTS_TOTAL.labels(result="completed").inc()
+        return response
+    except HTTPException:
+        raise
+    except Exception as exc:
+        fail_record(audit_id, hash_value, type(exc).__name__)
+        IDEMPOTENCY_EVENTS_TOTAL.labels(result="failed").inc()
+        raise
+    finally:
+        if semaphore is not None and acquired:
+            semaphore.release()
+
+
+def triage_semaphore() -> threading.BoundedSemaphore | None:
+    global _triage_semaphore, _triage_semaphore_size
+    try:
+        size = int(os.getenv("AIOPS_MAX_CONCURRENT_TRIAGE_REQUESTS", "0"))
+    except ValueError:
+        size = 0
+    if size <= 0:
+        return None
+    if _triage_semaphore is None or _triage_semaphore_size != size:
+        _triage_semaphore = threading.BoundedSemaphore(size)
+        _triage_semaphore_size = size
+    return _triage_semaphore
+
+
+def triage_request(request: TriageRequest, audit_id: str | None = None, idempotency_metadata: dict[str, Any] | None = None) -> TriageResponse:
     audit_id = audit_id or build_audit_id(request)
     started = time.perf_counter()
     TRIAGE_INFLIGHT_REQUESTS.inc()
     classification = "unknown"
     status = "error"
+    evidence_budget_metadata: dict[str, Any] = {"truncated": False, "stages": []}
     try:
+        reset_llm_usage()
         with span("triage_request", audit_id=audit_id, tenant_id=request.tenant_id, service=request.alert.service, environment=request.environment):
             log_triage_stage(request, audit_id, "started", "ok")
             with span("context_enrichment", audit_id=audit_id):
                 enriched_body = enrich_triage_context(request.model_dump(mode="json"))
             request = TriageRequest.model_validate(enriched_body)
+            request, budget_metadata = compact_request_evidence(request)
+            evidence_budget_metadata = merge_evidence_budget(evidence_budget_metadata, "context", budget_metadata)
 
             with span("deterministic_rca", audit_id=audit_id):
                 rca = analyze_request(request)
@@ -308,9 +429,13 @@ def triage_request(request: TriageRequest, audit_id: str | None = None) -> Triag
             if mode_selection.selected_mode == "agent_assisted":
                 with span("llm_investigation", audit_id=audit_id):
                     request, rca, decision, tool_metadata = investigate_with_tools(request, decision, rca)
+                    request, budget_metadata = compact_request_evidence(request)
+                    evidence_budget_metadata = merge_evidence_budget(evidence_budget_metadata, "agent_assisted_tools", budget_metadata)
             elif mode_selection.selected_mode == "agent_platform":
                 with span("agent_platform", audit_id=audit_id):
                     request, rca, decision, agent_metadata, platform_action_ids = run_agent_platform(request, decision, rca)
+                    request, budget_metadata = compact_request_evidence(request)
+                    evidence_budget_metadata = merge_evidence_budget(evidence_budget_metadata, "agent_platform_tools", budget_metadata)
 
             with span("deterministic_rca_reclassify", audit_id=audit_id):
                 rca = enrich_rca_with_jira_history(request, rca)
@@ -337,6 +462,8 @@ def triage_request(request: TriageRequest, audit_id: str | None = None) -> Triag
                         "tool_investigation": tool_metadata,
                         "agent_platform": agent_metadata,
                         "qa": qa_metadata,
+                        "evidence_budget": evidence_budget_metadata,
+                        "idempotency": idempotency_metadata,
                     },
                     platform_action_ids,
                 )
@@ -353,6 +480,7 @@ def triage_request(request: TriageRequest, audit_id: str | None = None) -> Triag
                 complexity_score=mode_selection.complexity_score,
                 agent_iterations=(agent_metadata or {}).get("iterations"),
                 fallback_reason=(agent_metadata or {}).get("fallback_reason"),
+                estimated_cost_usd=response.llm_metadata.get("cost_estimate", {}).get("total_estimated_cost_usd"),
             )
             _append_audit_record_safely(build_success_audit_record(request, response, round((time.perf_counter() - started) * 1000, 2)))
             return response
@@ -385,6 +513,39 @@ def _append_audit_record_safely(record: dict[str, Any]) -> None:
             environment=record.get("environment"),
             error_class=type(exc).__name__,
         )
+
+
+def merge_evidence_budget(current: dict[str, Any], stage: str, metadata: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(current)
+    stages = list(merged.get("stages", []))
+    stage_record = {"stage": stage, **metadata}
+    stages.append(stage_record)
+    merged["stages"] = stages
+    merged["truncated"] = bool(merged.get("truncated")) or bool(metadata.get("truncated"))
+    merged["bytes_before"] = max(int(merged.get("bytes_before") or 0), int(metadata.get("bytes_before") or 0))
+    merged["bytes_after"] = int(metadata.get("bytes_after") or merged.get("bytes_after") or 0)
+    reasons = set(merged.get("reasons", []))
+    reasons.update(metadata.get("reasons", []))
+    merged["reasons"] = sorted(reasons)
+    if metadata.get("counts_before"):
+        merged["counts_before"] = metadata.get("counts_before")
+    if metadata.get("counts_after"):
+        merged["counts_after"] = metadata.get("counts_after")
+    return merged
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def int_or_none(value: str) -> int | None:
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def validate_headers(
@@ -574,6 +735,7 @@ def log_triage_stage(
     complexity_score: int | None = None,
     agent_iterations: int | None = None,
     fallback_reason: str | None = None,
+    estimated_cost_usd: float | None = None,
 ) -> None:
     duration_ms = round((time.perf_counter() - started) * 1000, 2) if started else None
     log_event(
@@ -597,6 +759,7 @@ def log_triage_stage(
         complexity_score=complexity_score,
         agent_iterations=agent_iterations,
         fallback_reason=fallback_reason,
+        estimated_cost_usd=estimated_cost_usd,
     )
 
 
@@ -657,6 +820,7 @@ def build_response(
         action_wording = reword_catalog_actions(request, decision, rca, selected_actions)
     action_payloads = action_wording["actions"]
     llm_metadata["action_wording"] = action_wording["metadata"]
+    llm_metadata["cost_estimate"] = current_llm_usage_summary()
     actions = [RecommendedAction(**action) for action in action_payloads]
     suggested_assignee_account_id, suggestion_reason = suggest_assignee(request, owner, rca)
 

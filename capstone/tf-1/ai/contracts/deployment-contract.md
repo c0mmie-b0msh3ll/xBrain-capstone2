@@ -72,6 +72,10 @@ The AI engine is an event-driven triage compute service. Customer applications e
 | `AIOPS_AGENT_MAX_ITERATIONS` | env var | Kubernetes Deployment or ConfigMap | Default `2` |
 | `AIOPS_AGENT_MAX_TOOL_CALLS` | env var | Kubernetes Deployment or ConfigMap | Default `5` |
 | `AIOPS_TRIAGE_DEADLINE_SECONDS` | env var | Kubernetes Deployment or ConfigMap | Default `30` |
+| `AIOPS_RATE_LIMIT_PER_MINUTE` | env var | Kubernetes Deployment or ConfigMap | Default `60`; app-level per-tenant `/v1/triage` rate limit returning `429` |
+| `AIOPS_MAX_REQUEST_BYTES` | env var | Kubernetes Deployment or ConfigMap | Default `524288`; app-level request payload cap returning `413` |
+| `AIOPS_LLM_INPUT_COST_PER_1K` | env var | Kubernetes Deployment or ConfigMap | Optional model input cost rate for per-triage cost estimate; default `0` |
+| `AIOPS_LLM_OUTPUT_COST_PER_1K` | env var | Kubernetes Deployment or ConfigMap | Optional model output cost rate for per-triage cost estimate; default `0` |
 | `AWS_REGION` | env var | Kubernetes Deployment or ConfigMap | `us-east-1` |
 | `AGENTCORE_RUNTIME_ARN` | env var | Kubernetes Deployment or ConfigMap | Required only when AgentCore modes are enabled |
 | `ENABLE_AGENTCORE_LLM` | env var | Kubernetes Deployment or ConfigMap | Enables AgentCore summary/action/platform calls |

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
+from contextvars import ContextVar
 from typing import Any
 
 from app.context_tools import ToolRegistry, ToolScopeError, merge_tool_result_into_request, scope_from_request
@@ -23,6 +24,28 @@ DEFAULT_MODEL_IDS = [
     "us.anthropic.claude-opus-4-6-v1",
     "us.amazon.nova-2-lite-v1:0",
 ]
+
+_LLM_USAGE_ITEMS: ContextVar[list[dict[str, Any]]] = ContextVar("llm_usage_items", default=[])
+
+
+def reset_llm_usage() -> None:
+    _LLM_USAGE_ITEMS.set([])
+
+
+def current_llm_usage_summary() -> dict[str, Any]:
+    items = list(_LLM_USAGE_ITEMS.get())
+    return {
+        "currency": "USD",
+        "total_estimated_cost_usd": round(sum(float(item.get("estimated_cost_usd", 0.0)) for item in items), 8),
+        "total_prompt_tokens": sum(int(item.get("prompt_tokens", 0)) for item in items),
+        "total_completion_tokens": sum(int(item.get("completion_tokens", 0)) for item in items),
+        "total_tokens": sum(int(item.get("total_tokens", 0)) for item in items),
+        "calls": items,
+        "rates": {
+            "input_cost_per_1k": float(os.getenv("AIOPS_LLM_INPUT_COST_PER_1K", "0") or 0),
+            "output_cost_per_1k": float(os.getenv("AIOPS_LLM_OUTPUT_COST_PER_1K", "0") or 0),
+        },
+    }
 
 
 def synthesize_investigation_summary(request: Any, decision: dict[str, Any], rca: dict[str, Any]) -> dict[str, Any]:
@@ -146,7 +169,7 @@ def investigate_with_tools(
                 metadata["tool_calls"].append({key: value for key, value in result.items() if key != "result"})
                 enriched_request = merge_tool_result_into_request(enriched_request, result)
             except Exception as exc:
-                call_record["error"] = f"{type(exc).__name__}: {exc}"
+                call_record["error"] = type(exc).__name__
                 metadata["tool_calls"].append(call_record)
         rerun_rca = analyze_request(enriched_request)
         rerun_decision = decision.copy()
@@ -156,7 +179,7 @@ def investigate_with_tools(
         return enriched_request, rerun_rca, rerun_decision, metadata
     except Exception as exc:
         metadata["fallback"] = True
-        metadata["error"] = f"{type(exc).__name__}: {exc}"
+        metadata["error"] = type(exc).__name__
         DEGRADED_MODE_TOTAL.labels(reason="llm_tool_failure").inc()
         return request, rca, decision, metadata
 
@@ -228,10 +251,23 @@ def tracked_llm_call(request: Any, stage: str, payload: dict[str, Any], model: s
     with span("llm_call", stage=stage, model=model, service=request.alert.service, environment=request.environment):
         raw_text = invoke_agentcore_payload(request, stage, payload, session_id=session_id)
     completion_tokens = estimate_tokens(raw_text)
+    estimated_cost = estimate_llm_cost_usd(prompt_tokens, completion_tokens)
     LLM_CALLS_TOTAL.labels(stage=stage, model=model, status="ok").inc()
     LLM_TOKENS_TOTAL.labels(stage=stage, model=model, type="prompt").inc(prompt_tokens)
     LLM_TOKENS_TOTAL.labels(stage=stage, model=model, type="completion").inc(completion_tokens)
-    LLM_ESTIMATED_COST_USD_TOTAL.labels(stage=stage, model=model).inc(estimate_llm_cost_usd(prompt_tokens, completion_tokens))
+    LLM_ESTIMATED_COST_USD_TOTAL.labels(stage=stage, model=model).inc(estimated_cost)
+    usage = list(_LLM_USAGE_ITEMS.get())
+    usage.append(
+        {
+            "stage": stage,
+            "model": model,
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+            "estimated_cost_usd": round(estimated_cost, 8),
+        }
+    )
+    _LLM_USAGE_ITEMS.set(usage)
     return raw_text
 
 

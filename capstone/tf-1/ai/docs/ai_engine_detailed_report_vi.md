@@ -782,12 +782,13 @@ python -m compileall app scripts
 python -m pytest tests -q
 python scripts/validate_datapack.py
 docker compose -f docker-compose.observability.yml config --quiet
+npm run build  # from engine-skeleton/report-ui
 ```
 
 Latest known test status:
 
 ```text
-51 passed
+64 passed
 ```
 
 ## 21. Implementation Files
@@ -799,6 +800,8 @@ Important files:
 - `engine-skeleton/app/agent_runtime.py`: AgentCore platform loop, final validation, fallback.
 - `engine-skeleton/app/context_tools.py`: read-only tool registry and scope validation.
 - `engine-skeleton/app/context_enrichment.py`: bounded context enrichment before RCA.
+- `engine-skeleton/app/evidence_budget.py`: evidence compaction and budget metadata.
+- `engine-skeleton/app/idempotency_store.py`: durable retry/idempotency records for deterministic `audit_id`.
 - `engine-skeleton/app/rca.py`: deterministic anomaly detection, topology, causal hints, RCA ranking.
 - `engine-skeleton/app/action_catalog.py`: catalog actions and risk gating.
 - `engine-skeleton/app/llm.py`: AgentCore calls for summary/action wording/assisted tools.

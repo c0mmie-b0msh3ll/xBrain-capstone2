@@ -58,6 +58,7 @@ CDO's Prometheus, Loki, and Jaeger stack is enough as the base observability sta
   - `aiops_triage_requests_total{status,classification}`
   - `aiops_triage_request_duration_seconds`
   - `aiops_triage_inflight_requests`
+  - completed triage logs include `estimated_cost_usd`
 - Context metrics:
   - `aiops_context_tool_calls_total{tool,status}`
   - `aiops_context_tool_duration_seconds{tool}`
@@ -68,10 +69,18 @@ CDO's Prometheus, Loki, and Jaeger stack is enough as the base observability sta
   - `aiops_llm_tokens_total{stage,model,type}`
   - `aiops_llm_estimated_cost_usd_total{stage,model}`
   - `aiops_qa_iterations_total{result}`
+- Per-response cost:
+  - `llm_metadata.cost_estimate.total_estimated_cost_usd`
+  - `llm_metadata.cost_estimate.total_prompt_tokens`
+  - `llm_metadata.cost_estimate.total_completion_tokens`
+  - `llm_metadata.cost_estimate.calls[]` by stage and model
 - Self-protection metrics:
   - `aiops_circuit_breaker_open{dependency}`
   - `aiops_budget_exceeded_total{budget_type}`
   - `aiops_degraded_mode_total{reason}`
+  - `aiops_evidence_truncation_total{type,reason}`
+  - `aiops_idempotency_events_total{result}`
+  - `aiops_triage_rejected_total{reason}`
 
 Use low-cardinality labels only. Do not label metrics by alert title, trace id, incident id, or raw customer evidence. Treat service labels carefully; only use them when the service set is bounded for the demo.
 
@@ -100,7 +109,43 @@ Use low-cardinality labels only. Do not label metrics by alert title, trace id, 
 ### App Failures
 
 - High concurrent incidents, slow context tools, report write failure, SQS duplicate, or repeated alert storms.
-- Behavior: use request deadlines, context-tool circuit breakers, duplicate detection by alert fingerprint where possible, and degraded deterministic mode.
+- Behavior: use request deadlines, context-tool circuit breakers, deterministic `audit_id` idempotency, optional local concurrency caps, and degraded deterministic mode.
+
+### Evidence Budgeting
+
+- Inline request evidence and evidence fetched by context tools are compacted before RCA, AgentCore prompts, and response assembly.
+- Defaults:
+  - `AIOPS_MAX_EVIDENCE_BYTES=262144`
+  - `AIOPS_MAX_METRIC_SERIES=20`
+  - `AIOPS_MAX_METRIC_POINTS_PER_SERIES=120`
+  - `AIOPS_MAX_LOG_RECORDS=50`
+  - `AIOPS_MAX_TRACE_RECORDS=20`
+  - `AIOPS_MAX_LOG_MESSAGE_CHARS=500`
+  - `AIOPS_MAX_TRACE_LABEL_BYTES=2048`
+- Compaction is deterministic: metrics keep the highest-signal bounded series and newest points, logs keep high-signal/newest records with bounded messages, and traces keep error/slow/newest records with bounded labels.
+- Raw logs, metrics, and traces remain in memory for the current request only. Audit records store hashes, counts, lineage, and metadata, not raw customer evidence.
+- Response `llm_metadata.evidence_budget` records truncation status, counts before/after, bytes before/after, stages, and reasons.
+
+### Idempotency And Retry Safety
+
+- The public `/v1/triage` contract remains unchanged.
+- The engine computes the existing deterministic `audit_id` from `tenant_id:correlation_id:incident_id`.
+- Idempotency records are stored under `audit/idempotency/{audit_id}.json` by default, or `AIOPS_IDEMPOTENCY_DIR` when configured.
+- On request start, the engine writes `in_progress` with attempt, owner process id, request hash, and timestamps.
+- On success, it writes `completed` with a compact response artifact and response hash.
+- On retry:
+  - completed with the same request hash replays the stored response;
+  - completed with a different request hash reprocesses and records `idempotency.conflict=true`;
+  - non-stale `in_progress` returns `409`;
+  - stale `in_progress` or `failed_retryable` reprocesses.
+- `AIOPS_IDEMPOTENCY_STALE_SECONDS=120` by default.
+- Exceptions write `failed_retryable` with error class only.
+
+### Local Backpressure
+
+- `AIOPS_MAX_CONCURRENT_TRIAGE_REQUESTS=0` disables the local semaphore.
+- When enabled and saturated, `/v1/triage` returns `503`; CDO remains responsible for queueing and retry.
+- `AIOPS_TRIAGE_DEADLINE_SECONDS=30` remains the request deadline signal.
 
 ### Observability Stack Failures
 
@@ -134,10 +179,23 @@ Use low-cardinality labels only. Do not label metrics by alert title, trace id, 
   - `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces`
   - `AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS=3`
   - `AIOPS_TRIAGE_DEADLINE_SECONDS=30`
+  - `AIOPS_RATE_LIMIT_PER_MINUTE=60`
+  - `AIOPS_MAX_REQUEST_BYTES=524288`
   - `AIOPS_LLM_MAX_TOKENS_PER_INCIDENT`
+  - `AIOPS_LLM_INPUT_COST_PER_1K=0`
+  - `AIOPS_LLM_OUTPUT_COST_PER_1K=0`
   - `AIOPS_QA_MAX_ITERATIONS=1`
   - `AIOPS_QA_REPAIR_MAX_ITERATIONS=1`
   - `AIOPS_DEGRADED_MODE_ON_BUDGET_EXCEEDED=true`
+  - `AIOPS_MAX_EVIDENCE_BYTES=262144`
+  - `AIOPS_MAX_METRIC_SERIES=20`
+  - `AIOPS_MAX_METRIC_POINTS_PER_SERIES=120`
+  - `AIOPS_MAX_LOG_RECORDS=50`
+  - `AIOPS_MAX_TRACE_RECORDS=20`
+  - `AIOPS_MAX_LOG_MESSAGE_CHARS=500`
+  - `AIOPS_MAX_TRACE_LABEL_BYTES=2048`
+  - `AIOPS_IDEMPOTENCY_STALE_SECONDS=120`
+  - `AIOPS_MAX_CONCURRENT_TRIAGE_REQUESTS=0`
 
 ## Test Plan
 

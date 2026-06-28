@@ -278,10 +278,13 @@ CDO sends this seed through the agreed integration layer:
 
 Minimum required seed fields are `tenant_id`, `correlation_id`, `incident_id`, `environment`, `service`, `severity`, `title`, `started_at`, and `received_at`. Recommended labels such as `region`, `cluster`, `namespace`, `metric_names`, `trace_id`, and `suspected_dependency` help AI Ops query the right bounded evidence before cleaning and triage.
 
-In the current code, `evidence_uri` is documented as handoff metadata but is not yet implemented as a bundle reader. Until that reader is added, CDO should either:
+In the current `v1.0.0` code, `evidence_uri` is implemented as a bounded evidence-bundle lookup through the AIOps context layer. CDO can use any approved storage or proxy mechanism as long as the AI engine receives a scoped URI/reference and `EVIDENCE_BUNDLE_BASE_PATH` or the equivalent evidence access path is configured. If `evidence_uri` is missing, unavailable, malformed, or out of scope, the engine falls back to configured bounded context tools when available.
 
-- expose Prometheus/Loki/deploy/ownership sources through existing env vars, or
-- send full normalized context directly to `/v1/triage` using `telemetry-contract.md`.
+CDO can therefore choose one of three valid evidence paths:
+
+- send full normalized context directly to `/v1/triage` using `telemetry-contract.md`,
+- send `alert.labels.evidence_uri` pointing to a bounded evidence bundle, or
+- expose Prometheus/Loki/Jaeger/deploy/ownership/Jira sources through approved env-configured context access.
 
 ## Data Bounds And Security Requirements
 

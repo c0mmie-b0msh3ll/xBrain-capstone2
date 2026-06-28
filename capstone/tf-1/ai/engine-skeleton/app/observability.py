@@ -129,6 +129,24 @@ AGENT_FALLBACK_TOTAL = Counter(
     ["reason"],
     registry=REGISTRY,
 )
+EVIDENCE_TRUNCATION_TOTAL = Counter(
+    "aiops_evidence_truncation_total",
+    "Evidence compaction events by evidence type and reason.",
+    ["type", "reason"],
+    registry=REGISTRY,
+)
+IDEMPOTENCY_EVENTS_TOTAL = Counter(
+    "aiops_idempotency_events_total",
+    "Idempotency decisions by result.",
+    ["result"],
+    registry=REGISTRY,
+)
+TRIAGE_REJECTED_TOTAL = Counter(
+    "aiops_triage_rejected_total",
+    "Triage requests rejected by local guard reason.",
+    ["reason"],
+    registry=REGISTRY,
+)
 
 
 class JsonFormatter(logging.Formatter):
@@ -199,6 +217,7 @@ def sanitize_log_fields(fields: dict[str, Any]) -> dict[str, Any]:
         "complexity_score",
         "agent_iterations",
         "fallback_reason",
+        "estimated_cost_usd",
     }
     sanitized = {key: value for key, value in fields.items() if key in allowed}
     if LOG_POLICY != "metadata_only":
