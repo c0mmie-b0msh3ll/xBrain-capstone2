@@ -132,14 +132,45 @@ docker build -t tf1-agentcore-investigator:ac21f60 capstone/tf-1/ai/engine-skele
 
 ## Config Production Cần Chuẩn Bị
 
+Core runtime / auth / guardrails:
+
 ```text
-AIOPS_PERSISTENCE_BACKEND=dynamodb
-AIOPS_DYNAMODB_TABLE=<table name>
+APP_ENV=prod
+SERVICE_AUTH_TOKEN=<optional fallback token nếu chưa dùng SigV4/JWT>
 AWS_REGION=us-east-1
+AWS_DEFAULT_REGION=us-east-1
+AIOPS_INVESTIGATION_MODE=auto
+AIOPS_TRIAGE_DEADLINE_SECONDS=30
+AIOPS_RATE_LIMIT_PER_MINUTE=60
+AIOPS_MAX_REQUEST_BYTES=524288
+AIOPS_MAX_CONCURRENT_TRIAGE_REQUESTS=0
+```
+
+AgentCore / Bedrock path:
+
+```text
 AGENTCORE_RUNTIME_ARN=<runtime arn>
 ENABLE_AGENTCORE_LLM=true
 ENABLE_AGENTCORE_LLM_TOOLS=true
-AIOPS_INVESTIGATION_MODE=auto
+BEDROCK_MODEL_ID=<optional, default us.amazon.nova-micro-v1:0 cho AgentCore runtime>
+BEDROCK_MODEL_IDS=<optional csv nếu muốn fallback model list>
+BEDROCK_MAX_TOKENS=700
+AIOPS_AGENT_MAX_ITERATIONS=2
+AIOPS_AGENT_MAX_TOOL_CALLS=5
+AIOPS_ASSISTED_COMPLEXITY_THRESHOLD=3
+AIOPS_AGENT_COMPLEXITY_THRESHOLD=6
+AIOPS_LLM_MAX_TOKENS_PER_INCIDENT=0
+AIOPS_LLM_INPUT_COST_PER_1K=0
+AIOPS_LLM_OUTPUT_COST_PER_1K=0
+```
+
+Audit / idempotency production backend:
+
+```text
+AIOPS_PERSISTENCE_BACKEND=dynamodb
+AIOPS_DYNAMODB_TABLE=<table name>
+AIOPS_AUDIT_RETENTION_DAYS=90
+AIOPS_IDEMPOTENCY_STALE_SECONDS=120
 ```
 
 DynamoDB table:
@@ -148,6 +179,81 @@ DynamoDB table:
 partition key string: PK
 sort key string: SK
 TTL attribute: expires_at
+```
+
+Report JSON storage, nếu deploy report UI hoặc muốn giữ report local:
+
+```text
+REPORTS_DIR=/var/lib/tf1-ai/reports
+```
+
+File backend fallback, chỉ dùng nếu không dùng DynamoDB:
+
+```text
+AIOPS_PERSISTENCE_BACKEND=file
+AIOPS_AUDIT_LOG_PATH=/var/lib/tf1-ai/audit/audit-log.jsonl
+AIOPS_IDEMPOTENCY_DIR=/var/lib/tf1-ai/audit/idempotency
+```
+
+Evidence/context integrations:
+
+```text
+PROMETHEUS_URL=<bounded metrics endpoint>
+LOKI_URL=<bounded logs endpoint>
+JAEGER_URL=<bounded traces endpoint>
+DEPLOY_METADATA_PATH=<deploy metadata json path>
+OWNERSHIP_PATH=<ownership/runbook json path>
+EVIDENCE_BUNDLE_BASE_PATH=<bundle base path>
+JIRA_HISTORY_PATH=<read-only jira history/accountId map>
+KNOWN_ERRORS_PATH=<known errors json path>
+AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS=3
+LLM_TOOL_MAX_WINDOW_MINUTES=60
+LLM_TOOL_LOG_LIMIT=50
+LLM_TOOL_MAX_CALLS=3
+```
+
+Evidence budget / payload caps:
+
+```text
+AIOPS_MAX_EVIDENCE_BYTES=262144
+AIOPS_MAX_METRIC_SERIES=20
+AIOPS_MAX_METRIC_POINTS_PER_SERIES=120
+AIOPS_MAX_LOG_RECORDS=50
+AIOPS_MAX_TRACE_RECORDS=20
+AIOPS_MAX_LOG_MESSAGE_CHARS=500
+AIOPS_MAX_TRACE_LABEL_BYTES=2048
+```
+
+QA / observability:
+
+```text
+AIOPS_QA_MAX_ITERATIONS=1
+AIOPS_QA_REPAIR_MAX_ITERATIONS=1
+AIOPS_OBSERVABILITY_ENABLED=true
+AIOPS_LOG_POLICY=metadata_only
+AIOPS_LOG_LEVEL=INFO
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<optional otel collector endpoint>
+```
+
+Worker/demo flow nếu CDO dùng `app.aiops_worker`:
+
+```text
+TRIAGE_URL=<AI engine /v1/triage URL>
+REPORT_BASE_URL=<report UI base URL>
+TENANT_ID=<tenant id>
+SERVICE_NAME=<service name>
+ENVIRONMENT=<environment>
+SQS_QUEUE_URL=<inbound incident seed queue, nếu dùng>
+SQS_WAIT_SECONDS=5
+SQS_MAX_MESSAGES=1
+SLACK_WEBHOOK_URL=<legacy demo Slack webhook, optional>
+```
+
+Optional nếu bật Slack/Jira SQS handoff:
+
+```text
+TRIAGE_HUB_NOTIFY_SQS_URL=<queue url>
+TRIAGE_HUB_NOTIFY_SQS_DRY_RUN=false
 ```
 
 IAM cho engine role:
@@ -165,13 +271,6 @@ IAM cho AgentCore runtime role:
 ```text
 bedrock:Converse
 bedrock:InvokeModel
-```
-
-Optional nếu bật Slack/Jira SQS handoff:
-
-```text
-TRIAGE_HUB_NOTIFY_SQS_URL=<queue url>
-TRIAGE_HUB_NOTIFY_SQS_DRY_RUN=false
 ```
 
 Nếu bật path này thì worker role cần thêm:
