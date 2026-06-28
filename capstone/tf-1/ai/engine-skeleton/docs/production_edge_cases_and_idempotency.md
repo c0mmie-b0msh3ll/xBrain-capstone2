@@ -32,7 +32,7 @@ The request hash includes the request body and selected runtime-affecting settin
 
 ### Local File Durability
 
-The idempotency store is only durable if the audit base path is mounted to durable storage. If the pod uses ephemeral storage and dies, replay protection is lost. CDO owns durable volume or object-store provisioning.
+The idempotency store must be backed by durable storage in production/EKS. If the pod uses ephemeral storage and dies, replay protection is lost. CDO owns durable volume or object-store provisioning.
 
 ### Partial Audit Or Idempotency Write Failure
 

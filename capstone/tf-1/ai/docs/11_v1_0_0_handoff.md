@@ -27,7 +27,7 @@ Implemented API surface:
 - Log anomaly detection, topology inference, causal hints, RCA candidate ranking, and catalog action selection.
 - Bounded context enrichment from inline evidence, `evidence_uri`, or configured read-only context tools.
 - Evidence compaction before RCA/AgentCore: caps metrics, metric points, logs, log message chars, traces, trace label bytes, and total evidence bytes.
-- AgentCore/LLM optional modes with deterministic fallback.
+- AgentCore/LLM integration with deterministic fallback for failure handling.
 - Read-only tool gateway with tenant/service/environment/window validation.
 - Advisory-only recommendations; no Jira mutation, Slack posting, shell, rollback, restart, scale, or database action execution.
 - Metadata-only audit records and tenant-scoped audit lookup.
@@ -54,31 +54,20 @@ CDO/platform should provide the following for deployed environments:
   - inline normalized evidence in `/v1/triage`;
   - `alert.labels.evidence_uri` and configured evidence bundle base/access;
   - read-only bounded evidence proxy or backend env vars.
-- Durable audit/idempotency storage mount or production replacement store.
+- Durable audit/idempotency storage mount or production replacement store. This is required for production/EKS because retry safety depends on persisted state.
 - Slack rendering and Jira issue creation from AI response fields.
 - Platform metrics/logs/traces collection for `/metrics` and structured logs.
 - Rollout/rollback/canary process for the AI image.
 
-## AgentCore Runtime Options
+## AgentCore Runtime Requirement
 
-AgentCore is optional for the EKS deployment. The engine can run without AgentCore in deterministic mode.
+Production/EKS handoff should deploy the full AI app path, including AgentCore runtime access and durable audit/idempotency storage. The deterministic path remains in the code as a fail-closed fallback when AgentCore/tool calls fail, but it is not the intended production deployment mode.
 
-### Option A - No AgentCore For Initial Deploy
+### Required AgentCore Configuration
 
-Use this for the fastest CDO smoke/E2E path.
+CDO can wire AgentCore in one of two production-supported ways:
 
-```text
-AIOPS_INVESTIGATION_MODE=auto
-# Do not set AGENTCORE_RUNTIME_ARN
-```
-
-Behavior:
-
-- `/v1/triage` still works.
-- The engine uses deterministic RCA, bounded context enrichment, action catalog, audit, idempotency, and metrics.
-- If auto mode would have selected AgentCore, the engine records fallback/planned mode metadata and stays deterministic.
-
-### Option B - CDO Calls AIO-Owned AgentCore Runtime
+### Path A - CDO Calls AIO-Owned AgentCore Runtime
 
 This is possible only if AIO and CDO configure cross-account AWS permissions.
 
@@ -101,15 +90,25 @@ AIOPS_INVESTIGATION_MODE=auto     # or agent_assisted / agent_platform for expli
 AWS_REGION=us-east-1
 ```
 
-If these permissions are not configured, the engine must be deployed without `AGENTCORE_RUNTIME_ARN` and will run deterministic/fallback mode.
+If these permissions are not configured, the agentic runtime path is not fully deployed. The engine may still fail closed through deterministic fallback, but CDO should treat that as degraded mode, not the target production setup.
 
-### Option C - CDO-Owned AgentCore Runtime
+### Path B - CDO-Owned AgentCore Runtime
 
 CDO can deploy/configure its own AgentCore runtime and pass its ARN through `AGENTCORE_RUNTIME_ARN`. The same safety rules still apply: AgentCore never receives raw backend credentials and can only request allowlisted read-only tools through the AI engine gateway.
 
+### Degraded/Local Mode
+
+For local smoke tests only, the app can run without `AGENTCORE_RUNTIME_ARN`:
+
+```text
+AIOPS_INVESTIGATION_MODE=auto
+```
+
+In that mode, `/v1/triage` still works using deterministic RCA, bounded context enrichment, action catalog, audit, idempotency, and metrics. This is useful for development and emergency fallback, but it is not the full production deployment target.
+
 ### Not Implemented In v1.0.0
 
-There is no separate AIO-hosted HTTP proxy endpoint for AgentCore calls in this release. CDO EKS pods either call AWS AgentCore Runtime directly with IAM permissions, or run without AgentCore.
+There is no separate AIO-hosted HTTP proxy endpoint for AgentCore calls in this release. CDO EKS pods call AWS AgentCore Runtime directly with IAM permissions.
 
 ## Runtime Configuration Summary
 
@@ -154,7 +153,7 @@ AIOPS_MAX_TRACE_LABEL_BYTES=2048
 AgentCore/cost:
 
 ```text
-AGENTCORE_RUNTIME_ARN=<optional>
+AGENTCORE_RUNTIME_ARN=<required for production AgentCore path>
 ENABLE_AGENTCORE_LLM=true|false
 ENABLE_AGENTCORE_LLM_TOOLS=true|false
 BEDROCK_MODEL_ID=<optional>
@@ -167,9 +166,9 @@ AIOPS_LLM_OUTPUT_COST_PER_1K=0
 Audit/idempotency:
 
 ```text
-AIOPS_AUDIT_LOG_PATH=audit/audit-log.jsonl
+AIOPS_AUDIT_LOG_PATH=<durable mounted path>/audit-log.jsonl
 AIOPS_AUDIT_RETENTION_DAYS=90
-AIOPS_IDEMPOTENCY_DIR=<optional durable directory>
+AIOPS_IDEMPOTENCY_DIR=<durable mounted path>/idempotency
 AIOPS_IDEMPOTENCY_STALE_SECONDS=120
 ```
 
@@ -237,13 +236,14 @@ CDO remaining:
 - Deploy the image/artifact on the CDO platform.
 - Configure auth, secrets, network, ingress, scaling, and rollback.
 - Configure bounded evidence access or host evidence bundles.
-- Configure durable audit/idempotency storage.
+- Configure durable audit/idempotency storage, for example EBS/EFS or a production replacement such as DynamoDB/Postgres.
+- Configure AgentCore runtime access for the production agentic path.
 - Render Slack and create Jira from AI response fields.
 - Capture final deployed endpoint evidence, E2E screenshots/video, and platform observability evidence.
 
 ## Known Production Notes
 
-- File-based idempotency is suitable for demo/local durable mounts. Production should replace it with a conditional-write durable store such as DynamoDB, Postgres, or an equivalent CDO-managed service.
+- File-based idempotency requires a durable mount. Production can either mount durable storage for the file store or replace it with a conditional-write durable store such as DynamoDB, Postgres, or an equivalent CDO-managed service.
 - The app returns `429` for local per-tenant rate limiting, but CDO should still enforce fleet-level rate limits at ingress/API Gateway.
 - The app returns `413` for request payloads over `AIOPS_MAX_REQUEST_BYTES`; CDO ingress should enforce the same or stricter cap.
 - Audit/log storage is metadata-only, but public triage response evidence can include curated snippets. If production evidence can contain secrets or PII, CDO/AI should add an approved redaction policy before external ticket rendering.
