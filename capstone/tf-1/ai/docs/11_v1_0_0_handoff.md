@@ -59,6 +59,43 @@ CDO/platform should provide the following for deployed environments:
 - Platform metrics/logs/traces collection for `/metrics` and structured logs.
 - Rollout/rollback/canary process for the AI image.
 
+## Deployable Artifacts
+
+Production deploy has two AI-owned runtime artifacts:
+
+1. AI triage engine API
+   - Source: `capstone/tf-1/ai/engine-skeleton`
+   - Dockerfile: `capstone/tf-1/ai/engine-skeleton/Dockerfile`
+   - Runtime port: `8080`
+   - Main endpoints: `/healthz`, `/readyz`, `/metrics`, `/v1/triage`, `/v1/audit/{audit_id}`
+
+2. AgentCore investigator runtime
+   - Source: `capstone/tf-1/ai/engine-skeleton/agentcore_investigator`
+   - Dockerfile: `capstone/tf-1/ai/engine-skeleton/agentcore_investigator/Dockerfile`
+   - Entrypoint: `agentcore_investigator/main.py`
+   - Purpose: Bedrock AgentCore runtime invoked by the triage engine through `AGENTCORE_RUNTIME_ARN`
+   - Model env: `BEDROCK_MODEL_ID`, default `us.amazon.nova-micro-v1:0`
+
+CDO CI/CD should build, scan, sign, and push both artifacts if CDO owns production image promotion. If AIO supplies images directly, AIO must provide both image references and the AgentCore runtime ARN.
+
+Build commands from repo root:
+
+```bash
+docker build -t tf1-ai-triage-engine:v1.0.0 capstone/tf-1/ai/engine-skeleton
+docker build -t tf1-agentcore-investigator:v1.0.0 capstone/tf-1/ai/engine-skeleton/agentcore_investigator
+```
+
+## Production Deploy Order
+
+1. Build/push the AgentCore investigator artifact.
+2. Create or update the Bedrock AgentCore runtime from `agentcore_investigator`.
+3. Grant the AgentCore runtime execution role permission to call the configured Bedrock model.
+4. Capture the created `AGENTCORE_RUNTIME_ARN`.
+5. Build/push the AI triage engine artifact.
+6. Create durable audit/idempotency storage and mount it into the AI engine pod.
+7. Deploy the AI triage engine with `AGENTCORE_RUNTIME_ARN`, storage env vars, evidence access env vars, and auth secrets.
+8. Smoke test `/healthz`, `/readyz`, `/metrics`, and `POST /v1/triage`.
+
 ## AgentCore Runtime Requirement
 
 Production/EKS handoff should deploy the full AI app path, including AgentCore runtime access and durable audit/idempotency storage. The deterministic path remains in the code as a fail-closed fallback when AgentCore/tool calls fail, but it is not the intended production deployment mode.
@@ -76,6 +113,7 @@ Required from AIO:
 - provide `AGENTCORE_RUNTIME_ARN`;
 - allow the CDO EKS workload role/account to invoke that runtime;
 - confirm region and model/runtime availability.
+- provide source/image for `capstone/tf-1/ai/engine-skeleton/agentcore_investigator` if CDO builds the AgentCore runtime in its own pipeline.
 
 Required from CDO:
 
@@ -109,6 +147,149 @@ In that mode, `/v1/triage` still works using deterministic RCA, bounded context 
 ### Not Implemented In v1.0.0
 
 There is no separate AIO-hosted HTTP proxy endpoint for AgentCore calls in this release. CDO EKS pods call AWS AgentCore Runtime directly with IAM permissions.
+
+## Required IAM
+
+AI engine EKS workload role needs permission to invoke the AgentCore runtime:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "bedrock-agentcore:InvokeAgentRuntime",
+    "Resource": "<AGENTCORE_RUNTIME_ARN>"
+  }]
+}
+```
+
+AgentCore investigator runtime execution role needs permission to call the selected Bedrock model:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "bedrock:Converse",
+      "bedrock:InvokeModel"
+    ],
+    "Resource": "*"
+  }]
+}
+```
+
+Scope the model resource tighter if the target AWS account uses model-specific ARNs/policies.
+
+## Required Persistent Storage
+
+Current `v1.0.0` stores audit, reports, and idempotency as local files. In EKS, this must be backed by durable storage.
+
+Recommended for current file-based implementation:
+
+- Use EFS when running more than one replica, because all pods must see the same idempotency records.
+- Use EBS only for a single-replica deployment, because normal EBS PVCs are ReadWriteOnce and do not give shared idempotency across replicas.
+- For production hardening, CDO can replace the file store with DynamoDB/Postgres later, but the current image expects filesystem paths.
+
+Mount one durable volume at:
+
+```text
+/var/lib/tf1-ai
+```
+
+Set:
+
+```text
+AIOPS_AUDIT_LOG_PATH=/var/lib/tf1-ai/audit/audit-log.jsonl
+AIOPS_IDEMPOTENCY_DIR=/var/lib/tf1-ai/audit/idempotency
+REPORTS_DIR=/var/lib/tf1-ai/reports
+```
+
+Minimum directories created by the app:
+
+```text
+/var/lib/tf1-ai/audit
+/var/lib/tf1-ai/audit/idempotency
+/var/lib/tf1-ai/reports
+```
+
+Example EFS-backed PVC reference:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tf1-ai-engine-data
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+Example deployment volume/env wiring:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tf1-ai-triage-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tf1-ai-triage-engine
+  template:
+    metadata:
+      labels:
+        app: tf1-ai-triage-engine
+    spec:
+      serviceAccountName: tf1-ai-engine
+      containers:
+        - name: engine
+          image: <cdo-ecr>/tf1-ai-triage-engine:v1.0.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_ENV
+              value: prod
+            - name: AWS_REGION
+              value: us-east-1
+            - name: AIOPS_INVESTIGATION_MODE
+              value: auto
+            - name: AGENTCORE_RUNTIME_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: tf1-ai-engine-secrets
+                  key: agentcore-runtime-arn
+            - name: ENABLE_AGENTCORE_LLM
+              value: "true"
+            - name: ENABLE_AGENTCORE_LLM_TOOLS
+              value: "true"
+            - name: AIOPS_AUDIT_LOG_PATH
+              value: /var/lib/tf1-ai/audit/audit-log.jsonl
+            - name: AIOPS_IDEMPOTENCY_DIR
+              value: /var/lib/tf1-ai/audit/idempotency
+            - name: REPORTS_DIR
+              value: /var/lib/tf1-ai/reports
+          volumeMounts:
+            - name: ai-data
+              mountPath: /var/lib/tf1-ai
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+      volumes:
+        - name: ai-data
+          persistentVolumeClaim:
+            claimName: tf1-ai-engine-data
+```
 
 ## Runtime Configuration Summary
 
@@ -154,8 +335,8 @@ AgentCore/cost:
 
 ```text
 AGENTCORE_RUNTIME_ARN=<required for production AgentCore path>
-ENABLE_AGENTCORE_LLM=true|false
-ENABLE_AGENTCORE_LLM_TOOLS=true|false
+ENABLE_AGENTCORE_LLM=true
+ENABLE_AGENTCORE_LLM_TOOLS=true
 BEDROCK_MODEL_ID=<optional>
 BEDROCK_MODEL_IDS=<optional csv>
 AIOPS_LLM_MAX_TOKENS_PER_INCIDENT=0
@@ -224,6 +405,20 @@ audit_id present
 llm_metadata.cost_estimate present
 slack_payload absent
 ```
+
+## Production Acceptance Checks
+
+CDO should capture evidence for these checks after EKS deployment:
+
+- `GET /healthz` returns `status=ok` and `version=v1.0.0`.
+- `GET /readyz` returns successful readiness from the deployed pod.
+- `POST /v1/triage` returns a valid triage response with `audit_id`, `ticket_payload`, `llm_metadata`, and `llm_metadata.cost_estimate`.
+- `llm_metadata.mode_selection.agentcore_enabled=true` for the production AgentCore path.
+- AgentCore metadata does not show `runtime_arn_configured=false`.
+- `GET /metrics` exposes triage, LLM token/cost, idempotency, and evidence truncation metrics.
+- Restart one AI engine pod and retry the same request; the same `audit_id` should replay from persisted idempotency state instead of calling AgentCore again.
+- `GET /v1/audit/{audit_id}` still works after pod restart, proving audit storage is durable.
+- The mounted storage contains metadata-only audit/idempotency/report artifacts under `/var/lib/tf1-ai`; raw logs/metrics/traces are not persisted there.
 
 ## Handoff Boundary
 

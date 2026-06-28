@@ -16,11 +16,11 @@ normalized incident context
   -> feature extraction
   -> deterministic anomaly/RCA scoring
   -> confidence gate and safety checks
-  -> optional Bedrock synthesis
+  -> AgentCore/Bedrock synthesis for production full-app path
   -> structured diagnosis + Jira ticket fields + Slack-renderable raw fields
 ```
 
-The LLM is not the primary detector and does not receive direct observability backend credentials. Platform/DevOps provides observability data, alert detection, and bounded secure evidence access. AIOps performs context validation, bounded evidence query through allowlisted tools, cleaning/normalization/curation, evidence sufficiency checks, and incident-level RCA after an alert is pushed to AI Ops. Bedrock is optional and used only after the engine has grounded evidence.
+The LLM is not the primary detector and does not receive direct observability backend credentials. Platform/DevOps provides observability data, alert detection, and bounded secure evidence access. AIOps performs context validation, bounded evidence query through allowlisted tools, cleaning/normalization/curation, evidence sufficiency checks, and incident-level RCA after an alert is pushed to AI Ops. AgentCore/Bedrock is part of the production full-app path and is used only after the engine has grounded evidence; deterministic mode remains a fail-closed fallback and local smoke-test path.
 
 ### 1.1 Responsibilities
 
@@ -32,7 +32,7 @@ The LLM is not the primary detector and does not receive direct observability ba
 | Bounded evidence layer | Expose incident-scoped logs/events/traces/metrics/deploys/ownership from the customer's observability/evidence sources through safe bounded access owned by CDO/platform. |
 | AIOps context aggregation | Validate pushed incident context, request bounded extra evidence when context is insufficient through allowlisted tools, and clean/normalize/curate it before RCA. |
 | AI compute service | Validate, extract features, correlate metrics/logs/deploys, score RCA candidates, and apply confidence gates. |
-| Optional Bedrock synthesis | Convert grounded evidence into clear diagnosis, Jira description, assignee suggestion rationale, and runbook-aware recommendations. |
+| AgentCore/Bedrock synthesis | Convert grounded evidence into clear diagnosis, Jira description, assignee suggestion rationale, and runbook-aware recommendations for the production full-app path. |
 
 ### 1.2 Why Compute-First
 
@@ -106,9 +106,9 @@ score = metric_signal + log_signal + deploy_correlation + runbook_match - ambigu
 
 The score is converted into confidence and status. The engine must never turn low-confidence evidence into a strong root-cause claim.
 
-## 6. Optional Bedrock Synthesis
+## 6. AgentCore/Bedrock Synthesis
 
-Bedrock may be called only after the compute service has:
+AgentCore/Bedrock is part of the production full-app path and may be called only after the compute service has:
 
 - validated tenant and correlation IDs,
 - validated the schema,

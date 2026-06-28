@@ -1,6 +1,6 @@
 # TF1 AI Triage Engine Skeleton
 
-Small HTTP service that implements the TF1 AI API contract before optional Bedrock synthesis is integrated.
+HTTP service that implements the TF1 AI triage API contract with deterministic RCA, bounded evidence processing, AgentCore integration, audit, and idempotency.
 
 The service is event-driven. The broader AIOps app continuously ingests telemetry and detects alert/anomaly candidates, then calls this service with a bounded context bundle. The skeleton performs compute-first validation, scenario classification, confidence gating, and payload generation.
 
@@ -110,11 +110,19 @@ AIOPS_AGENT_MAX_ITERATIONS=2
 AIOPS_AGENT_MAX_TOOL_CALLS=5
 ```
 
-Auto mode scores missing context, low deterministic confidence, ambiguous RCA candidates, insufficient-context/investigate status, dependency or causal hints, high-severity sparse incidents, and missing/out-of-scope evidence bundles. If AgentCore is disabled, auto mode returns `deterministic_only` and records the mode it would have planned in `mode_selection.planned_mode`.
+Auto mode scores missing context, low deterministic confidence, ambiguous RCA candidates, insufficient-context/investigate status, dependency or causal hints, high-severity sparse incidents, and missing/out-of-scope evidence bundles. If AgentCore is disabled, auto mode returns `deterministic_only` and records the mode it would have planned in `mode_selection.planned_mode`; this is degraded/local behavior, not the production full-app target.
 
 ## Connect AgentCore LLM
 
-The triage API can optionally call Amazon Bedrock AgentCore Runtime for assisted summaries/action wording and for the full `agent_platform` investigator loop. It still runs deterministic RCA first, sends only bounded evidence to the agent, executes only TF1 allowlisted read-only tools, and falls back to deterministic RCA if AgentCore is disabled, slow, malformed, or policy-invalid.
+Production deploys Amazon Bedrock AgentCore Runtime for assisted summaries/action wording and for the full `agent_platform` investigator loop. The engine still runs deterministic RCA first, sends only bounded evidence to the agent, executes only TF1 allowlisted read-only tools, and falls back to deterministic RCA if AgentCore is slow, malformed, or policy-invalid.
+
+AgentCore investigator source:
+
+```text
+agentcore_investigator/main.py
+agentcore_investigator/Dockerfile
+agentcore_investigator/requirements.txt
+```
 
 Required env:
 

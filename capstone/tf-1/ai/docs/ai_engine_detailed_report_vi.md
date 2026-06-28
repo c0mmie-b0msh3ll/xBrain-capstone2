@@ -432,7 +432,7 @@ LLM_TOOL_LOG_LIMIT=50
 
 ## 12. Model Runtime
 
-AgentCore/Bedrock là optional.
+AgentCore/Bedrock là required cho production/EKS full app path. Deterministic mode chỉ là fallback khi AgentCore/tool fail hoặc dùng cho local smoke test.
 
 Env chính:
 
@@ -453,7 +453,7 @@ us.anthropic.claude-opus-4-6-v1
 us.amazon.nova-2-lite-v1:0
 ```
 
-Nếu không có AgentCore config, engine vẫn trả deterministic response.
+Nếu không có AgentCore config, engine vẫn trả deterministic response, nhưng đó là degraded/local mode chứ không phải production target.
 
 ## 13. Guardrails
 

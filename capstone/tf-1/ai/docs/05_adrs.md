@@ -39,8 +39,8 @@
 - **Status**: Accepted
 - **Date**: 2026-06-22
 - **Context**: Observability telemetry is continuous, but running full triage and LLM synthesis over every metric/log event would be expensive, noisy, and difficult to defend. TF1 also needs RCA decisions to be explainable and confidence-gated.
-- **Decision**: Platform/DevOps continuously collects telemetry and owns alert/anomaly detection. The incident-level triage engine is invoked only after CDO/platform pushes an alert/anomaly/incident candidate to AI Ops. Inside the triage engine, deterministic compute logic performs validation, feature extraction, RCA scoring, confidence gating, and safety checks before optional Bedrock synthesis.
-- **Consequence**: Bedrock is not the engine of record for RCA. It is used only for grounded summarization and human-readable Jira/Slack output when enabled. This reduces cost and hallucination risk while keeping a clear boundary between platform detection and AI triage.
+- **Decision**: Platform/DevOps continuously collects telemetry and owns alert/anomaly detection. The incident-level triage engine is invoked only after CDO/platform pushes an alert/anomaly/incident candidate to AI Ops. Inside the triage engine, deterministic compute logic performs validation, feature extraction, RCA scoring, confidence gating, and safety checks before AgentCore/Bedrock synthesis in the production full-app path.
+- **Consequence**: Bedrock is not the engine of record for RCA. It is used only for grounded summarization and human-readable Jira/Slack output after deterministic grounding. This reduces cost and hallucination risk while keeping a clear boundary between platform detection and AI triage. Deterministic-only execution remains a fail-closed fallback/local smoke-test mode, not the target production deployment.
 - **Alternatives considered**:
   - Continuous full AI triage over all telemetry: richer detection potential, but too expensive and noisy for capstone scope.
   - Detector calls Bedrock directly: faster demo path, but loses schema validation, RCA scoring, confidence behavior, and safety controls.
