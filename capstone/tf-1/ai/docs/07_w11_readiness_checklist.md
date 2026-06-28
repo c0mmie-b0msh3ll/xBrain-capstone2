@@ -91,12 +91,11 @@ This endpoint is the W11 bootstrap/demo endpoint for early CDO integration and m
 | Endpoint URL | `https://snpmtcwpys.us-east-1.awsapprunner.com` |
 | Runtime | AWS App Runner demo service |
 | Service ARN | `arn:aws:apprunner:us-east-1:589077667575:service/tf1-ai-triage-engine/540fcd194a144db09c63786d3d28c8f9` |
-| `/healthz` result | Passed locally for `v1.0.0`; previous bootstrap endpoint returned `{"status":"ok","service":"tf1-ai-triage-engine","version":"v1"}` before final release bump |
+| `/healthz` result | Passed locally for `v1.0.0`, returned `{"status":"ok","service":"tf1-ai-triage-engine","version":"v1.0.0"}` |
 | `/v1/triage` sample result | Passed with `latency-degradation.request.json`, returned `DIAGNOSED / latency_degradation` |
-| Image tag | `589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:latest` |
-| Image digest | `sha256:db688c5ed3ebed46beb50690df396bb8174752601015071c6094505e489c4909` |
-| Pushed at | `2026-06-24T17:39:26.858000+07:00` |
-| Rollback target | Previous App Runner image version or previous ECR digest after the next release; no prior production digest exists for this first demo deploy. |
+| Final image tag | `589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine:v1.0.0` |
+| Final image digest | `sha256:ed9d9ca831aa70865e175a611359610c66be5cb56fd33b0487ac687fc4b14f70` |
+| Rollback target | Previous tagged image digest after the next release. |
 
 Minimum smoke test:
 
