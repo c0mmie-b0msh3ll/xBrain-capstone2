@@ -65,7 +65,53 @@
       {
         "title": "Redis timeout triage",
         "url": "runbook://redis-timeout",
-        "excerpt": "Check Redis latency, connection limits, pool configuration, and deploy correlation before rollback."
+        "excerpt": "Check Redis latency, connection limits, pool configuration, and deploy correlation before rollback.",
+        "scenario_tags": ["latency_degradation", "dependency_timeout", "connection_pool_exhaustion"],
+        "steps": [
+          "Confirm p95 latency increase is isolated to checkout/payment paths before paging unrelated services.",
+          "Compare Redis timeout count with app connection pool saturation and slow command latency.",
+          "Check whether the latest deploy changed pool size, timeout, retry, or circuit-breaker settings.",
+          "Verify Redis node health and client-side error budget before considering rollback."
+        ],
+        "validation_signals": [
+          "http_latency_p95_ms remains above 1000ms for two consecutive windows",
+          "redis_timeout_count is non-zero during the incident window",
+          "application logs contain Redis or database timeout messages",
+          "recent deploy overlaps the incident start time"
+        ],
+        "safe_actions": [
+          "Open an owner review with evidence links and current confidence.",
+          "Ask the service owner to confirm pool saturation before changing config.",
+          "Use the approved rollback reference only after human approval."
+        ],
+        "avoid": [
+          "Do not restart pods as a first action unless readiness failures or crash loops are confirmed.",
+          "Do not increase connection limits without checking downstream Redis capacity."
+        ]
+      },
+      {
+        "title": "Payment dependency saturation checklist",
+        "url": "runbook://payment-dependency-saturation",
+        "excerpt": "Use when latency evidence points to connection pools, Redis, or database saturation without confirmed service outage.",
+        "scenario_tags": ["latency_degradation", "resource_saturation"],
+        "steps": [
+          "Check client pool usage, active connections, timeout rate, and retry rate.",
+          "Compare dependency latency with service CPU and memory to avoid misattributing local saturation.",
+          "Review trace bottleneck spans for the affected endpoint.",
+          "Attach findings to the CDO Slack/Jira handoff event."
+        ],
+        "validation_signals": [
+          "connection pool usage above 85%",
+          "dependency latency contributes the longest trace span",
+          "retry count increases after the latest deploy"
+        ],
+        "safe_actions": [
+          "Keep recommendation as human review until pool and dependency evidence agree.",
+          "Prefer rollback consideration over ad hoc config changes when deploy correlation is strong."
+        ],
+        "avoid": [
+          "Do not assign root cause to Redis if traces show app CPU saturation instead."
+        ]
       }
     ]
   }

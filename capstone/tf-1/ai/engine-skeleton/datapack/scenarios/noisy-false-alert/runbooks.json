@@ -2,6 +2,62 @@
   {
     "title": "Noisy alert triage",
     "url": "runbook://noisy-alert",
-    "excerpt": "Check alert repetition and user impact before escalating."
+    "excerpt": "Check alert repetition and user impact before escalating.",
+    "scenario_tags": ["noisy_or_ambiguous_alert", "false_positive", "low_severity"],
+    "steps": [
+      "Check whether the alert repeated in at least two windows.",
+      "Compare the alert with user-impacting latency, error, and availability metrics.",
+      "Look for recovery-on-retry logs before opening remediation work.",
+      "Route to owner review only when impact is unclear or the alert keeps flapping."
+    ],
+    "validation_signals": [
+      "no sustained error-rate increase",
+      "p95 latency remains near baseline",
+      "single synthetic probe failure recovered on retry",
+      "no recent deploy evidence"
+    ],
+    "safe_actions": [
+      "Observe for recurrence before escalation.",
+      "Ask the owner to confirm whether the alert is actionable.",
+      "Attach evidence to the CDO handoff without creating remediation work automatically."
+    ],
+    "avoid": [
+      "Do not page critical on-call for a single recovered probe failure.",
+      "Do not recommend rollback when no deploy correlation exists."
+    ],
+    "escalation": {
+      "page_after_minutes": 30,
+      "target": "search-platform",
+      "reason": "Only escalate if weak signals repeat or user-impacting metrics degrade."
+    }
+  },
+  {
+    "title": "Synthetic probe false-positive review",
+    "url": "runbook://synthetic-probe-false-positive",
+    "excerpt": "Use when a synthetic probe times out once but service-level metrics remain healthy.",
+    "scenario_tags": ["noisy_or_ambiguous_alert", "synthetic_probe"],
+    "steps": [
+      "Check probe location, retry success, and recent probe configuration changes.",
+      "Compare synthetic failure with real user monitoring or service metrics.",
+      "Suppress duplicate notifications only through the monitoring owner workflow.",
+      "Document why the incident remains investigation-only."
+    ],
+    "validation_signals": [
+      "probe timeout recovered on retry",
+      "no matching service logs at error level",
+      "stable latency and 5xx metrics"
+    ],
+    "safe_actions": [
+      "Keep status as INVESTIGATE unless impact evidence appears.",
+      "Recommend alert tuning review rather than remediation."
+    ],
+    "avoid": [
+      "Do not create a production incident without corroborating evidence."
+    ],
+    "escalation": {
+      "page_after_minutes": 60,
+      "target": "search-platform",
+      "reason": "Escalate only when probe noise becomes sustained or impacts users."
+    }
   }
 ]

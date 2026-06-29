@@ -1729,6 +1729,59 @@ def test_sqs_invalid_seed_is_not_deleted(tmp_path) -> None:
     assert sqs.deleted == []
 
 
+@pytest.mark.parametrize("scenario", ["latency-degradation", "critical-service-down", "noisy-false-alert"])
+def test_scenario_runbooks_are_enriched_for_demo_handoff(scenario: str) -> None:
+    root = Path(f"datapack/scenarios/{scenario}")
+    runbooks = json.loads((root / "runbooks.json").read_text(encoding="utf-8"))
+    request_body = json.loads((root / "triage-request.json").read_text(encoding="utf-8"))
+    embedded_runbooks = request_body["ownership"]["runbooks"]
+
+    assert len(runbooks) >= 2
+    assert len(embedded_runbooks) >= 2
+    assert {runbook["url"] for runbook in embedded_runbooks}.issubset({runbook["url"] for runbook in runbooks})
+    for runbook in runbooks:
+        assert runbook["url"].startswith("runbook://")
+        assert runbook["excerpt"]
+        assert len(runbook["steps"]) >= 3
+        assert len(runbook["validation_signals"]) >= 3
+        assert runbook["safe_actions"]
+        assert runbook["avoid"]
+        assert runbook["escalation"]["target"]
+
+
+@pytest.mark.parametrize("scenario", ["latency-degradation", "critical-service-down", "noisy-false-alert"])
+def test_enriched_scenarios_match_expected_triage_paths(monkeypatch, scenario: str) -> None:
+    monkeypatch.delenv("SERVICE_AUTH_TOKEN", raising=False)
+    root = Path(f"datapack/scenarios/{scenario}")
+    body = json.loads((root / "triage-request.json").read_text(encoding="utf-8"))
+    expected = json.loads((root / "expected-triage-summary.json").read_text(encoding="utf-8"))
+
+    response = TestClient(app).post(
+        "/v1/triage",
+        json=body,
+        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == expected["expected_status"]
+    assert payload["classification"] == expected["expected_classification"]
+    assert expected["confidence_min"] <= payload["confidence"] <= expected["confidence_max"]
+    for field in expected["must_include_fields"]:
+        assert field in payload
+    action_ids = [action.get("id") for action in payload["recommended_actions"]]
+    assert action_ids == expected["expected_action_ids"]
+    assert {action["runbook_ref"] for action in payload["recommended_actions"]} == {expected["expected_runbook_ref"]}
+
+    handoff_payload = build_triage_hub_notify_payload(payload, body)
+    assert handoff_payload["incident_id"] == body["incident_id"]
+    assert handoff_payload["tenant_id"] == body["tenant_id"]
+    assert handoff_payload["alert"]["service"] == body["alert"]["service"]
+    assert handoff_payload["ownership"]["jira_project"] == body["ownership"]["jira_project"]
+    assert handoff_payload["ownership"]["slack_channel"] == body["ownership"]["slack_channel"]
+    assert handoff_payload["recommended_actions"]
+
+
 def post_sample(name: str) -> dict[str, Any]:
     body = json.loads(Path(f"samples/{name}.request.json").read_text(encoding="utf-8"))
     response = TestClient(app).post(

@@ -3,5 +3,7 @@
   "expected_classification": "latency_degradation",
   "confidence_min": 0.75,
   "confidence_max": 0.9,
+  "expected_runbook_ref": "runbook://redis-timeout",
+  "expected_action_ids": ["dependency_timeout_triage", "consult_internal_runbooks", "latency_saturation_review", "consider_recent_deploy_rollback"],
   "must_include_fields": ["ticket_payload", "suggestion_reason", "audit_id", "recommended_actions"]
 }

@@ -65,7 +65,53 @@
       {
         "title": "Service down triage",
         "url": "runbook://service-down",
-        "excerpt": "Check service health, dependency availability, and recent deploys before rollback."
+        "excerpt": "Check service health, dependency availability, and recent deploys before rollback.",
+        "scenario_tags": ["critical_service_down", "availability", "dependency_failure"],
+        "steps": [
+          "Confirm synthetic and user-facing availability failures agree before declaring outage.",
+          "Check 5xx rate, health-check failure reason, and dependency connection errors.",
+          "Compare incident start time with the most recent deploy and config changes.",
+          "Notify the owning team with the audit id, root-cause evidence, and suggested rollback reference."
+        ],
+        "validation_signals": [
+          "availability_success_rate below 95%",
+          "http_5xx_rate above 5%",
+          "logs contain connection refused or health-check failure",
+          "recent deploy occurred within the bounded incident window"
+        ],
+        "safe_actions": [
+          "Page the owner immediately for critical impact.",
+          "Follow health-check and dependency verification before remediation.",
+          "Consider rollback only through the approved runbook and with human approval."
+        ],
+        "avoid": [
+          "Do not run shell commands from AI output.",
+          "Do not mutate Jira or Slack from the AI engine; publish the CDO handoff payload instead."
+        ]
+      },
+      {
+        "title": "Critical dependency outage isolation",
+        "url": "runbook://critical-dependency-isolation",
+        "excerpt": "Use when service health checks fail because an upstream or downstream dependency refuses connections.",
+        "scenario_tags": ["critical_service_down", "network_dns", "dependency_failure"],
+        "steps": [
+          "Identify whether refused connections are local, network-policy, DNS, or dependency-side failures.",
+          "Check whether only one service is impacted or whether multiple services share the same dependency.",
+          "Validate whether traffic shifting or dependency failover is available in the approved ops playbook.",
+          "Record dependency scope in the CDO Jira/Slack handoff event."
+        ],
+        "validation_signals": [
+          "connection refused logs from the affected service",
+          "health-check endpoint returns failure during the incident window",
+          "topology or trace evidence points at a shared dependency"
+        ],
+        "safe_actions": [
+          "Escalate to the service owner and dependency owner when scope is shared.",
+          "Keep rollback recommendation conditional until deploy correlation is confirmed."
+        ],
+        "avoid": [
+          "Do not increase traffic or retries before dependency health is confirmed."
+        ]
       }
     ]
   }

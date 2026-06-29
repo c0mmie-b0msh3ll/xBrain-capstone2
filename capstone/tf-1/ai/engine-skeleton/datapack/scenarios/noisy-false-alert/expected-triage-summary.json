@@ -3,5 +3,7 @@
   "expected_classification": "noisy_or_ambiguous_alert",
   "confidence_min": 0.3,
   "confidence_max": 0.6,
+  "expected_runbook_ref": "runbook://noisy-alert",
+  "expected_action_ids": ["observe_user_impact", "human_review_noisy_alert"],
   "must_include_fields": ["ticket_payload", "suggestion_reason", "audit_id", "recommended_actions"]
 }
