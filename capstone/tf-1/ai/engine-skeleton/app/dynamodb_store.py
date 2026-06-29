@@ -58,6 +58,10 @@ def idempotency_pk(audit_id: str) -> str:
     return f"IDEMPOTENCY#{audit_id}"
 
 
+def jira_history_pk(tenant_id: str, environment: str, service: str) -> str:
+    return f"JIRA_HISTORY#{tenant_id}#{environment}#{service}"
+
+
 def append_audit_record(record: dict[str, Any], retention_days: int) -> None:
     table = dynamodb_table()
     audit_id = str(record.get("audit_id") or "")
@@ -112,6 +116,31 @@ def write_idempotency_record(audit_id: str, record: dict[str, Any], retention_da
             {
                 "PK": idempotency_pk(audit_id),
                 "SK": "STATE",
+                "record": record,
+                "expires_at": _expires_at(retention_days),
+            }
+        )
+    )
+
+
+def read_jira_history_record(service: str, environment: str, tenant_id: str) -> dict[str, Any] | None:
+    response = dynamodb_table().get_item(Key={"PK": jira_history_pk(tenant_id, environment, service), "SK": "SUGGESTION"})
+    record = _from_dynamodb_value(response.get("Item", {})).get("record")
+    return record if isinstance(record, dict) else None
+
+
+def write_jira_history_record(
+    service: str,
+    environment: str,
+    tenant_id: str,
+    record: dict[str, Any],
+    retention_days: int = DEFAULT_IDEMPOTENCY_RETENTION_DAYS,
+) -> None:
+    dynamodb_table().put_item(
+        Item=_to_dynamodb_value(
+            {
+                "PK": jira_history_pk(tenant_id, environment, service),
+                "SK": "SUGGESTION",
                 "record": record,
                 "expires_at": _expires_at(retention_days),
             }

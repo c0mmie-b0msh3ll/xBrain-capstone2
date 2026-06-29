@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 import requests
 
+from app import dynamodb_store
 from app.evidence_budget import compact_tool_result
 from app.observability import CIRCUIT_BREAKER_OPEN, CONTEXT_TOOL_CALLS_TOTAL, CONTEXT_TOOL_DURATION_SECONDS, span, timed
 from app import rca
@@ -352,6 +353,14 @@ class ContextClient:
         return bundle
 
     def get_jira_history(self, service: str, environment: str, tenant_id: str) -> dict[str, Any]:
+        if dynamodb_store.use_dynamodb_backend():
+            try:
+                match = dynamodb_store.read_jira_history_record(service, environment, tenant_id)
+            except Exception:
+                match = None
+            if match:
+                return jira_history_result_from_match(match, service, "dynamodb_jira_history")
+
         if not self.jira_history_path:
             return {
                 "suggested_assignee_account_id": None,
@@ -364,17 +373,7 @@ class ContextClient:
                 "suggested_assignee_account_id": None,
                 "suggestion_reason": f"No Jira accountId history mapping matched {service}; route to owner team for human confirmation.",
             }
-        account_id = match.get("account_id") or match.get("assignee_account_id") or match.get("suggested_assignee_account_id")
-        if not isinstance(account_id, str) or not account_id:
-            return {
-                "suggested_assignee_account_id": None,
-                "suggestion_reason": f"Jira history matched {service}, but no accountId mapping is available; route to owner team for human confirmation.",
-            }
-        return {
-            "suggested_assignee_account_id": account_id,
-            "suggestion_reason": str(match.get("suggestion_reason") or f"Suggested from read-only Jira history for {service}."),
-            "source": "jira_history",
-        }
+        return jira_history_result_from_match(match, service, "jira_history")
 
     def search_runbooks(self, service: str, query: str = "") -> list[dict[str, Any]]:
         ownership = self.get_ownership(service)
@@ -563,6 +562,21 @@ def find_jira_history_match(records: Any, service: str, environment: str, tenant
             continue
         return record
     return None
+
+
+def jira_history_result_from_match(match: dict[str, Any], service: str, source: str) -> dict[str, Any]:
+    account_id = match.get("account_id") or match.get("assignee_account_id") or match.get("suggested_assignee_account_id")
+    if not isinstance(account_id, str) or not account_id:
+        return {
+            "suggested_assignee_account_id": None,
+            "suggestion_reason": f"Jira history matched {service}, but no accountId mapping is available; route to owner team for human confirmation.",
+            "source": source,
+        }
+    return {
+        "suggested_assignee_account_id": account_id,
+        "suggestion_reason": str(match.get("suggestion_reason") or f"Suggested from read-only Jira history for {service}."),
+        "source": source,
+    }
 
 
 def filter_docs(records: list[Any], query: str, default_source: str) -> list[dict[str, Any]]:

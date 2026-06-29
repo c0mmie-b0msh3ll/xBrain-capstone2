@@ -24,6 +24,7 @@ from app.aiops_worker import (
     publish_to_triage_hub_sqs,
 )
 from app.context_tools import ContextClient, ToolRegistry, ToolScope, ToolScopeError
+from app import dynamodb_store
 from app.evidence_budget import compact_request_evidence
 from app.audit_store import append_audit_record, latest_audit_record
 from app.idempotency_store import complete_record, fail_record, read_record, request_hash, start_record, write_record
@@ -1377,6 +1378,71 @@ def test_jira_history_missing_mapping_routes_to_team(tmp_path, monkeypatch) -> N
 
     assert payload["suggested_assignee_account_id"] is None
     assert "route to payments-platform" in payload["suggestion_reason"]
+
+
+def test_dynamodb_jira_history_suggests_configured_account_id(monkeypatch) -> None:
+    table = FakeDynamoTable()
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "tf1-aiops-audit-demo")
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+    dynamodb_store.write_jira_history_record(
+        service="checkout-api",
+        environment="sandbox",
+        tenant_id="tenant-a",
+        record={
+            "service": "checkout-api",
+            "environment": "sandbox",
+            "tenant_id": "tenant-a",
+            "suggested_assignee_account_id": "712020:abc123",
+            "suggestion_reason": "SME for checkout-api from DynamoDB Jira history.",
+        },
+    )
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["suggested_assignee_account_id"] == "712020:abc123"
+    assert "DynamoDB Jira history" in payload["suggestion_reason"]
+    assert payload["ticket_payload"]["fields"]["suggested_assignee_account_id"] == "712020:abc123"
+
+
+def test_dynamodb_jira_history_missing_mapping_routes_to_team(monkeypatch) -> None:
+    table = FakeDynamoTable()
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "tf1-aiops-audit-demo")
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["suggested_assignee_account_id"] is None
+    assert "route to payments-platform" in payload["suggestion_reason"]
+
+
+def test_dynamodb_jira_history_falls_back_to_json_mapping(tmp_path, monkeypatch) -> None:
+    table = FakeDynamoTable()
+    history_path = tmp_path / "jira-history.json"
+    history_path.write_text(
+        json.dumps(
+            [
+                {
+                    "tenant_id": "tenant-a",
+                    "environment": "sandbox",
+                    "service": "checkout-api",
+                    "account_id": "acct-json-123",
+                    "suggestion_reason": "Fallback JSON Jira history mapping.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AIOPS_PERSISTENCE_BACKEND", "dynamodb")
+    monkeypatch.setenv("AIOPS_DYNAMODB_TABLE", "tf1-aiops-audit-demo")
+    monkeypatch.setenv("JIRA_HISTORY_PATH", str(history_path))
+    monkeypatch.setattr("app.dynamodb_store.dynamodb_table", lambda: table)
+
+    payload = post_sample("latency-degradation")
+
+    assert payload["suggested_assignee_account_id"] == "acct-json-123"
+    assert payload["suggestion_reason"] == "Fallback JSON Jira history mapping."
 
 
 def test_llm_tool_call_parser_accepts_only_registered_tools() -> None:
