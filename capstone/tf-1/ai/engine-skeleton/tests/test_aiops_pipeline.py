@@ -16,6 +16,7 @@ from app.aiops_worker import (
     build_report,
     build_triage_hub_notify_payload,
     build_triage_request,
+    call_triage,
     detect_incident,
     offline_raw_observability,
     process_sqs_message,
@@ -1612,6 +1613,63 @@ def test_legacy_slack_webhook_publish_still_works(monkeypatch) -> None:
     assert calls[0][0] == "https://hooks.slack.example/test"
     assert "latency_degradation" in calls[0][1]["text"]
     assert "Report: http://localhost:5173/#/reports/inc-001" in calls[0][1]["text"]
+
+
+def test_worker_call_triage_adds_service_auth_token(monkeypatch) -> None:
+    calls: list[dict[str, Any]] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {"audit_id": "audit-001"}
+
+    def fake_post(url: str, json: dict[str, Any], headers: dict[str, str], timeout: int) -> FakeResponse:
+        calls.append({"url": url, "json": json, "headers": headers, "timeout": timeout})
+        return FakeResponse()
+
+    monkeypatch.setenv("SERVICE_AUTH_TOKEN", "worker-secret")
+    monkeypatch.setattr("app.aiops_worker.requests.post", fake_post)
+    args = argparse.Namespace(triage_url="http://triage.local/v1/triage")
+    body = {"tenant_id": "tenant-a", "correlation_id": "corr-001"}
+
+    result = call_triage(args, body)
+
+    assert result == {"audit_id": "audit-001"}
+    assert calls[0]["headers"] == {
+        "X-Tenant-Id": "tenant-a",
+        "X-Correlation-Id": "corr-001",
+        "Authorization": "Bearer worker-secret",
+    }
+    assert calls[0]["timeout"] == 10
+
+
+def test_worker_call_triage_omits_authorization_when_token_unset(monkeypatch) -> None:
+    calls: list[dict[str, str]] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {"audit_id": "audit-001"}
+
+    def fake_post(url: str, json: dict[str, Any], headers: dict[str, str], timeout: int) -> FakeResponse:
+        calls.append(headers)
+        return FakeResponse()
+
+    monkeypatch.delenv("SERVICE_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr("app.aiops_worker.requests.post", fake_post)
+    args = argparse.Namespace(triage_url="http://triage.local/v1/triage")
+    body = {"tenant_id": "tenant-a", "correlation_id": "corr-001"}
+
+    call_triage(args, body)
+
+    assert calls[0] == {
+        "X-Tenant-Id": "tenant-a",
+        "X-Correlation-Id": "corr-001",
+    }
 
 
 def test_sqs_seed_success_deletes_message_after_report_write(tmp_path, monkeypatch) -> None:

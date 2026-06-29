@@ -355,10 +355,14 @@ def build_triage_request(
 
 
 def call_triage(args: argparse.Namespace, body: dict[str, Any]) -> dict[str, Any]:
+    headers = {"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]}
+    service_token = os.getenv("SERVICE_AUTH_TOKEN")
+    if service_token:
+        headers["Authorization"] = f"Bearer {service_token}"
     response = requests.post(
         args.triage_url,
         json=body,
-        headers={"X-Tenant-Id": body["tenant_id"], "X-Correlation-Id": body["correlation_id"]},
+        headers=headers,
         timeout=10,
     )
     response.raise_for_status()
