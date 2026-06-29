@@ -151,6 +151,23 @@ kubectl logs -n tf1-ai-demo deployment/aiops-worker --tail=200
 
 Expected `/v1/triage` fields include `audit_id`, `classification`, `status`, `ticket_payload`, and `llm_metadata`.
 
+The worker prints Slack/Jira dry-run payloads by default. To enable live outbound integration for a controlled smoke test, create secrets and patch only the worker deployment:
+
+```powershell
+kubectl create secret generic tf1-aiops-integrations -n tf1-ai-demo `
+  --from-literal=SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..." `
+  --from-literal=JIRA_BASE_URL="https://your-domain.atlassian.net" `
+  --from-literal=JIRA_EMAIL="aiops@example.com" `
+  --from-literal=JIRA_API_TOKEN="..."
+
+kubectl set env deployment/aiops-worker -n tf1-ai-demo `
+  --from=secret/tf1-aiops-integrations `
+  JIRA_DRY_RUN=false `
+  JIRA_ISSUE_TYPE=Task
+```
+
+Keep `JIRA_DRY_RUN=true` for normal demo runs. Live Slack/Jira mutations happen in the worker after `/v1/triage` succeeds; the engine still only returns `ticket_payload` and metadata for audit/idempotency.
+
 Expected live AgentCore result for the included latency scenario:
 
 ```text
