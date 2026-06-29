@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tf1-ai-demo
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - config.yaml
+  - triage-engine.yaml
+  - telemetry-simulator.yaml
+  - aiops-worker.yaml
+  - observability.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: tf1-aiops-demo
+      project: tf1-aiops-demo
+      cost-center: RnD
+      environment: demo
+
+images:
+  - name: tf1-ai-triage-engine
+    newName: 589077667575.dkr.ecr.us-east-1.amazonaws.com/tf1-ai-triage-engine
+    digest: sha256:3b60233dbd9fe042bff8eefa5c7b3924cc168bdb7b386e37f3fe938756a7dc95
+
+configMapGenerator:
+  - name: latency-degradation-datapack
+    files:
+      - raw-metrics.json=datapack/latency-degradation/raw-metrics.json
+      - raw-logs.json=datapack/latency-degradation/raw-logs.json

@@ -31,6 +31,7 @@ from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, build_prompt_payload, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
 from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits, app, build_audit_id, classify
 from app.observability import sanitize_log_fields
+from app.qa_judge import parse_qa_judge_response, run_qa
 from app.rca import analyze_request, detect_metric_anomalies, infer_causal_hints
 from app.report_store import write_report
 
@@ -449,6 +450,125 @@ def test_qa_budget_degrades_confidence_and_records_metadata(monkeypatch) -> None
 
     assert payload["confidence"] < 0.82
     assert payload["llm_metadata"]["qa"]["result"] == "budget_exceeded"
+
+
+def test_llm_qa_disabled_keeps_deterministic_behavior(monkeypatch) -> None:
+    monkeypatch.delenv("ENABLE_QA_LLM", raising=False)
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["provider"] == "deterministic"
+    assert metadata["result"] == "passed"
+    assert "verdict" not in metadata
+
+
+def test_llm_qa_pass_verdict_does_not_reduce_confidence(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_QA_LLM", "true")
+    monkeypatch.setattr(
+        "app.qa_judge.invoke_bedrock_qa",
+        lambda model_id, payload: json.dumps(
+            {
+                "verdict": "pass",
+                "issues": [],
+                "confidence_delta": 0,
+                "rationale": "Latency diagnosis is supported by metric and timeout log evidence.",
+                "required_human_review": False,
+            }
+        ),
+    )
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["provider"] == "bedrock"
+    assert metadata["verdict"] == "pass"
+    assert metadata["confidence_delta"] == 0
+    assert metadata["required_human_review"] is False
+
+
+def test_llm_qa_fail_verdict_reduces_confidence_and_records_issues(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_QA_LLM", "true")
+    monkeypatch.setenv("AIOPS_QA_CONFIDENCE_PENALTY", "-0.2")
+    monkeypatch.setattr(
+        "app.qa_judge.invoke_bedrock_qa",
+        lambda model_id, payload: json.dumps(
+            {
+                "verdict": "fail",
+                "issues": ["unsupported_classification"],
+                "confidence_delta": -0.2,
+                "rationale": "The draft classification is not supported by the provided evidence.",
+                "required_human_review": True,
+            }
+        ),
+    )
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["result"] == "failed"
+    assert metadata["llm_result"] == "failed"
+    assert metadata["confidence_delta"] == -0.2
+    assert metadata["issues"] == ["unsupported_classification"]
+    assert metadata["required_human_review"] is True
+
+
+def test_llm_qa_malformed_output_degrades_safely(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_QA_LLM", "true")
+    monkeypatch.setattr("app.qa_judge.invoke_bedrock_qa", lambda model_id, payload: "{not-json")
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["provider"] == "bedrock"
+    assert metadata["llm_result"] == "degraded"
+    assert "error" in metadata
+    assert metadata["result"] == "passed"
+
+
+def test_llm_qa_budget_cap_skips_llm_and_keeps_deterministic(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_QA_LLM", "true")
+    monkeypatch.setenv("AIOPS_QA_MAX_TOKENS_PER_INCIDENT", "1")
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["provider"] == "bedrock"
+    assert metadata["llm_result"] == "budget_exceeded"
+    assert metadata["result"] == "passed"
+
+
+def test_qa_response_parser_clamps_schema() -> None:
+    parsed = parse_qa_judge_response(
+        '{"verdict":"uncertain","issues":["missing_evidence"],"confidence_delta":-5,"rationale":"Needs more evidence.","required_human_review":false}',
+        penalty_floor=-0.1,
+    )
+
+    assert parsed["verdict"] == "uncertain"
+    assert parsed["confidence_delta"] == -0.1
+    assert parsed["required_human_review"] is True
+
+
+def test_qa_response_parser_normalizes_pass_to_no_penalty() -> None:
+    parsed = parse_qa_judge_response(
+        '{"verdict":"pass","issues":["EVIDENCE_MATCH"],"confidence_delta":-0.05,"rationale":"Supported.","required_human_review":true}',
+        penalty_floor=-0.1,
+    )
+
+    assert parsed["verdict"] == "pass"
+    assert parsed["issues"] == []
+    assert parsed["confidence_delta"] == 0
+    assert parsed["required_human_review"] is False
 
 
 def test_latency_database_timeout_selects_dependency_action() -> None:

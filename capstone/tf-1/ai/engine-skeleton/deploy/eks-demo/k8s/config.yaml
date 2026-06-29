@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tf1-aiops-demo-config
+data:
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+  APP_ENV: demo
+  AIOPS_PERSISTENCE_BACKEND: dynamodb
+  AIOPS_DYNAMODB_TABLE: tf1-aiops-audit-demo
+  AIOPS_INVESTIGATION_MODE: auto
+  AGENTCORE_RUNTIME_ARN: REPLACE_WITH_AGENTCORE_RUNTIME_ARN
+  ENABLE_AGENTCORE_LLM: "true"
+  ENABLE_AGENTCORE_LLM_TOOLS: "true"
+  ENABLE_QA_LLM: "false"
+  AIOPS_QA_PROVIDER: bedrock
+  AIOPS_QA_MODEL_ID: us.amazon.nova-micro-v1:0
+  AIOPS_QA_MAX_TOKENS_PER_INCIDENT: "1200"
+  AIOPS_QA_CONFIDENCE_PENALTY: "-0.1"
+  AIOPS_QA_FAIL_CLOSED: "false"
+  AIOPS_LLM_INPUT_COST_PER_1K: "0"
+  AIOPS_LLM_OUTPUT_COST_PER_1K: "0"
+  AIOPS_OBSERVABILITY_ENABLED: "true"
+  AIOPS_LOG_LEVEL: INFO
+  AIOPS_LOG_POLICY: metadata_only
+  AIOPS_CONTEXT_TOOL_TIMEOUT_SECONDS: "3"
+  AIOPS_TRIAGE_DEADLINE_SECONDS: "30"
+  AIOPS_RATE_LIMIT_PER_MINUTE: "60"
+  AIOPS_MAX_REQUEST_BYTES: "524288"
+  AIOPS_AUDIT_RETENTION_DAYS: "90"
+  AIOPS_IDEMPOTENCY_STALE_SECONDS: "120"
+  PROMETHEUS_URL: http://prometheus:9090
+  LOKI_URL: http://loki:3100
+  JAEGER_URL: http://jaeger:16686
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+  TRIAGE_URL: http://tf1-ai-triage-engine:8080/v1/triage
+  REPORT_BASE_URL: http://localhost:5173/#/reports
+  TENANT_ID: tenant-a
+  ENVIRONMENT: sandbox
+  SIM_SCENARIO: latency-degradation
+  SIM_TENANT_ID: tenant-a
+  SIM_SERVICE: payment-api
+  SIM_ENVIRONMENT: sandbox
+  SIM_SPEED: "4"
+  SIM_LOOP: "true"

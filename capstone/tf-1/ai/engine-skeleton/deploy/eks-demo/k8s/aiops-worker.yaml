@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiops-worker
+  template:
+    metadata:
+      labels:
+        app: aiops-worker
+    spec:
+      serviceAccountName: tf1-aiops-demo
+      containers:
+        - name: worker
+          image: tf1-ai-triage-engine
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - app.aiops_worker
+            - --scenario
+            - latency-degradation
+            - --service
+            - payment-api
+            - --poll-seconds
+            - "30"
+          envFrom:
+            - configMapRef:
+                name: tf1-aiops-demo-config
+          env:
+            - name: REPORTS_DIR
+              value: /tmp/reports
+          volumeMounts:
+            - name: reports
+              mountPath: /tmp/reports
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: reports
+          emptyDir: {}
+

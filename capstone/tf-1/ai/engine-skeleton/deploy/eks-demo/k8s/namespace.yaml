@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tf1-ai-demo
+  labels:
+    Project: tf1-aiops-demo
+    CostCenter: RnD
+    Owner: AI
+    Environment: demo
+

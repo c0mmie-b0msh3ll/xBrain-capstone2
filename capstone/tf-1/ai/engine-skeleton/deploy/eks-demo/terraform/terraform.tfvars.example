@@ -1,0 +1,8 @@
+expires_at         = "2026-07-01"
+budget_alert_email = "your-email@example.com"
+agentcore_runtime_arn = "arn:aws:bedrock-agentcore:us-east-1:589077667575:runtime/tf1_ai_investigator-D48STMEUHo"
+
+# Keep the demo scoped. Increase only for a scheduled smoke test window.
+desired_size = 2
+min_size     = 1
+max_size     = 2

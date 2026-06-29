@@ -370,6 +370,7 @@ def build_tool_prompt_payload(
     max_calls: int,
 ) -> dict[str, Any]:
     return {
+        "task": "tool_planning",
         "incident_scope": {
             "tenant_id": request.tenant_id,
             "environment": request.environment,

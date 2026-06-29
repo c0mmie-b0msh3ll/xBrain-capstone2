@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tf1-ai-triage-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tf1-ai-triage-engine
+  template:
+    metadata:
+      labels:
+        app: tf1-ai-triage-engine
+    spec:
+      serviceAccountName: tf1-ai-triage-engine
+      containers:
+        - name: triage-engine
+          image: tf1-ai-triage-engine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: tf1-aiops-demo-config
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tf1-ai-triage-engine
+spec:
+  type: ClusterIP
+  selector:
+    app: tf1-ai-triage-engine
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+

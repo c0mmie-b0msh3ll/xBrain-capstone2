@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-simulator
+  template:
+    metadata:
+      labels:
+        app: telemetry-simulator
+    spec:
+      serviceAccountName: tf1-aiops-demo
+      containers:
+        - name: simulator
+          image: tf1-ai-triage-engine
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - app.simulator
+            - --datapack-root
+            - /app/datapack/scenarios
+            - --scenario
+            - latency-degradation
+            - --speed
+            - "4"
+            - --loop
+            - --metrics-port
+            - "9108"
+          envFrom:
+            - configMapRef:
+                name: tf1-aiops-demo-config
+          ports:
+            - name: metrics
+              containerPort: 9108
+          volumeMounts:
+            - name: latency-degradation-datapack
+              mountPath: /app/datapack/scenarios/latency-degradation
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: latency-degradation-datapack
+          configMap:
+            name: latency-degradation-datapack
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-simulator
+spec:
+  type: ClusterIP
+  selector:
+    app: telemetry-simulator
+  ports:
+    - name: metrics
+      port: 9108
+      targetPort: metrics
+

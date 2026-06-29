@@ -47,6 +47,7 @@ from app.observability import (
     metrics_response,
     span,
 )
+from app.qa_judge import estimate_qa_tokens, qa_findings, run_qa
 from app.rca import analyze_request
 from app.report_store import list_reports, read_report
 
@@ -684,55 +685,6 @@ def collect_evidence(request: TriageRequest, fallback: str) -> list[str]:
     if request.ownership and request.ownership.runbooks:
         evidence.append(f"Runbook available: {request.ownership.runbooks[0].title}.")
     return evidence or [fallback]
-
-
-def run_qa(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> dict[str, Any]:
-    max_iterations = int(os.getenv("AIOPS_QA_MAX_ITERATIONS", "1"))
-    repair_max_iterations = int(os.getenv("AIOPS_QA_REPAIR_MAX_ITERATIONS", "1"))
-    token_budget = int(os.getenv("AIOPS_LLM_MAX_TOKENS_PER_INCIDENT", "0") or 0)
-    metadata: dict[str, Any] = {
-        "enabled": max_iterations > 0,
-        "iterations": 0,
-        "repair_iterations": 0,
-        "result": "skipped" if max_iterations <= 0 else "passed",
-    }
-    if max_iterations <= 0:
-        QA_ITERATIONS_TOTAL.labels(result="skipped").inc()
-        return metadata
-
-    metadata["iterations"] = 1
-    issues = qa_findings(request, decision, rca)
-    if token_budget and estimate_qa_tokens(request, decision, rca) > token_budget:
-        metadata["result"] = "budget_exceeded"
-        metadata["confidence_delta"] = -0.1
-        BUDGET_EXCEEDED_TOTAL.labels(budget_type="qa_tokens").inc()
-        DEGRADED_MODE_TOTAL.labels(reason="qa_budget_exceeded").inc()
-    elif issues:
-        metadata["result"] = "failed"
-        metadata["issues"] = issues
-        metadata["confidence_delta"] = -0.1
-        if repair_max_iterations > 0:
-            metadata["repair_iterations"] = 1
-            metadata["repair_result"] = "not_attempted_deterministic_only"
-        DEGRADED_MODE_TOTAL.labels(reason="qa_failed").inc()
-    QA_ITERATIONS_TOTAL.labels(result=str(metadata["result"])).inc()
-    return metadata
-
-
-def qa_findings(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> list[str]:
-    findings: list[str] = []
-    if decision["status"] == "DIAGNOSED" and not decision.get("evidence"):
-        findings.append("diagnosis_missing_evidence")
-    if decision["status"] == "DIAGNOSED" and not (request.metrics or request.logs or request.recent_deploys or rca.get("anomaly_evidence")):
-        findings.append("diagnosis_without_supporting_context")
-    if decision["classification"] == "latency_degradation" and "latency" not in " ".join(decision.get("evidence", []) + [request.alert.title]).lower():
-        findings.append("latency_classification_without_latency_evidence")
-    return findings
-
-
-def estimate_qa_tokens(request: TriageRequest, decision: dict[str, Any], rca: dict[str, Any]) -> int:
-    evidence_items = len(request.metrics) + len(request.logs) + len(request.traces) + len(request.recent_deploys)
-    return 64 + (evidence_items * 24) + (len(decision.get("evidence", [])) * 16) + (len(rca.get("anomaly_evidence", [])) * 24)
 
 
 def log_triage_stage(
