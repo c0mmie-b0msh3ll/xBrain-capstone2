@@ -135,6 +135,43 @@ CDO owns:
 
 AI will publish a Triage-Hub notify event after `/v1/triage` completes. The event body contains incident/request context plus AI fields: classification, confidence, status, suspected root cause, recommended actions, suggested assignee accountId, and suggestion reason.
 
+Minimal smoke-test JSON accepted by the current mapper:
+
+```json
+{
+  "incident_id": "inc-test-001",
+  "tenant_id": "tenant-a",
+  "alert": {
+    "service": "checkout-api",
+    "severity": "high",
+    "title": "High p95 latency on checkout-api",
+    "description": "p95 latency above threshold"
+  },
+  "ownership": {
+    "jira_project": "TRIAGE",
+    "slack_channel": "#oncall-alerts"
+  },
+  "classification": "latency_degradation",
+  "confidence": 0.82,
+  "status": "DIAGNOSED",
+  "suspected_root_cause": {
+    "summary": "Database connection pool exhausted",
+    "evidence": [
+      "p95 latency 950ms",
+      "DB timeout logs"
+    ]
+  },
+  "recommended_actions": [
+    {
+      "type": "HUMAN_REVIEW",
+      "summary": "Check DB connection saturation"
+    }
+  ],
+  "suggested_assignee_account_id": "712020:abc123",
+  "suggestion_reason": "SME for checkout-api"
+}
+```
+
 CDO should provide:
 
 - `TRIAGE_HUB_NOTIFY_SQS_URL`

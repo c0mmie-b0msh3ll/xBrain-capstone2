@@ -151,22 +151,15 @@ kubectl logs -n tf1-ai-demo deployment/aiops-worker --tail=200
 
 Expected `/v1/triage` fields include `audit_id`, `classification`, `status`, `ticket_payload`, and `llm_metadata`.
 
-The worker prints Slack/Jira dry-run payloads by default. To enable live outbound integration for a controlled smoke test, create secrets and patch only the worker deployment:
+The worker prints Slack legacy and Triage-Hub SQS dry-run payloads by default. To enable the CDO Slack/Jira dispatcher flow for a controlled smoke test, configure the notify queue URL and IAM permission for `sqs:SendMessage`:
 
 ```powershell
-kubectl create secret generic tf1-aiops-integrations -n tf1-ai-demo `
-  --from-literal=SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..." `
-  --from-literal=JIRA_BASE_URL="https://your-domain.atlassian.net" `
-  --from-literal=JIRA_EMAIL="aiops@example.com" `
-  --from-literal=JIRA_API_TOKEN="..."
-
 kubectl set env deployment/aiops-worker -n tf1-ai-demo `
-  --from=secret/tf1-aiops-integrations `
-  JIRA_DRY_RUN=false `
-  JIRA_ISSUE_TYPE=Task
+  TRIAGE_HUB_NOTIFY_SQS_URL="https://sqs.us-east-1.amazonaws.com/<account>/<queue-name>" `
+  TRIAGE_HUB_NOTIFY_SQS_DRY_RUN=false
 ```
 
-Keep `JIRA_DRY_RUN=true` for normal demo runs. Live Slack/Jira mutations happen in the worker after `/v1/triage` succeeds; the engine still only returns `ticket_payload` and metadata for audit/idempotency.
+Live Slack/Jira mutations remain CDO-owned. AI publishes the unified event body described in `capstone/tf-1/ai/docs/slack_integration_migration.md`; CDO consumes the queue and creates or updates Slack/Jira artifacts.
 
 Expected live AgentCore result for the included latency scenario:
 

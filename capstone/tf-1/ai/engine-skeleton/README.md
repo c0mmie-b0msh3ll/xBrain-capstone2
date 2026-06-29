@@ -86,7 +86,7 @@ AIOPS_IDEMPOTENCY_STALE_SECONDS=120
 
 The table uses `PK` and `SK` string keys, stores audit records under `AUDIT#{audit_id}`, idempotency state under `IDEMPOTENCY#{audit_id}`, and writes TTL values to `expires_at`.
 
-## Connect Slack and Jira
+## Connect Slack and Triage-Hub
 
 Slack is dry-run by default. To send real messages, create a Slack Incoming Webhook for the target channel, then set `SLACK_WEBHOOK_URL` before running the worker:
 
@@ -104,29 +104,23 @@ python -m app.aiops_worker --offline-scenario --scenario latency-degradation --s
 
 If `SLACK_WEBHOOK_URL` is not set, the worker prints `slack_dry_run` and does not send anything.
 
-Jira is also dry-run by default. The engine always returns a bounded `ticket_payload`; the worker can turn that payload into a Jira issue after triage succeeds. To create real Jira issues, set:
+For the CDO Slack/Jira flow, prefer the unified Triage-Hub SQS handoff. The worker publishes one normalized event after `/v1/triage`; CDO consumes it and owns Slack Block Kit rendering, Jira create/update, assignment, comments, and workflow transitions.
 
 ```bash
-export JIRA_DRY_RUN=false
-export JIRA_BASE_URL="https://your-domain.atlassian.net"
-export JIRA_EMAIL="aiops@example.com"
-export JIRA_API_TOKEN="..."
-export JIRA_ISSUE_TYPE="Task"
+export TRIAGE_HUB_NOTIFY_SQS_URL="https://sqs.us-east-1.amazonaws.com/123456789012/triage-hub-notify"
+export AWS_REGION="us-east-1"
 python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
 ```
 
 PowerShell:
 
 ```powershell
-$env:JIRA_DRY_RUN = "false"
-$env:JIRA_BASE_URL = "https://your-domain.atlassian.net"
-$env:JIRA_EMAIL = "aiops@example.com"
-$env:JIRA_API_TOKEN = "..."
-$env:JIRA_ISSUE_TYPE = "Task"
+$env:TRIAGE_HUB_NOTIFY_SQS_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/triage-hub-notify"
+$env:AWS_REGION = "us-east-1"
 python -m app.aiops_worker --offline-scenario --scenario latency-degradation --service payment-api --triage-url http://127.0.0.1:8081/v1/triage --report-dir reports
 ```
 
-If Jira credentials are missing or `JIRA_DRY_RUN=true`, the worker prints `jira_dry_run` and does not call Jira. Jira mutation is intentionally outside `/v1/triage`; the API remains a deterministic triage and audit service, while the worker owns outbound notification side effects.
+If `TRIAGE_HUB_NOTIFY_SQS_URL` is missing or `TRIAGE_HUB_NOTIFY_SQS_DRY_RUN=true`, the worker prints `triage_hub_sqs_dry_run` and does not call AWS. See `capstone/tf-1/ai/docs/slack_integration_migration.md` for the exact CDO JSON contract.
 
 ## Investigation Modes
 

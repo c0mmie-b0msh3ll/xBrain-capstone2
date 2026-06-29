@@ -27,7 +27,6 @@ from app.evidence_budget import compact_request_evidence
 from app.audit_store import append_audit_record, latest_audit_record
 from app.idempotency_store import complete_record, fail_record, read_record, request_hash, start_record, write_record
 from app.incident_seed import IncidentSeed, build_triage_request_from_seed
-from app.integrations import build_jira_issue_payload, create_jira_issue
 from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, build_prompt_payload, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
 from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits, app, build_audit_id, classify
@@ -1472,6 +1471,78 @@ def test_triage_hub_notify_payload_maps_request_and_response() -> None:
     }
 
 
+def test_triage_hub_notify_payload_matches_cdo_json_contract() -> None:
+    request_context = {
+        "incident_id": "inc-test-001",
+        "tenant_id": "tenant-a",
+        "alert": {
+            "service": "checkout-api",
+            "severity": "high",
+            "title": "High p95 latency on checkout-api",
+            "description": "p95 latency above threshold",
+        },
+        "ownership": {
+            "jira_project": "TRIAGE",
+            "slack_channel": "#oncall-alerts",
+        },
+    }
+    response = {
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "status": "DIAGNOSED",
+        "suspected_root_cause": {
+            "summary": "Database connection pool exhausted",
+            "evidence": [
+                "p95 latency 950ms",
+                "DB timeout logs",
+            ],
+        },
+        "recommended_actions": [
+            {
+                "type": "HUMAN_REVIEW",
+                "summary": "Check DB connection saturation",
+            }
+        ],
+        "suggested_assignee_account_id": "712020:abc123",
+        "suggestion_reason": "SME for checkout-api",
+    }
+
+    payload = build_triage_hub_notify_payload(response, request_context)
+
+    assert payload == {
+        "incident_id": "inc-test-001",
+        "tenant_id": "tenant-a",
+        "alert": {
+            "service": "checkout-api",
+            "severity": "high",
+            "title": "High p95 latency on checkout-api",
+            "description": "p95 latency above threshold",
+        },
+        "ownership": {
+            "jira_project": "TRIAGE",
+            "slack_channel": "#oncall-alerts",
+        },
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "status": "DIAGNOSED",
+        "suspected_root_cause": {
+            "summary": "Database connection pool exhausted",
+            "evidence": [
+                "p95 latency 950ms",
+                "DB timeout logs",
+            ],
+        },
+        "recommended_actions": [
+            {
+                "type": "HUMAN_REVIEW",
+                "summary": "Check DB connection saturation",
+            }
+        ],
+        "suggested_assignee_account_id": "712020:abc123",
+        "suggestion_reason": "SME for checkout-api",
+    }
+
+
 def test_triage_hub_sqs_dry_run_prints_payload_and_skips_aws(monkeypatch, capsys) -> None:
     monkeypatch.delenv("TRIAGE_HUB_NOTIFY_SQS_URL", raising=False)
     sqs = FakeSQS()
@@ -1543,87 +1614,13 @@ def test_legacy_slack_webhook_publish_still_works(monkeypatch) -> None:
     assert "Report: http://localhost:5173/#/reports/inc-001" in calls[0][1]["text"]
 
 
-def test_jira_issue_payload_maps_ticket_payload() -> None:
-    response = {
-        "incident_id": "inc-001",
-        "audit_id": "audit-001",
-        "suggested_assignee_account_id": "acct-123",
-        "ticket_payload": {
-            "project": "PAY",
-            "summary": "[high] checkout-api latency_degradation",
-            "description": "checkout-api is slow. Evidence: p95 latency breached.",
-            "labels": ["ai-triage", "tenant-a", "checkout-api", "latency_degradation"],
-            "fields": {
-                "audit_id": "audit-001",
-                "suggested_assignee_account_id": "acct-123",
-            },
-        },
-    }
-
-    payload = build_jira_issue_payload(response)
-
-    fields = payload["fields"]
-    assert fields["project"] == {"key": "PAY"}
-    assert fields["summary"] == "[high] checkout-api latency_degradation"
-    assert fields["issuetype"] == {"name": "Task"}
-    assert fields["assignee"] == {"accountId": "acct-123"}
-    assert "latency_degradation" in fields["labels"]
-    assert fields["description"]["content"][1]["content"][0]["text"] == "Audit ID: audit-001"
-
-
-def test_jira_dry_run_skips_http_when_credentials_missing(monkeypatch, capsys) -> None:
-    monkeypatch.delenv("JIRA_BASE_URL", raising=False)
-    monkeypatch.delenv("JIRA_EMAIL", raising=False)
-    monkeypatch.delenv("JIRA_API_TOKEN", raising=False)
-    response = {"incident_id": "inc-001", "ticket_payload": {"project": "PAY", "summary": "Investigate", "description": "Details", "labels": []}}
-
-    result = create_jira_issue(response, dry_run=False, http_post=lambda *args, **kwargs: pytest.fail("HTTP should not be called"))
-
-    output = json.loads(capsys.readouterr().out)
-    assert result["status"] == "dry_run"
-    assert result["reason"].startswith("missing_")
-    assert output["jira_dry_run"]["fields"]["project"] == {"key": "PAY"}
-
-
-def test_jira_live_create_posts_to_rest_api(monkeypatch) -> None:
-    calls: list[tuple[str, dict[str, Any], dict[str, str], int]] = []
-
-    class FakeResponse:
-        def raise_for_status(self) -> None:
-            return None
-
-        def json(self) -> dict[str, str]:
-            return {"id": "10001", "key": "PAY-123"}
-
-    def fake_post(url: str, json: dict[str, Any], headers: dict[str, str], timeout: int) -> FakeResponse:
-        calls.append((url, json, headers, timeout))
-        return FakeResponse()
-
-    monkeypatch.setenv("JIRA_BASE_URL", "https://jira.example")
-    monkeypatch.setenv("JIRA_EMAIL", "aiops@example.com")
-    monkeypatch.setenv("JIRA_API_TOKEN", "secret")
-    response = {
-        "incident_id": "inc-001",
-        "ticket_payload": {"project": "PAY", "summary": "Investigate checkout-api", "description": "Details", "labels": ["ai-triage"], "fields": {}},
-    }
-
-    result = create_jira_issue(response, dry_run=False, http_post=fake_post)
-
-    assert result["status"] == "created"
-    assert result["issue_key"] == "PAY-123"
-    assert calls[0][0] == "https://jira.example/rest/api/3/issue"
-    assert calls[0][1]["fields"]["project"] == {"key": "PAY"}
-    assert calls[0][2]["Authorization"].startswith("Basic ")
-    assert calls[0][3] == 10
-
-
 def test_sqs_seed_success_deletes_message_after_report_write(tmp_path, monkeypatch) -> None:
     args = argparse.Namespace(
         sqs_queue_url="https://sqs.example/queue",
         report_dir=str(tmp_path),
         report_base_url="http://localhost:5173/#/reports",
         dry_run_slack=True,
-        dry_run_jira=True,
+        dry_run_triage_hub_sqs=True,
     )
     seed = {
         "schema_version": "tf1.incident_seed.v1",
@@ -1665,7 +1662,7 @@ def test_sqs_seed_success_deletes_message_after_report_write(tmp_path, monkeypat
 
 
 def test_sqs_invalid_seed_is_not_deleted(tmp_path) -> None:
-    args = argparse.Namespace(sqs_queue_url="https://sqs.example/queue", report_dir=str(tmp_path), dry_run_slack=True, dry_run_jira=True)
+    args = argparse.Namespace(sqs_queue_url="https://sqs.example/queue", report_dir=str(tmp_path), dry_run_slack=True, dry_run_triage_hub_sqs=True)
     sqs = FakeSQS()
 
     processed = process_sqs_message(args, sqs, {"Body": "{}", "ReceiptHandle": "rh-001"}, ToolRegistry(FakeContextClient()))

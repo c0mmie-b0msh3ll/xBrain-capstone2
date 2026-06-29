@@ -33,8 +33,6 @@ spec:
           env:
             - name: REPORTS_DIR
               value: /tmp/reports
-            - name: JIRA_DRY_RUN
-              value: "true"
           volumeMounts:
             - name: reports
               mountPath: /tmp/reports

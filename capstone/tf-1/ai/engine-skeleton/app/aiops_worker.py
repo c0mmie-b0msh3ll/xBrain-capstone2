@@ -14,7 +14,7 @@ from pydantic import ValidationError
 
 from app.context_tools import ToolRegistry
 from app.incident_seed import IncidentSeed, build_triage_request_from_seed
-from app.integrations import create_jira_issue, publish_slack_webhook
+from app.integrations import publish_slack_webhook
 from app.report_store import write_report
 
 
@@ -49,7 +49,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-seconds", type=int, default=0)
     parser.add_argument("--offline-scenario", action="store_true")
     parser.add_argument("--dry-run-slack", action="store_true", default=os.getenv("SLACK_WEBHOOK_URL") is None)
-    parser.add_argument("--dry-run-jira", action="store_true", default=env_flag("JIRA_DRY_RUN", True))
     parser.add_argument("--dry-run-triage-hub-sqs", action="store_true", default=env_flag("TRIAGE_HUB_NOTIFY_SQS_DRY_RUN"))
     parser.add_argument("--sqs-queue-url", default=os.getenv("SQS_QUEUE_URL"))
     parser.add_argument("--sqs-wait-seconds", type=int, default=int(os.getenv("SQS_WAIT_SECONDS", "5")))
@@ -407,10 +406,6 @@ def publish_slack(response: dict[str, Any], dry_run: bool, report_url: str) -> N
     publish_slack_webhook(response, report_url, dry_run=dry_run)
 
 
-def publish_jira(response: dict[str, Any], dry_run: bool) -> None:
-    create_jira_issue(response, dry_run=dry_run)
-
-
 def build_triage_hub_notify_payload(response: dict[str, Any], request_context: dict[str, Any]) -> dict[str, Any]:
     return {
         "incident_id": response.get("incident_id") or request_context.get("incident_id"),
@@ -460,10 +455,6 @@ def should_dry_run_triage_hub(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "dry_run_triage_hub_sqs", False))
 
 
-def should_dry_run_jira(args: argparse.Namespace) -> bool:
-    return bool(getattr(args, "dry_run_jira", True))
-
-
 def run_once(args: argparse.Namespace) -> bool:
     deploys: list[dict[str, Any]] = []
     if args.offline_scenario:
@@ -492,7 +483,6 @@ def run_once(args: argparse.Namespace) -> bool:
     report_path = write_report(report, Path(args.report_dir))
     print(json.dumps({"report_written": str(report_path), "report_url": report_url}, indent=2))
     publish_slack(response, args.dry_run_slack, report_url)
-    publish_jira(response, should_dry_run_jira(args))
     publish_to_triage_hub_sqs(response, body, should_dry_run_triage_hub(args))
     return True
 
@@ -528,7 +518,6 @@ def process_sqs_message(
         )
     )
     publish_slack(response, args.dry_run_slack, report_url)
-    publish_jira(response, should_dry_run_jira(args))
     publish_to_triage_hub_sqs(response, body, should_dry_run_triage_hub(args))
     return True
 
