@@ -1,13 +1,118 @@
 # Jira Task Evidence Updates - TF1 AI Ops
 
-Date: 2026-06-26  
+Date: 2026-06-30  
 Project: `A0X / AIO-01-XBrain`  
 Purpose: paste-ready Jira task updates with evidence links for W11/W12 handoff.
+
+## 2026-06-30 Final Status Summary
+
+Use this table to update Jira statuses.
+
+| Issue | Status to set | Evidence summary |
+|---|---|---|
+| A0X-19 | Done | AI API contract and Jira/Slack boundary finalized. |
+| A0X-20 | Done | Telemetry/context contract and bounded evidence fields finalized. |
+| A0X-21 | Done | Deployment contract, EKS demo setup, AgentCore runtime config, DynamoDB persistence, and deploy addendum documented. |
+| A0X-22 | Done | Context enrichment, evidence bundles, read-only tools, and Jira history lookup implemented. |
+| A0X-23 | Done | Deterministic RCA and anomaly detection pipeline implemented. |
+| A0X-24 | Done | Investigation mode router implemented. |
+| A0X-25 | Done | AgentCore custom runtime integration implemented and validated. |
+| A0X-26 | Done | Guardrails, bounded tools, no-remediation policy, and fallback behavior implemented. |
+| A0X-27 | Done | Observability metrics and dashboard artifacts implemented. |
+| A0X-28 | Done | Report UI and E2E evidence artifacts available. |
+| A0X-29 | Done | Test suite, datapack validator, runbook/scenario tests, auth fix tests, and Jira history tests pass. |
+| A0X-30 | Done | README/handoff docs, AI Ops implementation update, DevOps deploy update, and deploy setup addendum prepared. |
+| A0X-31 | Duplicate | Duplicate of A0X-27. Link to A0X-27 and close as duplicate. |
+| A0X-32 | Done | W11/W12 contract package ready for CDO sign-off. |
+| A0X-33 | Done | RCAEval-derived evidence bundles and enriched scenario datapacks ready. |
+| A0X-34 | Done | AI-owned EKS/AgentCore demo and runtime evidence complete; CDO-owned deployment is tracked by CDO. |
+| A0X-35 | In Progress / Blocked on CDO confirmation | AI-side CDO handoff is ready; keep open until CDO confirms queue URL/IAM/dispatcher Slack-Jira output in their environment. |
+
+## 2026-06-30 Final Paste-Ready Update For Completed AI Tasks
+
+Paste this into completed AI-owned tasks, or use it as the parent update for A0X-19 through A0X-34:
+
+```text
+AI-owned implementation is complete and validated.
+
+Latest evidence:
+- Commit: a6fa1a8 Add Jira history DynamoDB fallback docs
+- Commit: db4c333 Enrich AIOps scenario runbooks and tests
+- Commit: 4a6eb2e Send service auth token from AIOps worker
+- Commit: ee350e5 Align Triage-Hub notify payload with CDO contract
+- Commit: 120c952 Add EKS AgentCore demo and QA judge
+
+Implementation evidence:
+- capstone/tf-1/ai/engine-skeleton/app/main.py
+- capstone/tf-1/ai/engine-skeleton/app/aiops_worker.py
+- capstone/tf-1/ai/engine-skeleton/app/agent_runtime.py
+- capstone/tf-1/ai/engine-skeleton/agentcore_investigator/
+- capstone/tf-1/ai/engine-skeleton/app/context_tools.py
+- capstone/tf-1/ai/engine-skeleton/app/dynamodb_store.py
+- capstone/tf-1/ai/engine-skeleton/app/qa_judge.py
+- capstone/tf-1/ai/engine-skeleton/deploy/eks-demo/
+
+Handoff/docs evidence:
+- docs/tf1-aiops-team-implementation-update.md
+- docs/tf1-devops-cdo-deploy-update.md
+- docs/tf1-devops-deploy-setup-addendum.md
+- capstone/tf-1/ai/docs/slack_integration_migration.md
+- capstone/tf-1/ai/engine-skeleton/deploy/eks-demo/README.md
+
+Validation evidence:
+- pytest: 90 passed
+- datapack validation: passed
+- kubectl kustomize: passed
+
+Notes:
+- AgentCore is deployed as a custom Bedrock AgentCore Runtime investigator.
+- API owns guardrails, audit, idempotency, fallback, and final response assembly.
+- DynamoDB stores audit/idempotency and supports Jira history suggestion lookup.
+- JIRA_HISTORY_PATH JSON remains backward-compatible for local/demo fallback.
+- Worker now sends Authorization: Bearer <SERVICE_AUTH_TOKEN> when SERVICE_AUTH_TOKEN is configured.
+- CDO Slack/Jira flow is aligned to Triage-Hub SQS handoff. AI does not mutate Slack/Jira directly.
+- Enriched scenarios/runbooks cover latency degradation, critical service down, and noisy false alert.
+```
+
+## 2026-06-30 A0X-35 CDO Handoff Update
+
+Paste this into A0X-35 and keep the issue open until CDO confirms live dispatcher output:
+
+```text
+AI-side CDO handoff is ready. Remaining work is CDO-owned deployment and dispatcher confirmation.
+
+AI evidence:
+- Commit: a6fa1a8 Add Jira history DynamoDB fallback docs
+- Commit: ee350e5 Align Triage-Hub notify payload with CDO contract
+- Commit: 4a6eb2e Send service auth token from AIOps worker
+- docs/tf1-devops-cdo-deploy-update.md
+- docs/tf1-devops-deploy-setup-addendum.md
+- capstone/tf-1/ai/docs/slack_integration_migration.md
+
+What AI completed:
+- Worker publishes unified Triage-Hub SQS payload after /v1/triage.
+- Payload includes incident_id, tenant_id, alert, ownership, classification, confidence, status, suspected_root_cause, recommended_actions, suggested_assignee_account_id, and suggestion_reason.
+- Worker sends Authorization header when SERVICE_AUTH_TOKEN is enabled.
+- Jira history suggestion supports DynamoDB first, JSON fallback second.
+- AI does not create/update Jira and does not mutate Slack. CDO owns Slack/Jira dispatcher.
+
+CDO confirmation still needed:
+- TRIAGE_HUB_NOTIFY_SQS_URL provided to worker.
+- Worker role has sqs:SendMessage.
+- API/worker share SERVICE_AUTH_TOKEN.
+- CDO dispatcher consumes SQS message.
+- Slack/Jira output is created or updated from the CDO dispatcher.
+```
 
 ## Current Repo Evidence
 
 Latest pushed commits:
 
+- `a6fa1a8 Add Jira history DynamoDB fallback docs`
+- `db4c333 Enrich AIOps scenario runbooks and tests`
+- `4a6eb2e Send service auth token from AIOps worker`
+- `ee350e5 Align Triage-Hub notify payload with CDO contract`
+- `120c952 Add EKS AgentCore demo and QA judge`
 - `9ffc23e Clean contracts and add Vietnamese AI engine report`
 - `d75fb8b Add investigation modes and AgentCore platform flow`
 
@@ -24,11 +129,20 @@ Primary evidence files:
   - `capstone/tf-1/ai/docs/ai_engine_detailed_report_vi.md`
 - Engine implementation:
   - `capstone/tf-1/ai/engine-skeleton/app/main.py`
+  - `capstone/tf-1/ai/engine-skeleton/app/aiops_worker.py`
   - `capstone/tf-1/ai/engine-skeleton/app/investigation_router.py`
   - `capstone/tf-1/ai/engine-skeleton/app/agent_runtime.py`
   - `capstone/tf-1/ai/engine-skeleton/app/context_tools.py`
+  - `capstone/tf-1/ai/engine-skeleton/app/dynamodb_store.py`
+  - `capstone/tf-1/ai/engine-skeleton/app/qa_judge.py`
   - `capstone/tf-1/ai/engine-skeleton/app/rca.py`
   - `capstone/tf-1/ai/engine-skeleton/app/observability.py`
+  - `capstone/tf-1/ai/engine-skeleton/agentcore_investigator/`
+  - `capstone/tf-1/ai/engine-skeleton/deploy/eks-demo/`
+- Latest team/deploy update docs:
+  - `docs/tf1-aiops-team-implementation-update.md`
+  - `docs/tf1-devops-cdo-deploy-update.md`
+  - `docs/tf1-devops-deploy-setup-addendum.md`
 - Test/eval evidence:
   - `capstone/tf-1/ai/engine-skeleton/tests/test_aiops_pipeline.py`
   - `capstone/tf-1/ai/engine-skeleton/reports-e2e/rcaeval-e2e-results.json`
@@ -291,7 +405,9 @@ Validation run:
 - docker compose -f docker-compose.observability.yml config --quiet
 
 Latest known result:
-- 64 passed
+- 90 passed
+- datapack validation passed
+- kubectl kustomize passed
 ```
 
 ### A0X-30 - README / Handoff Documentation
@@ -436,5 +552,5 @@ These cannot be completed from the repo alone:
 |---|---|
 | A0X-19..A0X-30 | Paste evidence comments and move completed implementation issues to Done. |
 | A0X-31 | Mark duplicate/link to A0X-27. |
-| A0X-32..A0X-34 | Paste evidence comments and move to Done if reviewer accepts. |
-| A0X-35 | Keep In Progress until CDO runs their deployed-engine smoke test and confirms Slack/Jira/evidence hosting. |
+| A0X-32..A0X-34 | Paste evidence comments and move to Done. |
+| A0X-35 | Keep In Progress / Blocked on CDO confirmation until CDO runs deployed-engine smoke test and confirms Slack/Jira/evidence hosting. |

@@ -80,3 +80,19 @@
 - CDO will deploy the AI engine and own infrastructure concerns.
 - AI team responsibility is the AI engine artifact, runtime behavior, contracts, environment/config documentation, and smoke-test support.
 - CDO responsibility is hosting platform, network/auth, observability plumbing, scaling, rollout/rollback, Slack rendering, Jira creation, and evidence bundle hosting.
+
+## 2026-06-30 - Final Jira Evidence / Deploy Update
+
+### Done
+
+- Refreshed `capstone/tf-1/ai/docs/jira_task_evidence_updates.md` with final paste-ready Jira comments and status recommendations.
+- Marked AI-owned implementation tasks A0X-19 through A0X-30, A0X-32 through A0X-34 as `Done` in the recommended status table.
+- Kept A0X-31 as duplicate of A0X-27.
+- Kept A0X-35 `In Progress / Blocked on CDO confirmation` because final Slack/Jira dispatcher output depends on CDO queue URL, IAM, and dispatcher smoke test.
+- Added deploy setup addendum at `docs/tf1-devops-deploy-setup-addendum.md`.
+
+### Evidence
+
+- Latest commit evidence: `a6fa1a8`, `db4c333`, `4a6eb2e`, `ee350e5`, `120c952`.
+- Validation: `pytest: 90 passed`, datapack validation passed, `kubectl kustomize` passed.
+- Jira history suggestion now supports DynamoDB first with `JIRA_HISTORY_PATH` JSON fallback.
