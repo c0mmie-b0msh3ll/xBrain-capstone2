@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 
 from app.action_catalog import select_actions
-from app.agent_runtime import run_agent_platform
+from app.agent_runtime import contains_blocked_text, run_agent_platform
 from app.aiops_worker import (
     build_report,
     build_triage_hub_notify_payload,
@@ -342,6 +342,12 @@ def test_agent_platform_invalid_final_diagnosis_falls_back(monkeypatch) -> None:
     assert final_decision == decision
     assert metadata["fallback"] is True
     assert metadata["fallback_reason"] == "invalid_final_diagnosis"
+
+
+def test_agent_platform_blocked_text_guardrail_does_not_match_inside_words() -> None:
+    assert contains_blocked_text(["investigated without assigning a firm root cause."]) is False
+    assert contains_blocked_text(["Operator proposed rm -rf /tmp during investigation."]) is True
+    assert contains_blocked_text(["Do not run kubectl get pods from the agent output."]) is True
 
 
 def test_triage_metadata_contains_mode_selection_for_simple_request() -> None:

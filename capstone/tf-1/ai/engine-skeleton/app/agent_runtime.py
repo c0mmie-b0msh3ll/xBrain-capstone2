@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Any
 
 from app.action_catalog import ACTION_CATALOG
@@ -32,6 +33,12 @@ BLOCKED_TEXT_TOKENS = (
     "jira create",
     "slack post",
     "shell",
+)
+BLOCKED_TEXT_PATTERN = re.compile(
+    r"(?<![a-z0-9_-])(?:kubectl|curl|rm|delete|restart|rollback|scale|promql|logql|shell)(?![a-z0-9_-])"
+    r"|(?<![a-z0-9_-])jira\s+create(?![a-z0-9_-])"
+    r"|(?<![a-z0-9_-])slack\s+post(?![a-z0-9_-])",
+    re.IGNORECASE,
 )
 
 
@@ -240,5 +247,5 @@ def validate_final_diagnosis(payload: dict[str, Any], rca: dict[str, Any]) -> tu
 
 
 def contains_blocked_text(items: list[str]) -> bool:
-    text = " ".join(items).lower()
-    return any(token in text for token in BLOCKED_TEXT_TOKENS)
+    text = " ".join(items)
+    return BLOCKED_TEXT_PATTERN.search(text) is not None
