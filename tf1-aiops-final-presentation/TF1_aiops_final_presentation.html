@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TF1 Triage Hub - AI Ops Final</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+  --brand-primary:#0f172a;
+  --brand-accent:#f59e0b;
+  --brand-accent-2:#fb923c;
+  --brand-secondary:#3b82f6;
+  --brand-danger:#ef4444;
+  --brand-success:#22c55e;
+  --text-primary:#1e293b;
+  --text-secondary:#475569;
+  --text-muted:#94a3b8;
+  --border:#e2e8f0;
+  --surface-dark:#ffffff;
+  --surface-card:#f8fafc;
+  --gradient-warm:linear-gradient(135deg,#f59e0b,#ef4444);
+  --ease-out:cubic-bezier(0.16,1,0.3,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--surface-dark);color:var(--text-primary);line-height:1.5;-webkit-font-smoothing:antialiased}
+.slide{min-height:100vh;width:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(32px,5vh,76px) clamp(24px,5vw,112px);position:relative;overflow:hidden}
+.slide-title{text-align:center;background:var(--surface-dark)}
+.slide-title::before{content:'';position:absolute;top:-30%;right:-20%;width:60%;height:80%;background:radial-gradient(circle,rgba(245,158,11,.13) 0%,transparent 70%);pointer-events:none}
+.slide-title::after{content:'';position:absolute;bottom:-20%;left:-15%;width:50%;height:60%;background:radial-gradient(circle,rgba(59,130,246,.09) 0%,transparent 70%);pointer-events:none}
+.slide-title h1{font-size:clamp(2.2rem,5.2vw,4.4rem);font-weight:800;line-height:1.06;letter-spacing:-.03em;margin-bottom:18px}
+.slide-title .lead{font-size:clamp(1rem,1.8vw,1.25rem);color:var(--text-secondary);max-width:820px;margin:0 auto}
+.gradient-text{background:var(--gradient-warm);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.eyebrow{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--brand-accent);margin-bottom:10px}
+.meta-chips{display:flex;gap:12px;margin-top:24px;justify-content:center;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:7px;padding:7px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text-secondary)}
+.chip strong{color:var(--text-primary)}
+.slide-divider{text-align:center;background:var(--surface-dark)}
+.slide-divider::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(245,158,11,.07) 0%,transparent 60%);pointer-events:none}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:clamp(5rem,12vw,10rem);font-weight:700;-webkit-text-stroke:2px rgba(245,158,11,.22);color:transparent;line-height:1;margin-bottom:-18px}
+.section-label{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:var(--brand-accent);margin-bottom:8px}
+.slide-divider h2{font-size:clamp(1.9rem,4.2vw,3.25rem);font-weight:800;line-height:1.12;letter-spacing:-.02em}
+.slide-divider .lead{font-size:clamp(.98rem,1.5vw,1.16rem);color:var(--text-secondary);margin-top:14px;max-width:720px}
+.slide-content{width:100%;max-width:1120px}
+.slide-header{margin-bottom:clamp(22px,3vh,40px)}
+.slide-header h2{font-size:clamp(1.6rem,3.2vw,2.35rem);font-weight:800;line-height:1.12;letter-spacing:-.02em}
+.slide-header .lead{font-size:clamp(.88rem,1.2vw,1.02rem);color:var(--text-secondary);margin-top:7px;max-width:820px}
+.slide-footer{position:absolute;bottom:20px;left:40px;right:140px;display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+.grid{display:grid;gap:clamp(14px,2vw,22px)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--surface-card);border:1px solid var(--border);border-radius:12px;padding:clamp(16px,2vw,24px);transition:transform .3s var(--ease-out)}
+.card:hover{transform:translateY(-2px)}
+.card h3{font-size:clamp(.94rem,1.3vw,1.13rem);font-weight:800;margin-bottom:8px}
+.card p,.card li{font-size:clamp(.82rem,1vw,.94rem);color:var(--text-secondary);line-height:1.55}
+.card-dark{background:var(--brand-primary);border-color:rgba(245,158,11,.2);color:#e2e8f0}
+.card-dark h3{color:#fff}
+.card-dark p,.card-dark li{color:#cbd5e1}
+.card-accent{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(251,146,60,.05));border-color:rgba(245,158,11,.32)}
+.card-blue{background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(96,165,250,.05));border-color:rgba(59,130,246,.32)}
+.card-green{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(74,222,128,.05));border-color:rgba(34,197,94,.32)}
+.card-danger{background:linear-gradient(135deg,#b91c1c,#991b1b);border:none;box-shadow:0 4px 14px rgba(185,28,28,.34);color:#fff;text-align:center}
+.card-danger h3,.card-danger p{color:#fff}
+.icon-circle{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;background:rgba(255,255,255,.22)}
+.icon-soft{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px;background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(251,146,60,.08))}
+.number{font-family:'JetBrains Mono',monospace;font-size:clamp(2.3rem,4.2vw,3.8rem);font-weight:800;color:var(--brand-accent);line-height:1}
+.number-blue{color:var(--brand-secondary)}
+.number-green{color:var(--brand-success)}
+.label{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center}
+.flow-step{background:var(--surface-card);border:1px solid var(--border);border-radius:10px;padding:clamp(12px,1.5vw,18px) clamp(14px,2vw,22px);text-align:center;font-size:clamp(.76rem,1vw,.9rem);font-weight:700;min-width:142px}
+.flow-arrow{color:var(--brand-accent);font-size:1.25rem;padding:0 8px;flex-shrink:0}
+.bullets{list-style:none;padding:0}
+.bullets li{padding:9px 0 9px 26px;position:relative;font-size:clamp(.86rem,1.1vw,.98rem);color:var(--text-secondary);border-bottom:1px solid var(--border)}
+.bullets li:last-child{border-bottom:none}
+.bullets li::before{content:'';position:absolute;left:0;top:16px;width:8px;height:8px;border-radius:50%;background:var(--brand-accent)}
+.checkpoint{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:14px 18px;font-size:.9rem;color:var(--text-secondary)}
+.checkpoint strong{color:var(--brand-success)}
+.warn{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;font-size:.9rem;color:var(--text-secondary)}
+.warn strong{color:var(--brand-danger)}
+table{width:100%;border-collapse:collapse;font-size:clamp(.78rem,1vw,.9rem)}
+th{text-align:left;padding:10px 14px;background:rgba(30,41,59,.9);color:var(--brand-accent);font-weight:800;font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid rgba(245,158,11,.3)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary)}
+tr:hover td{background:rgba(51,65,85,.05)}
+code{font-family:'JetBrains Mono',monospace;font-size:.86em;background:rgba(51,65,85,.12);padding:2px 6px;border-radius:4px;color:#0f172a}
+.code-block{background:#0f172a;border:1px solid rgba(245,158,11,.24);border-radius:10px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:clamp(.68rem,.9vw,.82rem);color:#e2e8f0;line-height:1.65;overflow-x:auto;white-space:pre}
+.code-block .kw{color:#f59e0b}.code-block .str{color:#34d399}.code-block .key{color:#60a5fa}.code-block .num{color:#fbbf24}
+.lab-tag{display:inline-block;background:var(--gradient-warm);color:#fff;font-weight:800;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:6px;margin-bottom:10px}
+.badge{display:inline-block;padding:4px 10px;border-radius:5px;font-size:.72rem;font-weight:800;letter-spacing:.04em}
+.badge-accent{background:rgba(245,158,11,.15);color:var(--brand-accent)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--brand-secondary)}
+.badge-success{background:rgba(34,197,94,.15);color:var(--brand-success)}
+.badge-danger{background:rgba(239,68,68,.15);color:var(--brand-danger)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:clamp(22px,3vw,42px);align-items:start}
+.progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--gradient-warm);z-index:1000;width:0%;transition:width .3s}
+.nav-dots{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:1000;display:flex;flex-direction:column;gap:8px}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:rgba(148,163,184,.35);cursor:pointer;transition:all .3s;border:none;padding:0}
+.nav-dot.active{background:var(--brand-accent);transform:scale(1.4)}
+.slide-counter{position:fixed;bottom:20px;right:24px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--text-muted);z-index:1000}
+.slide-counter strong{color:var(--text-primary)}
+.slide-closing{text-align:center}
+.slide-closing h2{font-size:clamp(2rem,4vw,3.3rem);font-weight:800;line-height:1.1;margin-bottom:16px}
+@media(max-width:767px){.grid-2,.grid-3,.grid-4,.grid-5,.two-col{grid-template-columns:1fr!important}.flow{flex-direction:column}.flow-arrow{transform:rotate(90deg)}.nav-dots{display:none}.slide-footer{display:none}}
+@media(max-height:700px){.slide{padding:24px 20px}.slide-header{margin-bottom:18px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="slide-counter" id="counter"><strong>01</strong> / 27</div>
+
+<section class="slide slide-title">
+  <div class="eyebrow">TF1 · AIOps Capstone · Final</div>
+  <h1><span class="gradient-text">Triage Hub</span><br>AI Engine for Alert → RCA → Ticket</h1>
+  <p class="lead">A bounded AI triage engine that reduces manual on-call digging, keeps human-in-the-loop, and hands a signed contract payload to CDO.</p>
+  <div class="meta-chips">
+    <div class="chip"><i data-lucide="activity"></i><strong>Scenario</strong> 3 E2E incidents</div>
+    <div class="chip"><i data-lucide="shield-check"></i><strong>Boundary</strong> No auto-remediation</div>
+    <div class="chip"><i data-lucide="database"></i><strong>Audit</strong> DynamoDB + idempotency</div>
+  </div>
+</section>
+
+<section class="slide slide-divider">
+  <div class="section-number">01</div>
+  <div class="section-label">Problem</div>
+  <h2>Client không thiếu alert.<br>Client thiếu <span class="gradient-text">triage context</span>.</h2>
+  <p class="lead">On-call đang mất 30-60 phút cho mỗi alert chỉ để đào log, query metric, tạo Jira, và tìm owner.</p>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Client Context</div>
+      <h2>SaaS B2B startup, 50 microservices, on-call burnout</h2>
+      <p class="lead">Problem statement lấy trực tiếp từ TF1 learner brief.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-accent"><div class="number">20k</div><div class="label">active users</div><p>Sản phẩm B2B đang chạy production.</p></div>
+      <div class="card card-blue"><div class="number number-blue">50</div><div class="label">microservices</div><p>Nhiều service, nhiều signal rời rạc.</p></div>
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="flame"></i></div><h3>8 engineers</h3><p>On-call team nhỏ, burnout nặng.</p></div>
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="bell-ring"></i></div><h3>50+ alerts / week</h3><p>Mỗi alert mất 30-60 phút tới root cause.</p></div>
+    </div>
+    <div class="warn" style="margin-top:22px"><strong>Vấn đề gốc:</strong> 80% effort là việc lặp lại, không phải deep engineering: logs, metrics, Jira ticket, owner lookup.</div>
+  </div>
+  <div class="slide-footer"><span>01 — Problem</span><span>TF1 Triage Hub</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">What Client Wants</div>
+      <h2>Engineer chỉ confirm + act, không dig from zero</h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><i data-lucide="siren"></i><br>Alert fires</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="search"></i><br>Gather context</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="brain-circuit"></i><br>AI diagnose</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="ticket"></i><br>Jira payload</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="message-square"></i><br>Slack notify</div>
+    </div>
+    <div class="grid grid-3" style="margin-top:28px">
+      <div class="card"><h3>Logs + metrics</h3><p>Context thay vì alert trống.</p></div>
+      <div class="card"><h3>RCA + next action</h3><p>Suggestion phải actionable, không generic.</p></div>
+      <div class="card"><h3>Owner routing</h3><p>Ticket/Slack payload có assignee suggestion.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>01 — Problem</span><span>Client wants Triage Hub</span></div>
+</section>
+
+<section class="slide slide-divider">
+  <div class="section-number">02</div>
+  <div class="section-label">AI Engine</div>
+  <h2>Không phải chatbot.<br>Đây là <span class="gradient-text">diagnostic pipeline</span>.</h2>
+  <p class="lead">Evidence normalization → anomaly detectors → RCA ranking → confidence gates → AgentCore loop → QA judge → action catalog.</p>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Engine Pipeline</div>
+      <h2>AI engine chạy theo compute-first RCA pipeline</h2>
+      <p class="lead">LLM/AgentCore không được đứng đầu pipeline. Evidence phải được clean, score, rank, gate trước.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><i data-lucide="shield"></i><br>Ingress guards<br><span class="badge badge-blue">auth + limits</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="database-zap"></i><br>Idempotency<br><span class="badge badge-success">replay-safe</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="filter"></i><br>Context enrich<br><span class="badge badge-accent">bounded</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="activity"></i><br>Detector ensemble<br><span class="badge badge-blue">metrics + logs</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="git-branch"></i><br>RCA ranker<br><span class="badge badge-accent">topology-aware</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="brain-circuit"></i><br>Agent loop<br><span class="badge badge-success">if needed</span></div>
+    </div>
+    <div class="checkpoint" style="margin-top:24px"><strong>Main defense:</strong> “We use deterministic evidence scoring as the primary decision layer. AgentCore is a bounded investigator for complex/ambiguous cases, not unrestricted production access.”</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Compute-first pipeline</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Detector Ensemble</div>
+      <h2>Metrics diagnosis is not one rule</h2>
+      <p class="lead">The engine combines threshold checks, statistical drift, shape anomaly, and log evidence.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="gauge"></i></div><h3>Threshold</h3><p>Latency ≥ 1000ms, error/5xx ≥ 5, availability &lt; 95, CPU/memory ≥ 85.</p></div>
+      <div class="card card-accent"><div class="icon-soft"><i data-lucide="sigma"></i></div><h3>Rolling Z-score</h3><p>Latest point compared to baseline; abs(z) ≥ 3 creates high-severity evidence.</p></div>
+      <div class="card card-blue"><div class="icon-soft"><i data-lucide="trending-up"></i></div><h3>EWMA drift</h3><p>α = 0.35; catches drift when current deviates from smoothed expected value.</p></div>
+      <div class="card card-green"><div class="icon-soft"><i data-lucide="scan-search"></i></div><h3>IsolationForest</h3><p>contamination = 0.15, random_state = 7; catches latest-point shape anomaly.</p></div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h3>Log anomaly layer</h3>
+      <p>Error-like logs are counted by service using tokens: <code>error</code>, <code>timeout</code>, <code>failed</code>, <code>refused</code>, <code>exhausted</code>, <code>down</code>, <code>deadline</code>. Count/5.0 becomes a bounded log score.</p>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Detector ensemble</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Topology + Causal Hints</div>
+      <h2>RCA ranking uses service graph evidence</h2>
+      <p class="lead">We rank candidate services from metric/log evidence, dependency hints, recent deploys, and lag correlation.</p>
+    </div>
+    <div class="two-col">
+      <div class="card card-dark">
+        <h3>Candidate score inputs</h3>
+        <ul class="bullets">
+          <li>Detector score from metric/log anomaly evidence.</li>
+          <li>Dependency bump: impacted service dependency gets +0.35.</li>
+          <li>Recent deploy bump: deployed service gets +0.45.</li>
+          <li>Causal hint bump: lag-correlation score × 0.3.</li>
+          <li>If no evidence exists, alerted service becomes weak anchor: 0.25.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="lab-tag">RCA ranking logic</div>
+        <div class="code-block">score[service] += detector_score
+if dependency_of_impacted_service:
+  score[dependency] += <span class="num">0.35</span>
+if recent_deploy_on_service:
+  score[service] += <span class="num">0.45</span>
+if lag_correlation_abs >= <span class="num">0.70</span>:
+  score[source] += correlation * <span class="num">0.30</span>
+
+confidence = min(score / top_score, <span class="num">1.0</span>)
+return top_5_candidates</div>
+      </div>
+    </div>
+    <div class="checkpoint" style="margin-top:20px"><strong>Important:</strong> lag correlation is explicitly “supporting evidence, not proof.” That gives us a defendable RCA story without overclaiming causality.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>RCA ranking</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Evidence From Actual Runs</div>
+      <h2>Testing story: we did not stop at the happy path</h2>
+      <p class="lead">Evidence file: <code>capstone/tf-1/ai/engine-skeleton/reports-e2e/rcaeval-benchmark-matrix-2026-07-01.md</code></p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-danger"><div class="number">18%</div><div class="label">first stress result</div><p>Hidden alert metadata exposed a bad keyword shortcut: metric names made too many cases look like latency.</p></div>
+      <div class="card card-accent"><div class="number">38%</div><div class="label">first fix</div><p>Removed raw metric-name keyword matching and scored only actual anomaly evidence.</p></div>
+      <div class="card card-blue"><div class="number number-blue">62.45%</div><div class="label">lower bound</div><p>Full RCAEval-v2, 735 cases, hidden alert metadata, deterministic only.</p></div>
+      <div class="card card-green"><div class="number number-green">89.66%</div><div class="label">production-like</div><p>Full 735-case run with production-like metadata and evidence contract.</p></div>
+    </div>
+    <div class="checkpoint" style="margin-top:22px"><strong>Defense line:</strong> Hidden metadata is the lower-bound stress test. Production-like metadata is the contract CDO would actually send.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Benchmark evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Benchmark Matrix</div>
+      <h2>Final benchmark separates speed, accuracy, and cost</h2>
+      <p class="lead">We report deterministic full-dataset runs separately from AgentCore sampled runs because their latency and cost profiles are different.</p>
+    </div>
+    <table>
+      <thead><tr><th>Mode</th><th>Dataset</th><th>Metadata</th><th>AgentCore</th><th>Accuracy</th><th>Macro F1</th><th>Avg latency</th></tr></thead>
+      <tbody>
+        <tr><td>Conservative lower bound</td><td>735 full</td><td>hidden</td><td>off</td><td>62.45%</td><td>48.11%</td><td>0.47 ms</td></tr>
+        <tr><td>Production-like path</td><td>735 full</td><td>mapped</td><td>off</td><td>89.66%</td><td>81.03%</td><td>0.45 ms</td></tr>
+        <tr><td>AgentCore sample</td><td>15, 5/class</td><td>hidden</td><td>on</td><td>93.33%</td><td>93.27%</td><td>2138.69 ms</td></tr>
+        <tr><td>AgentCore + metadata sample</td><td>15, 5/class</td><td>mapped</td><td>on</td><td>93.33%</td><td>93.27%</td><td>2162.09 ms</td></tr>
+      </tbody>
+    </table>
+    <div class="warn" style="margin-top:20px"><strong>Important:</strong> AgentCore is sampled because every case invokes a paid runtime. Deterministic full-run is the high-volume hot path; AgentCore is for ambiguous/high-value incidents.</div>
+  </div>
+  <div class="slide-footer"><span>02 - AI Engine</span><span>Final benchmark matrix</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">MTTA / MTTR Proxy</div>
+      <h2>We estimate response impact without pretending production MTTR exists yet</h2>
+      <p class="lead">Evidence file: <code>capstone/tf-1/ai/engine-skeleton/reports-e2e/mtta-mttr-before-after-2026-07-01.md</code></p>
+    </div>
+    <table>
+      <thead><tr><th>Metric</th><th>Before</th><th>After deterministic</th><th>After AgentCore</th><th>What is measured</th></tr></thead>
+      <tbody>
+        <tr><td>MTTA proxy</td><td>15-30 minutes</td><td>~0.45-0.47 ms</td><td>~2.1 s</td><td>alert/evidence -> actionable diagnosis + ticket payload</td></tr>
+        <tr><td>MTTR proxy</td><td>60-120 minutes</td><td>reduced by Jira/Slack/SQS handoff</td><td>same + reasoning audit</td><td>time to routed owner action, not full production resolution</td></tr>
+        <tr><td>Handoff consistency</td><td>manual, engineer-dependent</td><td>structured JSON + audit_id</td><td>structured JSON + AgentCore metadata</td><td>repeatable ticket/slack payload</td></tr>
+      </tbody>
+    </table>
+    <div class="checkpoint" style="margin-top:20px"><strong>Demo-safe claim:</strong> We measured time-to-actionable-triage and handoff. Real MTTA/MTTR needs production timestamps after CDO deploy.</div>
+  </div>
+  <div class="slide-footer"><span>02 - AI Engine</span><span>MTTA / MTTR proxy</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Evidence From Actual Runs</div>
+      <h2>Every scenario produces report artifacts</h2>
+      <p class="lead">Screenshot artifact: <code>reports-e2e/rcaeval-report-list-ui-rendered.png</code></p>
+    </div>
+    <div style="background:#f8fafc;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 12px 32px rgba(15,23,42,.12)">
+      <img src="assets/rcaeval-report-list-ui-rendered.png" alt="RCAEval report list UI rendered evidence" style="display:block;width:100%;height:auto;border-radius:8px">
+    </div>
+    <div class="checkpoint" style="margin-top:16px"><strong>What this proves:</strong> critical cases are diagnosed at 86%, latency cases at 82%, noisy cases go to INVESTIGATE at 45% instead of fake RCA.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Report UI evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Evidence From Actual Runs</div>
+      <h2>Actual RCA report shows evidence lines and ranked candidates</h2>
+      <p class="lead">Screenshot artifact: <code>reports-e2e/rcaeval-detail-ui-rendered.png</code></p>
+    </div>
+    <div style="background:#f8fafc;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 12px 32px rgba(15,23,42,.12);max-height:660px;overflow:hidden">
+      <img src="assets/rcaeval-detail-ui-rendered.png" alt="RCAEval detail report UI rendered evidence" style="display:block;width:100%;height:auto;border-radius:8px;transform:translateY(-4px)">
+    </div>
+    <div class="checkpoint" style="margin-top:16px"><strong>Call out live:</strong> ts-auth-service is diagnosed as critical_service_down, confidence 86%, top RCA candidate ts-auth-service, with z-score, EWMA, and IsolationForest evidence lines.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>RCA detail evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Evidence From Actual Runs</div>
+      <h2>Concrete case outputs from the benchmark JSON</h2>
+      <p class="lead">Evidence file: <code>capstone/tf-1/ai/engine-skeleton/reports-e2e/rcaeval-e2e-results.json</code></p>
+    </div>
+    <table>
+      <thead><tr><th>Case</th><th>Expected → Actual</th><th>Status</th><th>Confidence</th><th>Evidence Count</th><th>Top RCA</th></tr></thead>
+      <tbody>
+        <tr><td><code>re2tt_ts-auth-service_loss_1</code></td><td>critical_service_down → critical_service_down</td><td>DIAGNOSED</td><td>0.86</td><td>10</td><td>ts-auth-service</td></tr>
+        <tr><td><code>re2ss_catalogue_delay_2</code></td><td>latency_degradation → latency_degradation</td><td>DIAGNOSED</td><td>0.82</td><td>7</td><td>catalogue</td></tr>
+        <tr><td><code>re1ss_carts_delay_1</code></td><td>latency_degradation → latency_degradation</td><td>DIAGNOSED</td><td>0.82</td><td>4</td><td>carts-db</td></tr>
+        <tr><td><code>re1tt_ts-route-service_disk_3</code></td><td>noisy_or_ambiguous_alert → noisy_or_ambiguous_alert</td><td>INVESTIGATE</td><td>0.45</td><td>7</td><td>ts-route-service</td></tr>
+      </tbody>
+    </table>
+    <div class="warn" style="margin-top:20px"><strong>Why this matters:</strong> The noisy cases intentionally do not return DIAGNOSED. That is evidence for confidence gating, not a weakness.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Case output evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Confidence Gates</div>
+      <h2>Low confidence does not become a fake RCA</h2>
+      <p class="lead">The engine decides whether to diagnose, investigate, or ask for more context.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card card-green"><div class="number number-green">≥ .70</div><div class="label">clear signal</div><h3>DIAGNOSED</h3><p>Evidence supports classification and RCA candidate.</p></div>
+      <div class="card card-accent"><div class="number">.50-.69</div><div class="label">ambiguous</div><h3>INVESTIGATE</h3><p>Human review or AgentCore-assisted investigation path.</p></div>
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="circle-alert"></i></div><h3>INSUFFICIENT_CONTEXT</h3><p>Missing metrics/logs/deploy/ownership or evidence URI out of scope.</p></div>
+    </div>
+    <table style="margin-top:24px">
+      <thead><tr><th>Signal</th><th>Effect on complexity score</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>missing metrics/logs</td><td>+2 each</td><td>RCA cannot be strongly grounded.</td></tr>
+        <tr><td>confidence &lt; 0.7</td><td>+2</td><td>Route to assisted investigation.</td></tr>
+        <tr><td>confidence &lt; 0.5</td><td>+1 extra</td><td>Very low confidence should not diagnose.</td></tr>
+        <tr><td>top two RCA candidates within 0.15</td><td>+2</td><td>Ambiguous candidate ranking.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Confidence gating</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Investigation Router</div>
+      <h2>Three modes: deterministic → assisted → platform agent</h2>
+      <p class="lead">Mode selection is based on complexity score, not vibes.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card card-green"><div class="number number-green">&lt; 3</div><div class="label">complexity score</div><h3>deterministic_only</h3><p>Evidence is enough; no AgentCore needed.</p></div>
+      <div class="card card-accent"><div class="number">3-5</div><div class="label">complexity score</div><h3>agent_assisted</h3><p>Need bounded help/synthesis, still compute-first.</p></div>
+      <div class="card card-blue"><div class="number number-blue">≥ 6</div><div class="label">complexity score</div><h3>agent_platform</h3><p>AgentCore investigator can request allowlisted evidence tools.</p></div>
+    </div>
+    <div class="warn" style="margin-top:22px"><strong>Fallback behavior:</strong> If AgentCore is disabled or unavailable, auto mode downgrades to deterministic-only instead of failing the incident.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>Investigation router</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">AgentCore Loop</div>
+      <h2>Agent loop is bounded, tool-gated, and validated</h2>
+      <p class="lead">This is the key AgentCore slide: max 2 iterations, max 5 tool calls, strict JSON, read-only tools only.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><i data-lucide="package-check"></i><br>Build grounded state</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="brain-circuit"></i><br>Invoke AgentCore</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="list-checks"></i><br>Tool requests?</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="shield"></i><br>Tool gateway</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="refresh-cw"></i><br>Re-run RCA</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><i data-lucide="badge-check"></i><br>Validate final</div>
+    </div>
+    <div class="grid grid-2" style="margin-top:26px">
+      <div class="card card-dark"><h3>Blocked by design</h3><p>No shell, no PromQL/LogQL from agent, no Jira create, no Slack post, no remediation commands, no arbitrary production credentials.</p></div>
+      <div class="card"><h3>Allowed output schemas</h3><p><code>tool_requests</code> for bounded read-only evidence, or <code>final_diagnosis</code> with classification, status, confidence, evidence, recommended action IDs, and QA.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>AgentCore loop</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">AgentCore Evidence</div>
+      <h2>Live AgentCore runtime benchmark exists</h2>
+      <p class="lead">Evidence files: <code>reports-e2e/rcaeval-hidden-metadata-agentcore-sample15.json</code> and <code>reports-e2e/rcaeval-mapped-metadata-agentcore-sample15.json</code></p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-green"><div class="number number-green">15</div><div class="label">sample size</div><p>5 cases per class, matching mentor feedback for minimum per-class coverage.</p></div>
+      <div class="card card-green"><div class="number number-green">93.33%</div><div class="label">accuracy</div><p>Same result for hidden-metadata sample and metadata sample.</p></div>
+      <div class="card card-accent"><div class="number">~2.1s</div><div class="label">avg latency</div><p>Bounded runtime call with 1 iteration and 1 tool call for demo control.</p></div>
+      <div class="card card-blue"><div class="number number-blue">safe</div><div class="label">fallback behavior</div><p>If AgentCore fails or is disabled, deterministic result still returns.</p></div>
+    </div>
+    <div class="checkpoint" style="margin-top:22px"><strong>Runtime:</strong> <code>arn:aws:bedrock-agentcore:us-east-1:589077667575:runtime/tf1_ai_investigator-D48STMEUHo</code> - Bounds: 1 iteration / 1 tool call for the benchmark.</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>AgentCore benchmark evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">QA Judge + Action Catalog</div>
+      <h2>Final answer is checked before handoff</h2>
+      <p class="lead">The QA judge penalizes unsupported diagnosis; action catalog keeps recommendations constrained.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="x-circle"></i></div><h3>QA fail examples</h3><p>Missing evidence, unsupported classification, unsupported root cause, invented service/signal, unsafe action.</p></div>
+      <div class="card card-accent"><div class="icon-soft"><i data-lucide="minus-circle"></i></div><h3>Confidence penalty</h3><p>Deterministic QA can apply <code>-0.1</code>; LLM QA can return <code>confidence_delta</code> from -0.2 to 0.</p></div>
+      <div class="card card-green"><div class="icon-soft"><i data-lucide="clipboard-check"></i></div><h3>Action catalog</h3><p>Recommendations are IDs from a curated catalog, not free-form remediation.</p></div>
+    </div>
+    <div class="checkpoint" style="margin-top:22px"><strong>Defense line:</strong> “The model cannot just invent an action. Recommendations are grounded in evidence and selected from an action catalog; execution remains human-owned.”</div>
+  </div>
+  <div class="slide-footer"><span>02 — AI Engine</span><span>QA and action constraints</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Architecture</div>
+      <h2>CDO owns platform execution. AI owns diagnosis + audit.</h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step">CDO<br><span class="badge badge-blue">Triage-Hub</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">AI API<br><code>/v1/triage</code></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Worker<br>correlator</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">AgentCore<br>investigator</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">DynamoDB<br>audit</div>
+    </div>
+    <div class="grid grid-2" style="margin-top:28px">
+      <div class="card card-dark"><h3>AI side</h3><ul class="bullets"><li>classification + root cause</li><li>confidence-aware status</li><li>recommended actions</li><li>audit/idempotency</li></ul></div>
+      <div class="card"><h3>CDO side</h3><ul class="bullets"><li>Slack dispatcher</li><li>Jira mutation</li><li>platform deploy</li><li>end-to-end notification</li></ul></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — Solution</span><span>AI/CDO boundary</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Full Architecture</div>
+      <h2>End-to-end TF1 AIOps architecture</h2>
+      <p class="lead">Use this slide when panel wants the full system view: data sources, deterministic RCA, AgentCore path, QA judge, response assembly, and CDO integrations.</p>
+    </div>
+    <div style="background:#0f1117;border:1px solid rgba(245,158,11,.22);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(15,23,42,.18)">
+      <img src="assets/tf1_arch_mingrammer_horizontal.png" alt="TF1 AIOps Triage Hub Architecture" style="display:block;width:100%;height:auto;border-radius:8px">
+    </div>
+    <div class="checkpoint" style="margin-top:16px"><strong>Talk track:</strong> “Left side is CDO observability input. Middle is AI engine on EKS with deterministic RCA plus optional AgentCore. Right side is CDO Slack/Jira integration consuming our assembled JSON response.”</div>
+  </div>
+  <div class="slide-footer"><span>02 — Solution</span><span>Full architecture diagram</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Contract</div>
+      <h2>Signed JSON contract: incident in, triage payload out</h2>
+      <p class="lead">This is the stable interface CDO can consume.</p>
+    </div>
+    <div class="two-col">
+      <div>
+        <div class="lab-tag">Input</div>
+        <div class="code-block">{
+  <span class="key">"incident_id"</span>: <span class="str">"inc-test-001"</span>,
+  <span class="key">"tenant_id"</span>: <span class="str">"tenant-a"</span>,
+  <span class="key">"alert"</span>: {
+    <span class="key">"service"</span>: <span class="str">"checkout-api"</span>,
+    <span class="key">"severity"</span>: <span class="str">"high"</span>,
+    <span class="key">"title"</span>: <span class="str">"High p95 latency"</span>
+  },
+  <span class="key">"ownership"</span>: {
+    <span class="key">"jira_project"</span>: <span class="str">"TRIAGE"</span>,
+    <span class="key">"slack_channel"</span>: <span class="str">"#oncall-alerts"</span>
+  }
+}</div>
+      </div>
+      <div>
+        <div class="lab-tag">Output</div>
+        <div class="code-block">{
+  <span class="key">"audit_id"</span>: <span class="str">"aud-..."</span>,
+  <span class="key">"classification"</span>: <span class="str">"latency_degradation"</span>,
+  <span class="key">"confidence"</span>: <span class="num">0.82</span>,
+  <span class="key">"status"</span>: <span class="str">"DIAGNOSED"</span>,
+  <span class="key">"suspected_root_cause"</span>: {...},
+  <span class="key">"recommended_actions"</span>: [...],
+  <span class="key">"ticket_payload"</span>: {...},
+  <span class="key">"llm_metadata"</span>: {...}
+}</div>
+      </div>
+    </div>
+    <div class="checkpoint" style="margin-top:20px"><strong>Sign-off:</strong> AI/AIO commit <code>ccbb47f</code> + CDO/Triage-Hub commit <code>ab8e209</code>, completed on 2026-06-26.</div>
+  </div>
+  <div class="slide-footer"><span>02 — Solution</span><span>AI API contract</span></div>
+</section>
+
+<section class="slide slide-divider">
+  <div class="section-number">03</div>
+  <div class="section-label">Implementation</div>
+  <h2>What we actually built</h2>
+  <p class="lead">Not a mock slide: API, worker fix, AgentCore runtime, DynamoDB audit, and compatibility fallback are implemented/documented.</p>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Delivered Components</div>
+      <h2>Five pieces that matter for DevOps + AI Ops</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="card card-accent"><div class="icon-soft"><i data-lucide="route"></i></div><h3>Triage API</h3><p><code>/v1/triage</code> returns classification, RCA, actions, ticket payload, metadata.</p></div>
+      <div class="card card-blue"><div class="icon-soft"><i data-lucide="wrench"></i></div><h3>Worker auth fix</h3><p><code>aiops_worker.py</code> sends bearer token when service auth is enabled.</p></div>
+      <div class="card card-green"><div class="icon-soft"><i data-lucide="brain"></i></div><h3>AgentCore</h3><p>Runtime READY in <code>us-east-1</code>, cross-account invoke allowed for CDO role.</p></div>
+      <div class="card"><div class="icon-soft"><i data-lucide="database"></i></div><h3>DynamoDB audit</h3><p>Stores audit trail and idempotency replay records.</p></div>
+      <div class="card"><div class="icon-soft"><i data-lucide="history"></i></div><h3>Jira history lookup</h3><p>DynamoDB-backed owner suggestion with JSON fallback for local/demo.</p></div>
+      <div class="card card-dark"><div class="icon-soft"><i data-lucide="shield"></i></div><h3>Guardrails</h3><p>Tenant-scoped audit, low-confidence investigate mode, no auto-remediation.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>03 — Implementation</span><span>Delivered components</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Demo Scenario</div>
+      <h2>Latency degradation on checkout-api</h2>
+      <p class="lead">Use one incident path and make it crisp.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card card-danger"><div class="icon-circle"><i data-lucide="timer-reset"></i></div><h3>Signal</h3><p>p95 latency 950ms, DB timeout logs, high severity.</p></div>
+      <div class="card card-accent"><div class="icon-soft"><i data-lucide="brain-circuit"></i></div><h3>AI diagnosis</h3><p><code>latency_degradation</code>, confidence <code>0.82</code>, status <code>DIAGNOSED</code>.</p></div>
+      <div class="card card-green"><div class="icon-soft"><i data-lucide="check-circle-2"></i></div><h3>Action</h3><p>Suspected DB connection pool exhaustion. Human reviews DB saturation.</p></div>
+    </div>
+    <div class="checkpoint" style="margin-top:22px"><strong>Show live:</strong> send incident JSON → show <code>audit_id</code> → show <code>ticket_payload</code> → query audit/replay.</div>
+  </div>
+  <div class="slide-footer"><span>03 — Implementation</span><span>Demo path</span></div>
+</section>
+
+<section class="slide slide-divider">
+  <div class="section-number">04</div>
+  <div class="section-label">Readiness</div>
+  <h2>Deployable, auditable,<br><span class="gradient-text">cost-bounded</span></h2>
+  <p class="lead">Enough for capstone demo and clear enough for CDO/DevOps handoff.</p>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Validation</div>
+      <h2>Evidence panel can verify</h2>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-green"><div class="number number-green">90</div><div class="label">pytest passed</div><p>Current AI code path validated.</p></div>
+      <div class="card card-accent"><div class="number">3</div><div class="label">scenario families</div><p>Critical down, latency, noisy false alert.</p></div>
+      <div class="card card-blue"><div class="number number-blue">2</div><div class="label">sign-off commits</div><p>AI/AIO and CDO both signed.</p></div>
+      <div class="card card-dark"><div class="number">READY</div><div class="label">AgentCore</div><p>Runtime policy attached for CDO invoke.</p></div>
+    </div>
+    <div class="checkpoint" style="margin-top:22px"><strong>Other checks:</strong> datapack validation passed, <code>kubectl kustomize</code> passed, Jira evidence cleaned up, <code>A0X-32</code> Done.</div>
+  </div>
+  <div class="slide-footer"><span>04 — Readiness</span><span>Validation evidence</span></div>
+</section>
+
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="eyebrow">Q&A Defense</div>
+      <h2>Answers we should keep short</h2>
+    </div>
+    <div class="grid grid-2">
+      <div class="card"><h3>Why no auto-remediation?</h3><p>Client explicitly scoped it out. AI diagnoses and suggests; human confirms and acts.</p></div>
+      <div class="card"><h3>What does AgentCore add?</h3><p>Bounded investigator runtime. CDO can invoke it cross-account when needed.</p></div>
+      <div class="card"><h3>Why DynamoDB?</h3><p>Audit trail and idempotency replay. Every decision can be traced.</p></div>
+      <div class="card"><h3>Where are Slack/Jira?</h3><p>CDO owns dispatcher and mutation. AI returns CDO-compatible payload.</p></div>
+      <div class="card"><h3>What was the worker bug?</h3><p>Worker missed bearer token with service auth enabled. Fixed to avoid 401 on deploy.</p></div>
+      <div class="card"><h3>What if confidence is low?</h3><p>Status becomes <code>INVESTIGATE</code>. The engine does not guess.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>04 — Readiness</span><span>Q&A</span></div>
+</section>
+
+<section class="slide slide-closing">
+  <div class="slide-content">
+    <div class="eyebrow">Final Message</div>
+    <h2>We built a <span class="gradient-text">bounded AI triage engine</span>, not a chatbot.</h2>
+    <p class="lead" style="max-width:820px;margin:0 auto 26px;color:var(--text-secondary)">Contract-stable, auditable, retry-safe, and ready for CDO E2E alert → ticket → notify flow.</p>
+    <div class="grid grid-3">
+      <div class="card card-green"><h3>AI side done</h3><p>API, worker, AgentCore, DynamoDB, owner lookup, docs.</p></div>
+      <div class="card card-blue"><h3>CDO handoff ready</h3><p>Payload schema, runtime ARN, policy, deploy notes.</p></div>
+      <div class="card card-accent"><h3>Future phase</h3><p>Slack AgentCore Q&A through CDO dispatcher.</p></div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Close</span><span>TF1 Triage Hub</span></div>
+</section>
+
+<script>
+const slides = [...document.querySelectorAll('.slide')];
+const nav = document.getElementById('navDots');
+const counter = document.getElementById('counter');
+const progress = document.getElementById('progress');
+slides.forEach((_, i) => {
+  const b = document.createElement('button');
+  b.className = 'nav-dot';
+  b.type = 'button';
+  b.setAttribute('aria-label', `Go to slide ${i + 1}`);
+  b.onclick = () => slides[i].scrollIntoView({ behavior: 'smooth' });
+  nav.appendChild(b);
+});
+const dots = [...document.querySelectorAll('.nav-dot')];
+function updateNav() {
+  let idx = 0;
+  const mid = window.innerHeight / 2;
+  slides.forEach((s, i) => {
+    const r = s.getBoundingClientRect();
+    if (r.top <= mid && r.bottom >= mid) idx = i;
+  });
+  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  counter.innerHTML = `<strong>${String(idx + 1).padStart(2, '0')}</strong> / ${String(slides.length).padStart(2, '0')}`;
+  progress.style.width = `${((idx + 1) / slides.length) * 100}%`;
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+window.addEventListener('resize', updateNav);
+document.addEventListener('keydown', (e) => {
+  let idx = dots.findIndex(d => d.classList.contains('active'));
+  if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+    e.preventDefault(); slides[Math.min(idx + 1, slides.length - 1)].scrollIntoView({ behavior: 'smooth' });
+  }
+  if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+    e.preventDefault(); slides[Math.max(idx - 1, 0)].scrollIntoView({ behavior: 'smooth' });
+  }
+});
+lucide.createIcons();
+updateNav();
+</script>
+</body>
+</html>

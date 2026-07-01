@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>W10 Sáng — Secure & Operate: RBAC + Admission Policy</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+  --brand-primary: #0f172a;
+  --brand-accent: #f59e0b;
+  --brand-accent-2: #fb923c;
+  --brand-secondary: #3b82f6;
+  --brand-danger: #ef4444;
+  --brand-success: #22c55e;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --surface-dark: #ffffff;
+  --surface-card: #f8fafc;
+  --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; overflow-x: hidden; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface-dark); color: var(--text-primary); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.slide {
+  min-height: 100vh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: clamp(32px, 5vh, 80px) clamp(24px, 5vw, 120px); position: relative; overflow: hidden;
+}
+.slide-title { background: var(--surface-dark); text-align: center; }
+.slide-title::before { content: ''; position: absolute; top: -30%; right: -20%; width: 60%; height: 80%; background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%); pointer-events: none; }
+.slide-title::after { content: ''; position: absolute; bottom: -20%; left: -15%; width: 50%; height: 60%; background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%); pointer-events: none; }
+.slide-title h1 { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 16px; }
+.slide-title .lead { font-size: clamp(1rem, 2vw, 1.3rem); color: var(--text-secondary); max-width: 760px; }
+.gradient-text { background: var(--gradient-warm); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.slide-divider { background: var(--surface-dark); text-align: center; }
+.slide-divider::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(245,158,11,0.06) 0%, transparent 60%); pointer-events: none; }
+.section-number { font-family: 'JetBrains Mono', monospace; font-size: clamp(5rem, 12vw, 10rem); font-weight: 700; -webkit-text-stroke: 2px rgba(245,158,11,0.2); color: transparent; line-height: 1; margin-bottom: -20px; }
+.section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--brand-accent); margin-bottom: 8px; }
+.slide-divider h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; }
+.slide-divider .lead { font-size: clamp(0.95rem, 1.5vw, 1.15rem); color: var(--text-secondary); margin-top: 12px; max-width: 640px; }
+.slide-content { width: 100%; max-width: 1100px; }
+.slide-header { margin-bottom: clamp(20px, 3vh, 40px); }
+.slide-header h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; }
+.slide-header .lead { font-size: clamp(0.85rem, 1.2vw, 1rem); color: var(--text-secondary); margin-top: 6px; }
+.slide-footer { position: absolute; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.eyebrow { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--brand-accent); margin-bottom: 8px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; }
+.badge-accent { background: rgba(245,158,11,0.15); color: var(--brand-accent); }
+.badge-blue { background: rgba(59,130,246,0.15); color: var(--brand-secondary); }
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--brand-danger); }
+.badge-success { background: rgba(34,197,94,0.15); color: var(--brand-success); }
+.grid { display: grid; gap: clamp(12px, 2vw, 20px); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.card { background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: clamp(16px, 2vw, 24px); transition: transform 0.3s var(--ease-out); }
+.card:hover { transform: translateY(-2px); }
+.card h3 { font-size: clamp(0.9rem, 1.3vw, 1.1rem); font-weight: 700; margin-bottom: 8px; }
+.card p, .card li { font-size: clamp(0.8rem, 1vw, 0.9rem); color: var(--text-secondary); line-height: 1.5; }
+.card-dark { background: var(--brand-primary); border-color: rgba(245,158,11,0.2); color:#e2e8f0; }
+.card-dark h3 { color:#fff; }
+.card-accent { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(251,146,60,0.05)); border-color: rgba(245,158,11,0.3); }
+.card-accent h3 { color: var(--brand-accent); }
+.card-number { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; color: var(--brand-accent); line-height: 1; }
+.card-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; }
+.flow-step { background: var(--surface-card); border: 1px solid var(--border); border-radius: 10px; padding: clamp(10px, 1.5vw, 18px) clamp(14px, 2vw, 22px); text-align: center; font-size: clamp(0.75rem, 1vw, 0.88rem); font-weight: 600; }
+.flow-arrow { color: var(--brand-accent); font-size: 1.2rem; padding: 0 6px; flex-shrink: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
+.stat { text-align: center; padding: 16px; }
+.bullets { list-style: none; padding: 0; }
+.bullets li { padding: 8px 0 8px 24px; position: relative; font-size: clamp(0.85rem, 1.1vw, 0.95rem); color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+.bullets li:last-child { border-bottom: none; }
+.bullets li::before { content: ''; position: absolute; left: 0; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-accent); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 40px); align-items: start; }
+table { width: 100%; border-collapse: collapse; font-size: clamp(0.78rem, 1vw, 0.88rem); }
+th { text-align: left; padding: 10px 14px; background: rgba(30,41,59,0.8); color: var(--brand-accent); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 2px solid rgba(245,158,11,0.3); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+tr:hover td { background: rgba(51,65,85,0.06); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: rgba(51,65,85,0.12); padding: 2px 6px; border-radius: 4px; color:#0f172a; }
+.code-block { background:#0f172a; border:1px solid rgba(245,158,11,0.2); border-radius:10px; padding:16px 18px; font-family:'JetBrains Mono',monospace; font-size:clamp(0.7rem,0.92vw,0.84rem); color:#e2e8f0; line-height:1.65; overflow-x:auto; white-space:pre; }
+.code-block .cmt { color:#64748b; } .code-block .kw { color:#f59e0b; } .code-block .str { color:#34d399; } .code-block .fn { color:#60a5fa; } .code-block .out { color:#94a3b8; }
+.lab-tag { display:inline-block; background:var(--gradient-warm); color:#fff; font-weight:800; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; padding:4px 12px; border-radius:6px; margin-bottom:10px; }
+.do-now { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--brand-accent); font-size:0.82rem; margin:4px 0 8px; }
+.checkpoint { background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:12px 16px; font-size:0.84rem; color:var(--text-secondary); }
+.checkpoint strong { color:var(--brand-success); }
+.warn { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:12px 16px; font-size:0.84rem; color:var(--text-secondary); }
+.warn strong { color:var(--brand-danger); }
+.meta-chips { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+.chip strong { color: var(--text-primary); }
+.reveal { opacity: 1; }
+.stagger > * { opacity: 1; }
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--gradient-warm); z-index: 1000; width: 0%; transition: width 0.3s; }
+.nav-dots { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(148,163,184,0.3); cursor: pointer; transition: all 0.3s; border: none; padding: 0; }
+.nav-dot.active { background: var(--brand-accent); transform: scale(1.4); }
+.slide-counter { position: fixed; bottom: 20px; right: 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); z-index: 1000; }
+.slide-counter strong { color: var(--text-primary); }
+.slide-closing { text-align: center; }
+.slide-closing h2 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+.refs { margin-top:16px; padding:10px 14px; background:#1e293b; border-radius:8px; font-size:0.72rem; color:#94a3b8; line-height:1.6; }
+.refs a { color:#60a5fa; text-decoration:none; } .refs a:hover { text-decoration:underline; }
+@media (max-width: 767px) { .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;} .two-col{grid-template-columns:1fr;} .flow{flex-direction:column;} .flow-arrow{transform:rotate(90deg);} .nav-dots{display:none;} }
+@media (max-height: 700px) { .slide { padding: 24px 20px; } }
+@media (prefers-reduced-motion: reduce) { .reveal,.stagger>*{opacity:1;transform:none;transition:none;} html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="slide-counter" id="counter"><strong>01</strong> / 18</div>
+
+<!-- Title -->
+<section class="slide slide-title">
+  <div class="eyebrow">W10 · Buổi sáng</div>
+  <h1><span class="gradient-text">Secure & Operate</span><br>RBAC + Admission Policy</h1>
+  <div class="meta-chips">
+    <div class="chip"><strong>Session</strong> Sáng: 1h speak + 2h lab</div>
+    <div class="chip"><strong>Scope</strong> RBAC + OPA/Gatekeeper</div>
+    <div class="chip"><strong>Goal</strong> 3 roles + 4 constraints enforce</div>
+  </div>
+</section>
+
+<!-- ===== Section: Context ===== -->
+<section class="slide slide-divider">
+  <div class="section-number">01</div>
+  <div class="section-label">Context</div>
+  <h2>Tại sao cần <span class="gradient-text">cluster-level enforcement</span>?</h2>
+  <p class="lead">W8 có cụm, W9 GitOps + observability + canary.<br>Còn thiếu: chặn vi phạm TẠI CỤM, không dựa "dev hứa".</p>
+</section>
+
+<!-- Problem -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Problem</div><h2>Cluster như cái <strong>chợ</strong> — ai muốn làm gì cũng được</h2><p class="lead">Không có gì chặn. Tai nạn production xảy ra lúc 2h sáng.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div style="display:flex; gap:16px; justify-content:center; align-items:stretch;" class="reveal stagger">
+        <div class="card" style="flex:1; max-width:240px; background:linear-gradient(135deg, #b91c1c, #991b1b); border:none; padding:24px 20px; text-align:center; box-shadow:0 4px 12px rgba(185,28,28,0.4); display:flex; flex-direction:column;">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.25); margin:0 auto 14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="trash-2" style="width:30px; height:30px; color:#ffffff;"></i>
+          </div>
+          <h3 style="color:#ffffff; font-size:1rem; margin-bottom:10px; font-weight:700; min-height:48px; display:flex; align-items:center; justify-content:center;">Xóa nhầm namespace prod</h3>
+          <p style="font-size:0.88rem; color:rgba(255,255,255,0.95); line-height:1.6; flex-grow:1;">Junior gõ <code style="background:rgba(0,0,0,0.25); color:#fff; padding:2px 5px; border-radius:4px; font-size:0.8rem;">kubectl delete</code><br>→ Service sập 15 phút</p>
+        </div>
+        <div class="card" style="flex:1; max-width:240px; background:linear-gradient(135deg, #b91c1c, #991b1b); border:none; padding:24px 20px; text-align:center; box-shadow:0 4px 12px rgba(185,28,28,0.4); display:flex; flex-direction:column;">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.25); margin:0 auto 14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="bug" style="width:30px; height:30px; color:#ffffff;"></i>
+          </div>
+          <h3 style="color:#ffffff; font-size:1rem; margin-bottom:10px; font-weight:700; min-height:48px; display:flex; align-items:center; justify-content:center;">Image không rõ nguồn gốc</h3>
+          <p style="font-size:0.88rem; color:rgba(255,255,255,0.95); line-height:1.6; flex-grow:1;">Pull từ registry lạ<br>→ CVE critical 3 tháng</p>
+        </div>
+        <div class="card" style="flex:1; max-width:240px; background:linear-gradient(135deg, #b91c1c, #991b1b); border:none; padding:24px 20px; text-align:center; box-shadow:0 4px 12px rgba(185,28,28,0.4); display:flex; flex-direction:column;">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.25); margin:0 auto 14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="zap-off" style="width:30px; height:30px; color:#ffffff;"></i>
+          </div>
+          <h3 style="color:#ffffff; font-size:1rem; margin-bottom:10px; font-weight:700; min-height:48px; display:flex; align-items:center; justify-content:center;">Pod ăn hết RAM node</h3>
+          <p style="font-size:0.88rem; color:rgba(255,255,255,0.95); line-height:1.6; flex-grow:1;">Không set <code style="background:rgba(0,0,0,0.25); color:#fff; padding:2px 5px; border-radius:4px; font-size:0.8rem;">limits</code><br>→ 20 pods evict</p>
+        </div>
+        <div class="card" style="flex:1; max-width:240px; background:linear-gradient(135deg, #b91c1c, #991b1b); border:none; padding:24px 20px; text-align:center; box-shadow:0 4px 12px rgba(185,28,28,0.4); display:flex; flex-direction:column;">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.25); margin:0 auto 14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="shield-alert" style="width:30px; height:30px; color:#ffffff;"></i>
+          </div>
+          <h3 style="color:#ffffff; font-size:1rem; margin-bottom:10px; font-weight:700; min-height:48px; display:flex; align-items:center; justify-content:center;">Mọi thứ trong <code style="background:rgba(0,0,0,0.25); color:#fff; padding:2px 5px; border-radius:4px; font-size:0.8rem;">default</code></h3>
+          <p style="font-size:0.88rem; color:rgba(255,255,255,0.95); line-height:1.6; flex-grow:1;">20 apps chung namespace<br>→ Lateral movement dễ</p>
+        </div>
+      </div>
+
+      <div class="card reveal" style="margin-top:24px; background:#ffffff; border:2px solid rgba(245,158,11,0.2); padding:24px 28px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+          <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,146,60,0.1)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="search" style="width:28px; height:28px; color:var(--brand-accent);"></i>
+          </div>
+          <div>
+            <h3 style="color:var(--brand-accent); font-size:1.05rem; font-weight:700; margin-bottom:6px;">Vấn đề gốc</h3>
+            <p style="color:var(--text-primary); font-size:0.95rem; line-height:1.6;">K8s mặc định <strong>KHÔNG chặn gì cả</strong>.<br>Muốn chặn → cần 2 lớp kiểm soát:</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:16px;">
+          <div style="flex:1; padding:16px; background:rgba(245,158,11,0.08); border-radius:8px; border-left:3px solid var(--brand-accent);">
+            <strong style="font-size:0.95rem; color:var(--brand-accent); display:block; margin-bottom:4px;">RBAC</strong>
+            <span style="font-size:0.88rem; color:var(--text-secondary);">→ Ai làm gì?</span>
+          </div>
+          <div style="flex:1; padding:16px; background:rgba(59,130,246,0.08); border-radius:8px; border-left:3px solid var(--brand-secondary);">
+            <strong style="font-size:0.95rem; color:var(--brand-secondary); display:block; margin-bottom:4px;">Admission Policy</strong>
+            <span style="font-size:0.88rem; color:var(--text-secondary);">→ Manifest như thế nào?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>01 — Context</span></div>
+</section>
+
+<!-- W10 Goal -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Mục tiêu W10</div><h2>Hôm nay làm gì? → Cluster-level enforcement</h2></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; align-items:stretch;" class="reveal stagger">
+        <div class="card" style="background:linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.06)); border:2px solid rgba(245,158,11,0.3); text-align:center; display:flex; flex-direction:column;">
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:12px;">RBAC Roles</div>
+          <div style="font-size:2.2rem; font-weight:700; color:var(--brand-accent); line-height:1.3; margin-bottom:12px; min-height:72px; display:flex; align-items:center; justify-content:center;">Không ai xóa nhầm prod</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); flex-grow:1;"><code>developer</code> | <code>sre</code> | <code>viewer</code><br><span style="font-size:0.85rem; color:var(--text-muted);">3 roles phân quyền rõ ràng</span></p>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(96,165,250,0.06)); border:2px solid rgba(59,130,246,0.3); text-align:center; display:flex; flex-direction:column;">
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:12px;">Gatekeeper Policies</div>
+          <div style="font-size:2.2rem; font-weight:700; color:var(--brand-secondary); line-height:1.3; margin-bottom:12px; min-height:72px; display:flex; align-items:center; justify-content:center;">Vi phạm → reject ngay</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); flex-grow:1;">ECR + <code>limits</code> + label <code>owner</code><br><span style="font-size:0.85rem; color:var(--text-muted);">4 constraints enforce</span></p>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.06)); border:2px solid rgba(34,197,94,0.3); text-align:center; display:flex; flex-direction:column;">
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:12px;">Deploy Toàn Stack</div>
+          <div style="font-size:2.2rem; font-weight:700; color:var(--brand-success); line-height:1.3; margin-bottom:12px; min-height:72px; display:flex; align-items:center; justify-content:center;">Platform lên &lt;2h</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); flex-grow:1;">GitOps + observability + canary + security<br><span style="font-size:0.85rem; color:var(--text-muted);">Fresh cluster từ repo</span></p>
+        </div>
+      </div>
+
+      <div class="checkpoint reveal" style="margin-top:24px; padding:20px 24px; font-size:0.95rem;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="width:48px; height:48px; border-radius:50%; background:rgba(34,197,94,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="target" style="width:24px; height:24px; color:var(--brand-success);"></i>
+          </div>
+          <strong style="color:var(--brand-success); font-size:1.05rem;">Kết thúc W10</strong>
+        </div>
+        <div style="display:grid; gap:10px; padding-left:60px;">
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <i data-lucide="shield-check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+            <span style="color:var(--text-secondary);">Cluster không còn là <strong>chợ</strong> nữa</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <i data-lucide="lock" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+            <span style="color:var(--text-secondary);">RBAC phân quyền rõ ràng, policy chặn manifest xấu</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <i data-lucide="rocket" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+            <span style="color:var(--text-secondary);">Ready cho capstone W11-W12</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <i data-lucide="user-check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+            <span style="color:var(--text-secondary);">Vai trò của bạn: xây hạ tầng + phát telemetry chuẩn để AI Engine đọc được</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>01 — Context</span></div>
+</section>
+
+<!-- ===== Section: RBAC ===== -->
+<section class="slide slide-divider">
+  <div class="section-number">02</div>
+  <div class="section-label">RBAC</div>
+  <h2>Ai làm gì trong cụm?</h2>
+  <p class="lead">Role-Based Access Control: phân quyền cho người/service account.</p>
+</section>
+
+<!-- RBAC Core Concepts -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Khái niệm</div><h2>RBAC có 4 thứ — hiểu rõ 2 cặp này là xong</h2></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="display:flex; gap:24px; margin-bottom:20px;">
+        <div style="flex:1; text-align:center; padding:28px 20px; background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(251,146,60,0.05)); border-radius:12px; border:2px solid rgba(245,158,11,0.3);">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(245,158,11,0.15); margin:0 auto 14px; display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="package" style="width:32px; height:32px; color:var(--brand-accent);"></i>
+          </div>
+          <h3 style="font-size:1.4rem; color:var(--brand-accent); margin-bottom:14px;">Role / ClusterRole</h3>
+          <div style="font-size:0.9rem; font-weight:600; color:var(--text-primary); margin-bottom:12px;">= Định nghĩa quyền</div>
+          <div style="padding:12px; background:rgba(255,255,255,0.8); border-radius:8px; text-align:left; font-size:0.85rem; line-height:1.7;">
+            <div style="margin-bottom:6px;"><strong>Role</strong> → 1 namespace</div>
+            <div><strong>ClusterRole</strong> → toàn cụm</div>
+          </div>
+          <div style="margin-top:12px; font-size:0.8rem; color:var(--text-muted); font-style:italic; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i data-lucide="alert-triangle" style="width:14px; height:14px;"></i>
+            <span>Chưa gắn cho ai = chưa có tác dụng</span>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; font-size:3rem; color:var(--brand-accent); font-weight:700;">+</div>
+
+        <div style="flex:1; text-align:center; padding:28px 20px; background:linear-gradient(135deg, rgba(59,130,246,0.1), rgba(96,165,250,0.05)); border-radius:12px; border:2px solid rgba(59,130,246,0.3);">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(59,130,246,0.15); margin:0 auto 14px; display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="link" style="width:32px; height:32px; color:var(--brand-secondary);"></i>
+          </div>
+          <h3 style="font-size:1.4rem; color:var(--brand-secondary); margin-bottom:14px;">RoleBinding / ClusterRoleBinding</h3>
+          <div style="font-size:0.9rem; font-weight:600; color:var(--text-primary); margin-bottom:12px;">= Gắn quyền cho ai đó</div>
+          <div style="padding:12px; background:rgba(255,255,255,0.8); border-radius:8px; text-align:left; font-size:0.85rem; line-height:1.7;">
+            <div style="margin-bottom:6px;"><strong>RoleBinding</strong> → 1 namespace</div>
+            <div><strong>ClusterRoleBinding</strong> → toàn cụm</div>
+          </div>
+          <div style="margin-top:12px; font-size:0.8rem; color:var(--text-muted); font-style:italic; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i data-lucide="lightbulb" style="width:14px; height:14px;"></i>
+            <span>Gắn xong → user có quyền thật</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal" style="background:#0f172a; color:#ffffff; padding:16px 20px; text-align:center;">
+        <p style="font-size:0.95rem; color:#ffffff; display:inline-flex; align-items:center; gap:8px;">
+          <i data-lucide="brain" style="width:20px; height:20px; color:var(--brand-accent);"></i>
+          <strong style="color:var(--brand-accent);">Tóm lại:</strong> <span style="color:#ffffff;">Role = định nghĩa quyền (chưa gắn cho ai). RoleBinding = gắn cho user/SA cụ thể.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — RBAC</span></div>
+</section>
+
+<!-- Role Example -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Ví dụ cụ thể</div><h2>Alice chỉ được xem pods trong namespace <code>demo</code></h2><p class="lead">Tạo Role + RoleBinding → xong.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="display:flex; gap:18px; align-items:stretch;">
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px; align-self:flex-start;">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">1</div>
+            <span style="font-size:0.7rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase;">Role</span>
+          </div>
+          <div class="code-block" style="font-size:0.78rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> Role
+<span class="kw">metadata:</span>
+  <span class="kw">namespace:</span> demo
+  <span class="kw">name:</span> pod-reader
+<span class="kw">rules:</span>
+- <span class="kw">apiGroups:</span> [<span class="str">""</span>]
+  <span class="kw">resources:</span> [<span class="str">"pods"</span>]
+  <span class="kw">verbs:</span> [<span class="str">"get"</span>, <span class="str">"list"</span>]  <span class="cmt"># chỉ xem</span></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px; align-self:flex-start;">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-secondary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">2</div>
+            <span style="font-size:0.7rem; font-weight:700; color:var(--brand-secondary); text-transform:uppercase;">RoleBinding</span>
+          </div>
+          <div class="code-block" style="font-size:0.78rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> RoleBinding
+<span class="kw">metadata:</span>
+  <span class="kw">namespace:</span> demo
+  <span class="kw">name:</span> read-pods
+<span class="kw">subjects:</span>
+- <span class="kw">kind:</span> User
+  <span class="kw">name:</span> alice           <span class="cmt"># ← gắn cho alice</span>
+<span class="kw">roleRef:</span>
+  <span class="kw">kind:</span> Role
+  <span class="kw">name:</span> pod-reader     <span class="cmt"># ← role bên trái</span></div>
+        </div>
+      </div>
+
+      <div class="checkpoint reveal" style="margin-top:16px; font-size:0.9rem; display:flex; align-items:flex-start; gap:10px;">
+        <i data-lucide="arrow-right" style="width:20px; height:20px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+        <div>
+          <strong style="color:var(--brand-success); display:block; margin-bottom:6px;">Kết quả:</strong>
+          <div style="display:grid; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="check" style="width:16px; height:16px; color:var(--brand-success);"></i>
+              <span>Alice xem được pods trong <code>demo</code></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="x" style="width:16px; height:16px; color:var(--brand-danger);"></i>
+              <span>Không xem được <code>prod/staging</code></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="x" style="width:16px; height:16px; color:var(--brand-danger);"></i>
+              <span>Không tạo/xóa gì cả</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — RBAC</span></div>
+</section>
+
+<!-- ClusterRole Example -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Ví dụ cụ thể</div><h2>Bob là SRE — xem pods <strong>toàn cụm</strong></h2><p class="lead">Dùng ClusterRole. Không giới hạn namespace.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="display:flex; gap:18px; align-items:start; margin-bottom:18px;">
+        <div style="flex:1;">
+          <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">1</div>
+            <span style="font-size:0.7rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase;">ClusterRole</span>
+          </div>
+          <div class="code-block" style="font-size:0.78rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> ClusterRole      <span class="cmt"># toàn cụm</span>
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> cluster-pod-reader
+  <span class="cmt"># KHÔNG có namespace</span>
+<span class="kw">rules:</span>
+- <span class="kw">apiGroups:</span> [<span class="str">""</span>]
+  <span class="kw">resources:</span> [<span class="str">"pods"</span>]
+  <span class="kw">verbs:</span> [<span class="str">"get"</span>, <span class="str">"list"</span>, <span class="str">"watch"</span>]</div>
+        </div>
+        <div style="flex:1;">
+          <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-secondary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">2</div>
+            <span style="font-size:0.7rem; font-weight:700; color:var(--brand-secondary); text-transform:uppercase;">ClusterRoleBinding</span>
+          </div>
+          <div class="code-block" style="font-size:0.78rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> ClusterRoleBinding
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> sre-read-pods
+<span class="kw">subjects:</span>
+- <span class="kw">kind:</span> User
+  <span class="kw">name:</span> bob              <span class="cmt"># ← gắn cho bob</span>
+<span class="kw">roleRef:</span>
+  <span class="kw">kind:</span> ClusterRole
+  <span class="kw">name:</span> cluster-pod-reader</div>
+        </div>
+      </div>
+
+      <div class="reveal" style="display:flex; gap:14px;">
+        <div style="flex:1; padding:14px; background:rgba(34,197,94,0.08); border-left:4px solid var(--brand-success); border-radius:8px;">
+          <strong style="color:var(--brand-success); font-size:0.9rem; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="check-circle" style="width:16px; height:16px;"></i> Chạy được</strong>
+          <div style="margin-top:8px; font-family:'JetBrains Mono', monospace; font-size:0.75rem; line-height:1.7; color:var(--text-secondary);">
+            kubectl get pods --all-namespaces<br>
+            kubectl get pods -n demo/prod/staging
+          </div>
+        </div>
+        <div style="flex:1; padding:14px; background:rgba(239,68,68,0.08); border-left:4px solid var(--brand-danger); border-radius:8px;">
+          <strong style="color:var(--brand-danger); font-size:0.9rem; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="x-circle" style="width:16px; height:16px;"></i> KHÔNG chạy được</strong>
+          <div style="margin-top:8px; font-family:'JetBrains Mono', monospace; font-size:0.75rem; line-height:1.7; color:var(--text-secondary);">
+            kubectl delete/create/scale ...<br>
+            <span style="font-size:0.7rem; color:var(--text-muted);">(chỉ xem, không sửa)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — RBAC</span></div>
+</section>
+
+<!-- ServiceAccount -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">ServiceAccount</div><h2>Pod cũng cần quyền</h2><p class="lead">Ví dụ: Prometheus pod cần gọi K8s API để list pods.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="card reveal" style="margin-bottom:18px; background:rgba(245,158,11,0.08); border-left:4px solid var(--brand-accent); padding:16px;">
+        <p style="font-size:0.9rem;"><strong style="color:var(--brand-accent);">Vấn đề:</strong> Pod muốn gọi K8s API → cần identity. Dùng <strong>ServiceAccount</strong> (SA).</p>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:14px;">
+        <div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <div style="width:20px; height:20px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700;">1</div>
+            <span style="font-size:0.65rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase;">ServiceAccount</span>
+          </div>
+          <div class="code-block" style="font-size:0.72rem;"><span class="kw">apiVersion:</span> v1
+<span class="kw">kind:</span> ServiceAccount
+<span class="kw">metadata:</span>
+  { name: app-sa, namespace: prod }</div>
+        </div>
+        <div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <div style="width:20px; height:20px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700;">2</div>
+            <span style="font-size:0.65rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase;">Role</span>
+          </div>
+          <div class="code-block" style="font-size:0.72rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> Role
+<span class="kw">metadata:</span> { name: pod-lister, namespace: prod }
+<span class="kw">rules:</span>
+- <span class="kw">apiGroups:</span> [<span class="str">""</span>]
+  <span class="kw">resources:</span> [<span class="str">"pods"</span>]
+  <span class="kw">verbs:</span> [<span class="str">"list"</span>]</div>
+        </div>
+        <div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <div style="width:20px; height:20px; border-radius:50%; background:var(--brand-secondary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700;">3</div>
+            <span style="font-size:0.65rem; font-weight:700; color:var(--brand-secondary); text-transform:uppercase;">RoleBinding</span>
+          </div>
+          <div class="code-block" style="font-size:0.72rem;"><span class="kw">apiVersion:</span> rbac.authorization.k8s.io/v1
+<span class="kw">kind:</span> RoleBinding
+<span class="kw">metadata:</span> { name: app-list-pods, namespace: prod }
+<span class="kw">subjects:</span>
+- <span class="kw">kind:</span> ServiceAccount  <span class="cmt"># ← gắn SA</span>
+  { name: app-sa, namespace: prod }
+<span class="kw">roleRef:</span> { kind: Role, name: pod-lister, ... }</div>
+        </div>
+        <div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <div style="width:20px; height:20px; border-radius:50%; background:var(--brand-success); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700;">4</div>
+            <span style="font-size:0.65rem; font-weight:700; color:var(--brand-success); text-transform:uppercase;">Pod dùng SA</span>
+          </div>
+          <div class="code-block" style="font-size:0.72rem;"><span class="cmt"># trong Deployment/Pod:</span>
+<span class="kw">spec:</span>
+  <span class="kw">serviceAccountName:</span> app-sa  <span class="cmt"># ← xài SA</span>
+  <span class="kw">containers:</span>
+  - { name: prometheus, image: prom/prometheus }
+    <span class="cmt"># giờ gọi K8s API với quyền của app-sa</span></div>
+        </div>
+      </div>
+
+      <div class="checkpoint reveal" style="font-size:0.88rem; display:flex; align-items:flex-start; gap:10px;">
+        <i data-lucide="arrow-right" style="width:20px; height:20px; color:var(--brand-success); flex-shrink:0; margin-top:2px;"></i>
+        <div>
+          <strong style="color:var(--brand-success); display:block; margin-bottom:6px;">Kết quả:</strong>
+          <div style="display:grid; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="check" style="width:16px; height:16px; color:var(--brand-success);"></i>
+              <span>Pod có quyền <code>list pods</code></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="x" style="width:16px; height:16px; color:var(--brand-danger);"></i>
+              <span>Không gắn SA → <code>403 Forbidden</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — RBAC</span></div>
+</section>
+
+<!-- kubectl auth can-i -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Test RBAC</div><h2><code>kubectl auth can-i</code> — test quyền ngay lập tức</h2><p class="lead">Tạo Role/RoleBinding xong → test ngay.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:18px;">
+        <div style="padding:18px; background:rgba(245,158,11,0.08); border-radius:10px; border-left:4px solid var(--brand-accent);">
+          <div style="font-size:0.8rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase; margin-bottom:12px;">Test chính mình</div>
+          <div class="code-block" style="font-size:0.8rem;"><span class="cmt"># Tôi tạo pod được không?</span>
+kubectl auth can-i \
+  create pods -n demo
+<span class="out">yes</span></div>
+        </div>
+        <div style="padding:18px; background:rgba(59,130,246,0.08); border-radius:10px; border-left:4px solid var(--brand-secondary);">
+          <div style="font-size:0.8rem; font-weight:700; color:var(--brand-secondary); text-transform:uppercase; margin-bottom:12px;">Test user khác (--as)</div>
+          <div class="code-block" style="font-size:0.8rem;"><span class="cmt"># Alice có quyền không?</span>
+kubectl auth can-i \
+  delete deployments -n prod \
+  --as alice
+<span class="out">no</span></div>
+        </div>
+        <div style="padding:18px; background:rgba(34,197,94,0.08); border-radius:10px; border-left:4px solid var(--brand-success);">
+          <div style="font-size:0.8rem; font-weight:700; color:var(--brand-success); text-transform:uppercase; margin-bottom:12px;">Test ServiceAccount</div>
+          <div class="code-block" style="font-size:0.8rem;"><span class="cmt"># SA có list được không?</span>
+kubectl auth can-i \
+  list pods -n prod --as \
+  system:serviceaccount:prod:app-sa
+<span class="out">yes</span></div>
+        </div>
+      </div>
+
+      <div class="card reveal" style="background:rgba(245,158,11,0.1); border:2px solid rgba(245,158,11,0.3); padding:20px;">
+        <p style="font-size:1.05rem; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+          <i data-lucide="lightbulb" style="width:22px; height:22px; color:var(--brand-accent);"></i>
+          <strong style="color:var(--brand-accent);">Dùng khi nào?</strong>
+        </p>
+        <ul style="list-style:none; padding:0; font-size:0.92rem; line-height:1.8; display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; color:var(--text-primary);">
+          <li style="display:flex; align-items:flex-start; gap:8px;"><i data-lucide="check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:3px;"></i> <span>Sau khi tạo RBAC → test trước khi submit</span></li>
+          <li style="display:flex; align-items:flex-start; gap:8px;"><i data-lucide="check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:3px;"></i> <span>User báo "không có quyền" → reproduce lỗi</span></li>
+          <li style="display:flex; align-items:flex-start; gap:8px;"><i data-lucide="check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:3px;"></i> <span>Pod bị <code style="background:rgba(245,158,11,0.15); color:var(--text-primary); padding:2px 6px; border-radius:3px; font-weight:600;">403</code> → test quyền của SA</span></li>
+          <li style="display:flex; align-items:flex-start; gap:8px;"><i data-lucide="check" style="width:18px; height:18px; color:var(--brand-success); flex-shrink:0; margin-top:3px;"></i> <span>Debug RBAC lúc 2h sáng production down</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>02 — RBAC</span></div>
+</section>
+
+<!-- ===== Section: Admission Policy ===== -->
+<section class="slide slide-divider">
+  <div class="section-number">03</div>
+  <div class="section-label">Admission Policy</div>
+  <h2>Chặn manifest xấu TẠI API server</h2>
+  <p class="lead">RBAC = ai làm gì. Admission = manifest như thế nào.</p>
+</section>
+
+<!-- Admission Overview -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Khái niệm</div><h2>RBAC chỉ kiểm "ai" — chưa kiểm "cái gì"</h2><p class="lead">Alice được tạo Deployment (RBAC pass). Nhưng Deployment đó có image lạ, không có limits → cần chặn ở đây.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="margin-bottom:24px;">
+        <div style="padding:24px; background:linear-gradient(to right, rgba(245,158,11,0.06), rgba(59,130,246,0.06)); border-radius:12px; border:2px solid rgba(245,158,11,0.2);">
+          <div style="font-size:1.05rem; font-weight:700; margin-bottom:16px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+            <i data-lucide="traffic-cone" style="width:22px; height:22px; color:var(--brand-accent);"></i>
+            Flow khi bạn <code>kubectl apply</code> (4 bước kiểm tra)
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px; padding:14px; background:rgba(255,255,255,0.8); border-radius:8px; text-align:center; border-left:4px solid #64748b;">
+              <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Bước 1</div>
+              <div style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">Authentication</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Bạn là ai?</div>
+            </div>
+            <div style="font-size:1.5rem; color:var(--brand-accent);">→</div>
+            <div style="flex:1; min-width:200px; padding:14px; background:rgba(255,255,255,0.8); border-radius:8px; text-align:center; border-left:4px solid var(--brand-accent);">
+              <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Bước 2</div>
+              <div style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">Authorization (RBAC)</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Bạn có quyền không?</div>
+            </div>
+            <div style="font-size:1.5rem; color:var(--brand-accent);">→</div>
+            <div style="flex:1; min-width:200px; padding:14px; background:rgba(245,158,11,0.15); border-radius:8px; text-align:center; border-left:4px solid var(--brand-accent); box-shadow:0 4px 12px rgba(245,158,11,0.2);">
+              <div style="font-size:0.7rem; color:var(--brand-accent); font-weight:700; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; justify-content:center; gap:4px;">
+                Bước 3 <i data-lucide="star" style="width:14px; height:14px; fill:var(--brand-accent);"></i>
+              </div>
+              <div style="font-size:0.95rem; font-weight:700; color:var(--brand-accent);">Admission Webhooks</div>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">Manifest có hợp lệ không?</div>
+            </div>
+            <div style="font-size:1.5rem; color:var(--brand-accent);">→</div>
+            <div style="flex:1; min-width:200px; padding:14px; background:rgba(255,255,255,0.8); border-radius:8px; text-align:center; border-left:4px solid var(--brand-success);">
+              <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:4px;">Bước 4</div>
+              <div style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">Persisted to etcd</div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Lưu vào cluster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
+        <div style="padding:18px; background:rgba(34,197,94,0.08); border-radius:10px; border-left:4px solid var(--brand-success);">
+          <div style="font-weight:700; color:var(--brand-success); margin-bottom:10px; display:flex; align-items:center; gap:6px; font-size:0.95rem;">
+            <i data-lucide="check-circle" style="width:20px; height:20px;"></i> Ví dụ pass
+          </div>
+          <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);">Alice (đã auth, có RBAC) deploy manifest có image từ ECR, có <code>limits</code>, có label <code>owner</code>. Policy check → <strong>pass</strong> → vào etcd.</p>
+        </div>
+        <div style="padding:18px; background:rgba(239,68,68,0.08); border-radius:10px; border-left:4px solid var(--brand-danger);">
+          <div style="font-weight:700; color:var(--brand-danger); margin-bottom:10px; display:flex; align-items:center; gap:6px; font-size:0.95rem;">
+            <i data-lucide="x-circle" style="width:20px; height:20px;"></i> Ví dụ bị chặn
+          </div>
+          <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);">Alice deploy manifest không có <code>limits</code>. RBAC pass (alice có quyền), nhưng <strong>Admission webhook reject</strong> → trả lỗi <code>403</code>, manifest KHÔNG vào cụm.</p>
+        </div>
+      </div>
+
+      <div class="card reveal" style="background:rgba(245,158,11,0.1); border:2px solid rgba(245,158,11,0.3); padding:20px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <i data-lucide="target" style="width:24px; height:24px; color:var(--brand-accent);"></i>
+          <strong style="color:var(--brand-accent); font-size:1.05rem;">Tóm lại:</strong>
+        </div>
+        <div style="padding-left:34px; font-size:0.95rem; line-height:1.8; color:var(--text-primary);">
+          <div style="margin-bottom:8px;">
+            <strong>RBAC</strong> kiểm <strong>"ai làm gì"</strong>
+          </div>
+          <div style="margin-bottom:8px;">
+            <strong>Admission Policy</strong> kiểm <strong>"cái gì như thế nào"</strong> (image từ đâu? có limits không? có label không?)
+          </div>
+          <div style="color:var(--brand-accent); font-weight:600;">
+            → Kết hợp 2 lớp = cluster thật sự an toàn
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>03 — Admission Policy</span></div>
+</section>
+
+<!-- OPA Gatekeeper - Overview -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Gatekeeper</div><h2>OPA Gatekeeper = Policy-as-Code</h2><p class="lead">Viết logic 1 lần, áp cho cả cluster. Không phải gõ tay từng rule.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="margin-bottom:24px;">
+        <div style="padding:24px; background:rgba(245,158,11,0.06); border-radius:12px; border-left:4px solid var(--brand-accent);">
+          <p style="font-size:1.05rem; line-height:1.7; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+            <i data-lucide="puzzle" style="width:22px; height:22px; color:var(--brand-accent);"></i>
+            <strong style="color:var(--brand-accent);">Gatekeeper có 2 thứ:</strong>
+          </p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+            <div style="padding:18px; background:rgba(255,255,255,0.7); border-radius:8px;">
+              <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700;">1</div>
+                <span style="font-size:0.95rem; font-weight:700; color:var(--text-primary);">ConstraintTemplate</span>
+              </div>
+              <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);">= <strong>Khuôn mẫu policy</strong> (viết logic bằng Rego).<br>Ví dụ: "Deployment phải có label X".<br>Định nghĩa 1 lần, dùng nhiều lần.</p>
+            </div>
+            <div style="padding:18px; background:rgba(255,255,255,0.7); border-radius:8px;">
+              <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-secondary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700;">2</div>
+                <span style="font-size:0.95rem; font-weight:700; color:var(--text-primary);">Constraint</span>
+              </div>
+              <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);">= <strong>Instance cụ thể</strong> của template.<br>Truyền tham số (label nào? resource nào?)<br>Chọn enforce/audit. Áp policy lên cluster.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div style="padding:20px; background:rgba(34,197,94,0.08); border-radius:10px; border-left:4px solid var(--brand-success);">
+          <div style="display:flex; gap:24px; align-items:center;">
+            <div style="flex:1;">
+              <div style="font-size:0.95rem; font-weight:700; color:var(--brand-success); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="settings" style="width:20px; height:20px;"></i>
+                Audit mode vs Enforce mode
+              </div>
+              <div style="margin-bottom:12px;">
+                <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);"><strong>Audit</strong> (<code>enforcementAction: warn</code>):<br>Report vi phạm, KHÔNG chặn. Dùng khi test policy mới.</p>
+              </div>
+              <div>
+                <p style="font-size:0.9rem; line-height:1.7; color:var(--text-secondary);"><strong>Enforce</strong> (<code>enforcementAction: deny</code>):<br>Reject ngay lập tức. Dùng khi policy đã stable.</p>
+              </div>
+            </div>
+            <div style="padding:16px; background:rgba(255,255,255,0.8); border-radius:8px; font-size:0.8rem; font-family:'JetBrains Mono', monospace; line-height:1.7;">
+<span class="kw">spec:</span>
+  <span class="kw">enforcementAction:</span> deny  <span class="cmt"># enforce</span>
+  <span class="cmt"># hoặc: warn  (audit)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>03 — Admission Policy</span></div>
+</section>
+
+<!-- OPA Gatekeeper - Code Example -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Gatekeeper</div><h2>ConstraintTemplate — định nghĩa khung policy</h2><p class="lead">Viết logic Rego 1 lần → sinh ra CRD mới. Constraint dùng CRD đó để áp lên cluster.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="reveal" style="margin-bottom:18px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--brand-accent); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700;">1</div>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--brand-accent); text-transform:uppercase;">ConstraintTemplate (logic Rego)</span>
+        </div>
+        <div class="code-block" style="font-size:0.72rem; line-height:1.6;"><span class="cmt"># Template: policy "phải có label owner"</span>
+<span class="kw">apiVersion:</span> templates.gatekeeper.sh/v1
+<span class="kw">kind:</span> ConstraintTemplate
+<span class="kw">metadata:</span> { name: k8srequiredlabels }
+<span class="kw">spec:</span>
+  <span class="kw">crd:</span>
+    <span class="kw">spec:</span>
+      <span class="kw">names:</span> { kind: K8sRequiredLabels }  <span class="cmt"># sinh ra CRD mới tên này</span>
+      <span class="kw">validation:</span>
+        <span class="kw">openAPIV3Schema:</span>
+          <span class="kw">properties:</span>
+            <span class="kw">labels:</span> { type: array }  <span class="cmt"># param nhận vào từ Constraint</span>
+  <span class="kw">targets:</span>
+  - <span class="kw">target:</span> admission.k8s.gatekeeper.sh
+    <span class="kw">rego:</span> |
+      <span class="kw">package</span> k8srequiredlabels
+      <span class="fn">violation</span>[{<span class="str">"msg"</span>: msg}] {
+        provided := {l | input.review.object.metadata.labels[l]}
+        required := {l | l := input.parameters.labels[_]}
+        missing := required - provided
+        count(missing) > 0                          <span class="cmt"># thiếu label → vi phạm</span>
+        msg := sprintf(<span class="str">"Thiếu label: %v"</span>, [missing])
+      }</div>
+      </div>
+
+    </div>
+  </div>
+  <div class="slide-footer"><span>03 — Admission Policy</span></div>
+</section>
+
+<!-- Constraint Example -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Ví dụ</div><h2>Constraint — áp policy "owner label bắt buộc"</h2></div>
+    <div class="two-col reveal">
+      <div>
+        <div class="code-block"><span class="cmt"># Constraint: instance của template trên</span>
+<span class="kw">apiVersion:</span> constraints.gatekeeper.sh/v1beta1
+<span class="kw">kind:</span> K8sRequiredLabels          <span class="cmt"># dùng CRD từ template</span>
+<span class="kw">metadata:</span> { name: require-owner-label }
+<span class="kw">spec:</span>
+  <span class="kw">enforcementAction:</span> deny    <span class="cmt"># deny = enforce, warn = audit</span>
+  <span class="kw">match:</span>
+    <span class="kw">kinds:</span>
+    - <span class="kw">apiGroups:</span> [<span class="str">"apps"</span>]
+      <span class="kw">kinds:</span> [<span class="str">"Deployment"</span>]
+  <span class="kw">parameters:</span>
+    <span class="kw">labels:</span> [<span class="str">"owner"</span>]          <span class="cmt"># truyền param vào template</span></div>
+      </div>
+      <div>
+        <div class="do-now">▶ Test vi phạm</div>
+        <div class="code-block"><span class="cmt"># Deployment thiếu label owner</span>
+kubectl apply -f deploy-no-owner.yaml
+<span class="out">Error from server (Forbidden):
+admission webhook denied the request:
+Missing labels: {"owner"}</span>
+
+<span class="cmt"># Fix: thêm label owner</span>
+<span class="kw">metadata:</span>
+  <span class="kw">labels:</span>
+    <span class="kw">owner:</span> team-platform
+<span class="out"># → apply thành công</span></div>
+      </div>
+    </div>
+    <div class="checkpoint reveal" style="margin-top:16px; font-size:0.9rem; line-height:1.8;">
+      <strong style="display:block; margin-bottom:8px; color:var(--brand-accent);">Flow đầy đủ:</strong>
+      <div style="padding-left:16px;">
+        <div style="margin-bottom:6px;">• <strong>ConstraintTemplate</strong> = viết logic Rego, sinh ra CRD <code>K8sRequiredLabels</code></div>
+        <div style="margin-bottom:6px;">• <strong>Constraint</strong> = dùng CRD đó, truyền <code>labels: ["owner"]</code>, chọn <code>deny/warn</code></div>
+        <div>• Gatekeeper webhook reject manifest vi phạm</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>03 — Admission Policy</span></div>
+</section>
+
+<!-- ===== LAB ===== -->
+<section class="slide slide-divider">
+  <div class="section-number">LAB</div>
+  <div class="section-label">Hands-on · RBAC + Gatekeeper</div>
+  <h2>Tự tay <span class="gradient-text">phân quyền + enforce policy</span></h2>
+  <p class="lead"><strong>Lab 1</strong> 3 role + 4 constraint + 1 custom policy. Slide chỉ cho <strong>đề bài + gợi ý</strong>, bạn tự viết YAML.</p>
+</section>
+
+<!-- Lab 1.1 RBAC - de bai -->
+<section class="slide">
+  <div class="slide-content">
+    <span class="lab-tag">Lab 1.1 · RBAC</span>
+    <div class="slide-header"><h2>Đề bài: phân quyền 3 vai trò qua GitOps</h2><p class="lead">Cluster đang "ai cũng admin". Tạo 3 vai trò, gán cho 3 user — mọi thứ qua git, KHÔNG <code>kubectl apply</code> tay.</p></div>
+
+    <div style="max-width:1120px; margin:0 auto;">
+      <div class="warn reveal" style="margin-bottom:16px; display:flex; align-items:flex-start; gap:10px;">
+        <i data-lucide="git-branch" style="width:20px;height:20px;color:var(--brand-danger);flex-shrink:0;margin-top:2px;"></i>
+        <div><strong>Trước khi bắt đầu (chỉ làm 1 lần):</strong> fork repo platform → sửa <code>argocd/root.yaml</code> đổi <code>repoURL</code> về repo của bạn → xác nhận platform W9 <code>Synced/Healthy</code><strong></div>
+      </div>
+
+      <table class="reveal" style="margin-bottom:16px;">
+        <thead><tr><th>User</th><th>Vai trò</th><th>Được làm gì</th></tr></thead>
+        <tbody>
+          <tr><td><code>alice</code></td><td><strong>developer</strong></td><td>CRUD workload (deploy/pod/service) — <strong>chỉ trong ns <code>demo</code></strong></td></tr>
+          <tr><td><code>bob</code></td><td><strong>sre</strong></td><td>Xem + thao tác pod <strong>toàn cụm</strong> (mọi namespace)</td></tr>
+          <tr><td><code>carol</code></td><td><strong>viewer</strong></td><td><strong>Chỉ đọc</strong> (get/list/watch), toàn cụm</td></tr>
+        </tbody>
+      </table>
+
+      <div class="grid grid-2 reveal">
+        <div class="card">
+          <h3 style="color:var(--brand-accent); display:flex; align-items:center; gap:6px;"><i data-lucide="folder" style="width:16px;height:16px;"></i> Gợi ý — tạo file gì</h3>
+          <div class="code-block" style="font-size:0.72rem;line-height:1.5;">rbac/
+├── roles.yaml          <span class="cmt"># 3 role/clusterrole</span>
+└── rolebindings.yaml   <span class="cmt"># 3 binding</span>
+argocd/apps/
+└── rbac.yaml           <span class="cmt"># App → rbac/</span></div>
+        </div>
+        <div class="card">
+          <h3 style="color:var(--brand-secondary); display:flex; align-items:center; gap:6px;"><i data-lucide="lightbulb" style="width:16px;height:16px;"></i> Gợi ý tư duy</h3>
+          <ul class="bullets" style="font-size:0.82rem;">
+            <li>alice bó 1 ns → <code>Role</code>; bob/carol toàn cụm → <code>ClusterRole</code></li>
+            <li>viewer chỉ <code>get/list/watch</code> — đừng cho create/delete</li>
+            <li>bind cho người → <code>subjects.kind: User</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab · RBAC + Gatekeeper</span></div>
+</section>
+
+<!-- Lab 1.1 nghiem thu -->
+<section class="slide">
+  <div class="slide-content">
+    <span class="lab-tag">Lab 1.1 · RBAC · Nghiệm thu</span>
+    <div class="slide-header"><h2>Tự kiểm bằng <code>kubectl auth can-i ... --as &lt;user&gt;</code></h2><p class="lead">Commit → ArgoCD sync xong → chạy 4 lệnh, kết quả phải đúng cột bên phải.</p></div>
+    <div style="max-width:980px;margin:0 auto;">
+      <table class="reveal">
+        <thead><tr><th>Lệnh test</th><th>Kỳ vọng</th></tr></thead>
+        <tbody>
+          <tr><td><code>can-i create deploy -n demo --as alice</code></td><td><span class="badge badge-success">yes</span></td></tr>
+          <tr><td><code>can-i create deploy -n kube-system --as alice</code></td><td><span class="badge badge-danger">no</span></td></tr>
+          <tr><td><code>can-i get pods -A --as bob</code></td><td><span class="badge badge-success">yes</span></td></tr>
+          <tr><td><code>can-i delete nodes --as carol</code></td><td><span class="badge badge-danger">no</span></td></tr>
+        </tbody>
+      </table>
+      <div class="checkpoint reveal" style="margin-top:16px;"><strong>Đạt khi:</strong> cả 4 lệnh trả đúng. <code>--as</code> là impersonation (admin giả lập user) — đủ để chấm authorization, chưa cần authentication thật.</div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab · RBAC + Gatekeeper</span></div>
+</section>
+
+<!-- Lab 1.2 Gatekeeper - de bai -->
+<section class="slide">
+  <div class="slide-content">
+    <span class="lab-tag">Lab 1.2 · Gatekeeper</span>
+    <div class="slide-header"><h2>Đề bài: 4 luật chặn manifest xấu tại admission</h2><p class="lead">Cài OPA Gatekeeper (qua GitOps) + viết 4 constraint. Deploy vi phạm phải bị API server từ chối.</p></div>
+    <div style="max-width:1120px;margin:0 auto;">
+      <table class="reveal" style="margin-bottom:14px;">
+        <thead><tr><th>#</th><th>Luật cần enforce</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Cấm image tag <code>:latest</code></td><td>F-01</td></tr>
+          <tr><td>2</td><td>Bắt buộc có <code>resources.limits</code></td><td>F-02</td></tr>
+          <tr><td>3</td><td>Cấm <code>runAsUser: 0</code> (chạy root)</td><td>F-04</td></tr>
+          <tr><td>4</td><td>Cấm <code>hostNetwork: true</code></td><td>—</td></tr>
+        </tbody>
+      </table>
+      <div class="grid grid-2 reveal">
+        <div class="card">
+          <h3 style="color:var(--brand-accent); display:flex; align-items:center; gap:6px;"><i data-lucide="folder" style="width:16px;height:16px;"></i> Gợi ý — file & thứ tự</h3>
+          <ul class="bullets" style="font-size:0.8rem;">
+            <li>Cài controller: <code>argocd/apps/gatekeeper.yaml</code> (sync-wave sớm)</li>
+            <li>ConstraintTemplate (Rego) lấy từ <strong>gatekeeper-library</strong> — không cần tự viết Rego</li>
+            <li><code>gatekeeper/constraints/</code> chứa 4 Constraint + 1 App quản</li>
+            <li>Thứ tự: controller → ConstraintTemplate → Constraint (dùng sync-wave, đừng apply 1 lượt)</li>
+          </ul>
+        </div>
+        <div class="warn">
+          <strong><i data-lucide="alert-triangle" style="width:16px;height:16px;vertical-align:middle;"></i> Bẫy:</strong> chính Rollout <code>api</code> của bạn có lọt 4 luật không? Kiểm tra image đã pin version, có <code>limits</code>, không set <code>runAsUser:0</code> — nếu platform tự bị chặn thì sửa cho hợp lệ trước khi bật enforce.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab · RBAC + Gatekeeper</span></div>
+</section>
+
+<!-- Lab 1.2 nghiem thu -->
+<section class="slide">
+  <div class="slide-content">
+    <span class="lab-tag">Lab 1.2 · Gatekeeper · Nghiệm thu</span>
+    <div class="slide-header"><h2>Thử deploy manifest vi phạm — phải bị reject</h2></div>
+    <div style="max-width:980px;margin:0 auto;">
+      <table class="reveal">
+        <thead><tr><th>Thử deploy</th><th>Kỳ vọng</th></tr></thead>
+        <tbody>
+          <tr><td>Pod image <code>:latest</code></td><td><span class="badge badge-danger">reject</span></td></tr>
+          <tr><td>Pod thiếu <code>resources.limits</code></td><td><span class="badge badge-danger">reject</span></td></tr>
+          <tr><td>Pod <code>runAsUser: 0</code></td><td><span class="badge badge-danger">reject</span></td></tr>
+          <tr><td>Pod <code>hostNetwork: true</code></td><td><span class="badge badge-danger">reject</span></td></tr>
+          <tr><td>Pod hợp lệ (version pinned + limits + non-root)</td><td><span class="badge badge-success">pass</span></td></tr>
+        </tbody>
+      </table>
+      <div class="checkpoint reveal" style="margin-top:16px;"><strong>Mẹo:</strong> trước khi bật <code>deny</code>, chạy <code>enforcementAction: warn</code> (audit) để liệt kê resource đang vi phạm — tránh enforce xong sập cả platform.</div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab · RBAC + Gatekeeper</span></div>
+</section>
+
+<!-- Lab 1.3 Challenge -->
+<section class="slide">
+  <div class="slide-content">
+    <span class="lab-tag">Lab 1.3 · Custom Policy</span>
+    <div class="slide-header"><h2>Viết custom ConstraintTemplate</h2><p class="lead">Phần bắt buộc — tự tay viết 1 luật Rego của riêng bạn.</p></div>
+    <div style="max-width:1000px;margin:0 auto;">
+      <div class="card reveal" style="background:rgba(245,158,11,0.08);border-left:4px solid var(--brand-accent);padding:18px;">
+        <h3 style="color:var(--brand-accent);margin-bottom:10px;">📋 Đề bài — chọn 1</h3>
+        <ul class="bullets" style="font-size:0.9rem;">
+          <li>Reject Deployment nếu <code>replicas &gt; 5</code></li>
+          <li>Bắt buộc mọi workload có label <code>owner</code></li>
+          <li>Chỉ cho image từ registry của bạn (whitelist <code>ghcr.io/&lt;bạn&gt;/...</code>), chặn registry khác</li>
+        </ul>
+        <p style="font-size:0.86rem;margin-top:10px;color:var(--text-secondary);">Yêu cầu: tự viết <strong>ConstraintTemplate</strong> (Rego) + 1 <strong>Constraint</strong> → test vi phạm (reject) &amp; hợp lệ (pass) → commit git → ArgoCD sync.</p>
+      </div>
+      <div class="refs reveal" style="margin-top:16px;">
+        Tham khảo: <a href="https://open-policy-agent.github.io/gatekeeper/website/docs/howto/" target="_blank">Gatekeeper How-To</a> ·
+        <a href="https://www.openpolicyagent.org/docs/latest/policy-language/" target="_blank">Rego Language</a>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab · RBAC + Gatekeeper</span></div>
+</section>
+
+<!-- Deliverable -->
+<section class="slide">
+  <div class="slide-content">
+    <div class="slide-header"><div class="eyebrow">Lab 1 · Nộp gì</div><h2>Deliverable + tự kiểm trước khi nộp</h2></div>
+    <div style="max-width:1000px;margin:0 auto;">
+      <div class="grid grid-2 reveal">
+        <div class="card" style="border-left:4px solid var(--brand-accent);">
+          <h3 style="color:var(--brand-accent);">Trong repo fork</h3>
+          <div class="code-block" style="font-size:0.72rem;line-height:1.5;">rbac/                   <span class="cmt"># 3 role + 3 binding</span>
+gatekeeper/constraints/ <span class="cmt"># 4 constraint (+custom)</span>
+argocd/apps/*.yaml      <span class="cmt"># App: rbac, gatekeeper</span></div>
+        </div>
+        <div class="card" style="border-left:4px solid var(--brand-success);">
+          <h3 style="color:var(--brand-success);">Tự kiểm</h3>
+          <ul class="bullets" style="font-size:0.82rem;">
+            <li><code>auth can-i</code> khớp đúng 3 role</li>
+            <li>4 constraint reject vi phạm, pass hợp lệ</li>
+            <li>Platform W9 vẫn xanh sau khi bật enforce</li>
+            <li>Mọi thứ qua git → ArgoCD <code>Synced</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Lab 1 Summary</span></div>
+</section>
+
+<!-- ===== Closing sáng ===== -->
+<section class="slide slide-closing">
+  <div class="eyebrow">Hết buổi sáng</div>
+  <h2>Cluster đã có <span class="gradient-text">RBAC + Policy Enforcement</span></h2>
+  <p class="lead" style="max-width:700px;margin:0 auto;">3 roles rõ ràng · 4 Gatekeeper constraints chặn vi phạm.<br>Buổi chiều: Secrets Rotation + Supply Chain Security + Platform Integration.</p>
+</section>
+
+<script>
+class SlidePresentation {
+  constructor() {
+    this.slides = document.querySelectorAll('.slide');
+    this.dots = document.getElementById('navDots');
+    this.counter = document.getElementById('counter');
+    this.progress = document.getElementById('progress');
+    this.total = this.slides.length;
+    this.currentIndex = 0;
+    this.wheelTimeout = null;
+    this.init();
+  }
+  init() { this.createDots(); this.observeSlides(); this.observeReveals(); this.bindKeys(); this.bindWheel(); this.bindTouch(); this.update(0); }
+  createDots() {
+    this.slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'nav-dot';
+      dot.addEventListener('click', () => this.slides[i].scrollIntoView({ behavior: 'smooth' }));
+      this.dots.appendChild(dot);
+    });
+    this.dotEls = this.dots.querySelectorAll('.nav-dot');
+  }
+  observeSlides() {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting && e.intersectionRatio > 0.5) { const idx = [...this.slides].indexOf(e.target); if (idx >= 0) this.update(idx); } });
+    }, { threshold: 0.5 });
+    this.slides.forEach(s => obs.observe(s));
+  }
+  observeReveals() {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { if (e.target.classList.contains('stagger')) { [...e.target.children].forEach((ch, i) => setTimeout(() => ch.classList.add('visible'), i * 100)); } else { e.target.classList.add('visible'); } } });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.reveal, .stagger').forEach(el => obs.observe(el));
+  }
+  update(idx) {
+    this.currentIndex = idx;
+    this.dotEls.forEach((d, i) => d.classList.toggle('active', i === idx));
+    const num = String(idx + 1).padStart(2, '0');
+    this.counter.innerHTML = `<strong>${num}</strong> / ${this.total}`;
+    this.progress.style.width = `${((idx + 1) / this.total) * 100}%`;
+  }
+  go(dir) { const next = Math.max(0, Math.min(this.total - 1, this.currentIndex + dir)); this.slides[next].scrollIntoView({ behavior: 'smooth' }); }
+  bindKeys() {
+    document.addEventListener('keydown', e => {
+      if (['ArrowDown','ArrowRight','Space','PageDown'].includes(e.code)) { e.preventDefault(); this.go(1); }
+      if (['ArrowUp','ArrowLeft','PageUp'].includes(e.code)) { e.preventDefault(); this.go(-1); }
+      if (e.code === 'Home') { e.preventDefault(); this.slides[0].scrollIntoView({ behavior: 'smooth' }); }
+      if (e.code === 'End') { e.preventDefault(); this.slides[this.total-1].scrollIntoView({ behavior: 'smooth' }); }
+    });
+  }
+  bindWheel() {
+    document.addEventListener('wheel', e => { if (this.wheelTimeout) return; this.wheelTimeout = setTimeout(() => this.wheelTimeout = null, 600); this.go(e.deltaY > 0 ? 1 : -1); }, { passive: true });
+  }
+  bindTouch() {
+    let startY = 0;
+    document.addEventListener('touchstart', e => startY = e.touches[0].clientY);
+    document.addEventListener('touchend', e => { const diff = startY - e.changedTouches[0].clientY; if (Math.abs(diff) > 60) this.go(diff > 0 ? 1 : -1); });
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  new SlidePresentation();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
