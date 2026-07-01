@@ -557,6 +557,59 @@ def test_classifier_maps_telemetry_only_loss_anomaly_to_service_down() -> None:
     assert decision["status"] == "DIAGNOSED"
 
 
+def test_traffic_loss_metric_drop_maps_to_service_down() -> None:
+    body = metadata_only_triage_body()
+    body["alert"]["title"] = "Telemetry anomaly on checkout-api"
+    body["alert"]["description"] = "Telemetry-only RCAEval case"
+    body["metrics"] = [
+        {
+            "metric_name": "checkout-api_request_count",
+            "service": "checkout-api",
+            "unit": "count",
+            "points": [
+                {"ts": "1", "value": 1000},
+                {"ts": "2", "value": 980},
+                {"ts": "3", "value": 1010},
+                {"ts": "4", "value": 80},
+            ],
+            "labels": {},
+        }
+    ]
+    request = TriageRequest.model_validate(body)
+    rca = analyze_request(request)
+
+    assert any(item["detector"] == "traffic_loss" for item in rca["anomaly_evidence"])
+
+    decision = classify(request, rca)
+
+    assert decision["classification"] == "critical_service_down"
+    assert decision["status"] == "DIAGNOSED"
+
+
+def test_latency_metric_drop_does_not_trigger_traffic_loss() -> None:
+    body = metadata_only_triage_body()
+    body["alert"]["title"] = "Telemetry anomaly on checkout-api"
+    body["alert"]["description"] = "Telemetry-only RCAEval case"
+    body["metrics"] = [
+        {
+            "metric_name": "checkout-api_latency_p95",
+            "service": "checkout-api",
+            "unit": "ms",
+            "points": [
+                {"ts": "1", "value": 1000},
+                {"ts": "2", "value": 980},
+                {"ts": "3", "value": 1010},
+                {"ts": "4", "value": 80},
+            ],
+            "labels": {},
+        }
+    ]
+    request = TriageRequest.model_validate(body)
+    rca = analyze_request(request)
+
+    assert not any(item["detector"] == "traffic_loss" for item in rca["anomaly_evidence"])
+
+
 def test_llm_qa_pass_verdict_does_not_reduce_confidence(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_QA_LLM", "true")
     monkeypatch.setattr(

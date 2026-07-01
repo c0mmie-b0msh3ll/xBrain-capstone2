@@ -57,6 +57,21 @@ def detect_metric_anomalies(metrics: list[Any]) -> list[dict[str, Any]]:
             baseline_mean = mean(baseline)
             baseline_std = pstdev(baseline) if len(baseline) > 1 else max(abs(baseline_mean) * 0.1, 1.0)
             z_score = (current - baseline_mean) / baseline_std if baseline_std else 0.0
+            drop = traffic_loss_anomaly(metric_name, baseline_mean, current)
+            if drop:
+                evidence.append(
+                    {
+                        "detector": "traffic_loss",
+                        "service": service,
+                        "metric_name": metric_name,
+                        "severity": "high",
+                        "score": drop["score"],
+                        "reason": (
+                            f"{metric_name} traffic loss/drop detected: current value {current:g}{unit or ''} "
+                            f"is {drop['drop_ratio']:.0%} below baseline {baseline_mean:g}{unit or ''}."
+                        ),
+                    }
+                )
             if abs(z_score) >= 3.0:
                 evidence.append(
                     {
@@ -111,6 +126,20 @@ def threshold_anomaly(metric_name: str, value: float, unit: str | None) -> str |
     if ("cpu" in name or "memory" in name) and value >= 85:
         return f"{metric_name} breached saturation threshold at {value:g}{suffix}."
     return None
+
+
+def traffic_loss_anomaly(metric_name: str, baseline_mean: float, current: float) -> dict[str, float] | None:
+    name = metric_name.lower()
+    if not any(token in name for token in ("request", "requests", "traffic", "throughput", "qps", "rps", "success", "count", "rate")):
+        return None
+    if any(token in name for token in ("latency", "duration", "timeout", "error", "5xx", "cpu", "mem", "memory", "disk")):
+        return None
+    if baseline_mean <= 0:
+        return None
+    drop_ratio = (baseline_mean - current) / baseline_mean
+    if drop_ratio < 0.6:
+        return None
+    return {"drop_ratio": round(drop_ratio, 3), "score": round(min(max(drop_ratio, 0.6), 1.0), 3)}
 
 
 def ewma_anomaly(values: list[float], alpha: float = 0.35) -> dict[str, float] | None:

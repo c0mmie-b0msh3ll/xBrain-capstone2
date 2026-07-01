@@ -711,7 +711,7 @@ def classification_signal_scores(request: TriageRequest, rca: dict[str, Any], al
         text = " ".join(str(item.get(key, "")) for key in ("metric_name", "reason", "detector")).lower()
         if any(token in text for token in ["latency", "p95", "p90", "p50", "timeout", "duration", "delay", "slow"]):
             scores["latency"] += score
-        if any(token in text for token in ["availability", "error_rate", "5xx", "loss", "down", "unavailable", "connection refused"]):
+        if any(token in text for token in ["availability", "error_rate", "5xx", "loss", "drop", "traffic_loss", "down", "unavailable", "connection refused"]):
             scores["critical"] += score
     return scores
 
