@@ -1,0 +1,2244 @@
+{
+  "generated_at": "2026-07-01T08:16:25.397188+00:00",
+  "metadata_mode": "hidden",
+  "include_metadata_features": false,
+  "fast_raw_only": true,
+  "model": "ExtraTreesClassifier(class_weight=balanced)",
+  "random_state": 42,
+  "test_size": 0.3,
+  "total_cases": 735,
+  "train_cases": 514,
+  "test_cases": 221,
+  "label_counts": {
+    "noisy_or_ambiguous_alert": 495,
+    "latency_degradation": 120,
+    "critical_service_down": 120
+  },
+  "evaluation": {
+    "accuracy": 0.7692,
+    "macro_precision": 0.608,
+    "macro_recall": 0.584,
+    "macro_f1": 0.5937,
+    "per_class": {
+      "critical_service_down": {
+        "precision": 0.4545,
+        "recall": 0.4167,
+        "f1": 0.4348,
+        "support": 36
+      },
+      "latency_degradation": {
+        "precision": 0.4828,
+        "recall": 0.3889,
+        "f1": 0.4308,
+        "support": 36
+      },
+      "noisy_or_ambiguous_alert": {
+        "precision": 0.8868,
+        "recall": 0.9463,
+        "f1": 0.9156,
+        "support": 149
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "critical_service_down": 15,
+        "latency_degradation": 13,
+        "noisy_or_ambiguous_alert": 8
+      },
+      "latency_degradation": {
+        "critical_service_down": 12,
+        "latency_degradation": 14,
+        "noisy_or_ambiguous_alert": 10
+      },
+      "noisy_or_ambiguous_alert": {
+        "critical_service_down": 6,
+        "latency_degradation": 2,
+        "noisy_or_ambiguous_alert": 141
+      }
+    },
+    "confidence": {
+      "avg_max_probability": 0.763,
+      "min_max_probability": 0.34
+    }
+  },
+  "test_failures": [
+    {
+      "case": "re1ss_carts_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-auth-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-travel-service_disk_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ss_carts_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_payment_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ob_emailservice_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ss_orders_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-auth-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-travel-service_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ob_recommendationservice_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ss_catalogue_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ob_recommendationservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ss_payment_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-route-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_productcatalogservice_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ob_currencyservice_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_checkoutservice_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ob_currencyservice_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ss_carts_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_orders_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ss_orders_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1ss_orders_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ss_catalogue_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_adservice_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ss_carts_f3_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_carts_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ob_adservice_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-auth-service_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_carts_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-travel-service_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ss_payment_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re3ob_cartservice_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-route-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_checkoutservice_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_checkoutservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    }
+  ],
+  "test_cases_detail": [
+    {
+      "case": "re1ss_user_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_mem_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_carts_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re3ss_carts_f4_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-auth-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_mem_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-train-service_mem_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-travel-service_disk_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_payment_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-train-service_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_carts_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_payment_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ob_emailservice_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ob_currencyservice_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_productcatalogservice_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1ss_catalogue_mem_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_emailservice_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f2_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_socket_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f1_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_front-end_f2_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "front-end",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-route-service_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re2ss_carts_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_mem_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_socket_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_carts_f1_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_cpu_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-auth-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-order-service_cpu_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_catalogue_socket_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_orders_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_cpu_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-travel-service_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ob_recommendationservice_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_mem_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_orders_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-train-service_socket_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-auth-service_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_emailservice_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-auth-service_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-auth-service_disk_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-train-service_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ss_orders_f4_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_currencyservice_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_socket_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-auth-service_f3_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2ss_catalogue_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_productcatalogservice_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_mem_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-route-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_emailservice_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_productcatalogservice_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ob_currencyservice_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-train-service_cpu_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f3_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_payment_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_front-end_f3_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "front-end",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_cpu_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ob_currencyservice_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ss_front-end_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "front-end",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-auth-service_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_carts_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-travel-service_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f2_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_orders_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-travel-service_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ss_user_loss_4",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f3_6",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_user_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f5_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_socket_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-route-service_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f2_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_cartservice_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_mem_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_socket_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f4_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_emailservice_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f1_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f4_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re2ss_carts_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_catalogue_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-auth-service_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ob_currencyservice_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_carts_f3_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_5",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1ob_adservice_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_disk_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re2tt_ts-auth-service_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-auth-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3tt_ts-auth-service_f2_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_socket_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_carts_f3_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-route-service_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_user_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-route-service_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_cartservice_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-order-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3tt_ts-auth-service_f4_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_mem_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_carts_f3_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_delay_5",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_user_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-order-service_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_carts_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-train-service_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-train-service_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-train-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_adservice_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-auth-service_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ss_user_mem_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_carts_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_delay_1",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re1tt_ts-travel-service_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ss_payment_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_catalogue_delay_4",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_payment_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_emailservice_f5_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_socket_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_cartservice_f1_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "cartservice",
+      "prediction": "critical_service_down",
+      "correct": false
+    },
+    {
+      "case": "re3ss_carts_f3_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_currencyservice_f1_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-auth-service_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_cpu_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-route-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re2ss_payment_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "payment",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_recommendationservice_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "recommendationservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_carts_f1_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "carts",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_productcatalogservice_delay_2",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_orders_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re3tt_ts-auth-service_f2_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ss_user_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re1ss_user_disk_4",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ss_front-end_f1_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "front-end",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_productcatalogservice_cpu_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_user_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_catalogue_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-order-service_mem_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3ob_adservice_f4_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ss_catalogue_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "catalogue",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-auth-service_loss_3",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "latency_degradation",
+      "correct": false
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re3ss_orders_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "orders",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2tt_ts-travel-service_mem_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ss_user_cpu_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_checkoutservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "checkoutservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re2ss_user_loss_1",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "user",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": false
+    },
+    {
+      "case": "re3ob_adservice_f3_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "adservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-travel-service_loss_2",
+      "expected": "critical_service_down",
+      "deterministic": "not_run",
+      "service": "ts-travel-service",
+      "prediction": "critical_service_down",
+      "correct": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_delay_3",
+      "expected": "latency_degradation",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "latency_degradation",
+      "correct": true
+    },
+    {
+      "case": "re2ob_emailservice_socket_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "emailservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re2ob_productcatalogservice_cpu_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "productcatalogservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-order-service_mem_1",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-order-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_5",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "currencyservice",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re1tt_ts-route-service_disk_2",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-route-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    },
+    {
+      "case": "re3tt_ts-auth-service_f1_3",
+      "expected": "noisy_or_ambiguous_alert",
+      "deterministic": "not_run",
+      "service": "ts-auth-service",
+      "prediction": "noisy_or_ambiguous_alert",
+      "correct": true
+    }
+  ]
+}

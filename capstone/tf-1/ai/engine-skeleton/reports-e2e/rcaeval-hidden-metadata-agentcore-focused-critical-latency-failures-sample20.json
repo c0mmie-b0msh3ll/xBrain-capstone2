@@ -1,0 +1,875 @@
+{
+  "generated_at": "2026-07-01T07:36:13.435784+00:00",
+  "scope": "AgentCore focused sample over deterministic hidden-metadata failures for critical_service_down and latency_degradation.",
+  "selection_source": "reports-e2e/rcaeval-hidden-metadata-deterministic-full.json",
+  "metadata_mode": "hidden",
+  "agentcore_enabled": true,
+  "total_cases": 20,
+  "errors": [],
+  "expected_counts": {
+    "critical_service_down": 10,
+    "latency_degradation": 10
+  },
+  "predicted_counts": {
+    "latency_degradation": 2,
+    "noisy_or_ambiguous_alert": 16,
+    "critical_service_down": 2
+  },
+  "classification": {
+    "accuracy": 0.0,
+    "macro_precision": 0.0,
+    "macro_recall": 0.0,
+    "macro_f1": 0.0,
+    "per_class": {
+      "critical_service_down": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 10,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "latency_degradation": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 10,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "noisy_or_ambiguous_alert": {
+        "tp": 0,
+        "fp": 16,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "latency_degradation": 2,
+        "noisy_or_ambiguous_alert": 8
+      },
+      "latency_degradation": {
+        "critical_service_down": 2,
+        "noisy_or_ambiguous_alert": 8
+      },
+      "noisy_or_ambiguous_alert": {}
+    }
+  },
+  "root_service_top1_accuracy": 0.7,
+  "latency_ms": {
+    "avg": 2115.64,
+    "max": 2804.68,
+    "min": 1621.34
+  },
+  "cases": [
+    {
+      "case": "re1ob_cartservice_loss_2",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 1801.62,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_3",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 1621.34,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_4",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 1740.78,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_4",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "duration_ms": 2301.44,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_1",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2111.46,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          1
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_2",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "duration_ms": 2278.33,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_3",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "duration_ms": 2790.01,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_4",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2037.08,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 13,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_1",
+      "service": "productcatalogservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "duration_ms": 2226.7,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_productcatalogservice_loss_2",
+      "service": "productcatalogservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2072.39,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "productcatalogservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_2",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 1938.35,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 1622.97,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 2142.75,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_1",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2804.68,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_5",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 1973.02,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_productcatalogservice_delay_3",
+      "service": "productcatalogservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2026.85,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "productcatalogservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ss_carts_delay_1",
+      "service": "carts",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2473.74,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "carts-db",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ss_carts_delay_2",
+      "service": "carts",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2235.21,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "carts",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ss_carts_delay_3",
+      "service": "carts",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2023.42,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "carts-db",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ss_carts_delay_5",
+      "service": "carts",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 2090.68,
+      "agent_metadata": {
+        "enabled": true,
+        "provider": "agentcore",
+        "runtime_arn_configured": true,
+        "iterations": 1,
+        "tool_calls": [],
+        "fallback": false,
+        "final_validation": {
+          "passed": true
+        },
+        "qa": {
+          "passed": true,
+          "gaps": []
+        }
+      },
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "carts",
+      "root_service_top1": true
+    }
+  ]
+}

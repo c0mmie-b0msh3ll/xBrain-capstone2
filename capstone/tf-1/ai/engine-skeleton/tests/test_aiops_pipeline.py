@@ -32,6 +32,7 @@ from app.incident_seed import IncidentSeed, build_triage_request_from_seed
 from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, build_prompt_payload, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
 from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits, app, apply_qa_revision, build_audit_id, classify
+from app.ml_classifier import apply_ml_decision
 from app.observability import sanitize_log_fields
 from app.qa_judge import parse_qa_judge_response, run_qa
 from app.rca import analyze_request, detect_metric_anomalies, detect_multivariate_changepoints, infer_causal_hints
@@ -751,6 +752,38 @@ def test_qa_revision_applies_suggested_classification_when_enabled(monkeypatch) 
     assert revised["status"] == "INVESTIGATE"
     assert revised["confidence"] == 0.65
     assert revised["summary"].startswith("QA revised diagnosis:")
+
+
+def test_ml_decision_requires_confidence_threshold(monkeypatch) -> None:
+    monkeypatch.setenv("AIOPS_ML_MIN_CONFIDENCE", "0.75")
+    decision = {
+        "status": "DIAGNOSED",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "summary": "deterministic",
+    }
+    ml_metadata = {"enabled": True, "prediction": "critical_service_down", "confidence": 0.6}
+
+    assert apply_ml_decision(decision, ml_metadata) == decision
+    assert ml_metadata["skipped_reason"] == "below_confidence_threshold"
+
+
+def test_ml_decision_can_override_when_confident(monkeypatch) -> None:
+    monkeypatch.setenv("AIOPS_ML_MIN_CONFIDENCE", "0.7")
+    decision = {
+        "status": "DIAGNOSED",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "summary": "deterministic",
+    }
+    ml_metadata = {"enabled": True, "prediction": "critical_service_down", "confidence": 0.83}
+
+    revised = apply_ml_decision(decision, ml_metadata)
+
+    assert revised["classification"] == "critical_service_down"
+    assert revised["status"] == "DIAGNOSED"
+    assert revised["confidence"] == 0.83
+    assert ml_metadata["applied"] is True
 
 
 def test_llm_qa_malformed_output_degrades_safely(monkeypatch) -> None:

@@ -32,6 +32,7 @@ from app.idempotency_store import (
 )
 from app.investigation_router import select_investigation_mode
 from app.llm import current_llm_usage_summary, investigate_with_tools, reset_llm_usage, reword_catalog_actions, synthesize_investigation_summary
+from app.ml_classifier import apply_ml_decision, predict_ml_classification
 from app.observability import (
     BUDGET_EXCEEDED_TOTAL,
     DEGRADED_MODE_TOTAL,
@@ -420,6 +421,9 @@ def triage_request(request: TriageRequest, audit_id: str | None = None, idempote
             with span("deterministic_rca", audit_id=audit_id):
                 rca = analyze_request(request)
             decision = classify(request, rca)
+            with span("ml_classifier", audit_id=audit_id):
+                ml_metadata = predict_ml_classification(request, rca)
+                decision = apply_ml_decision(decision, ml_metadata)
 
             with span("mode_selection", audit_id=audit_id):
                 mode_selection = select_investigation_mode(request, decision, rca, agent_platform_enabled())
@@ -455,6 +459,8 @@ def triage_request(request: TriageRequest, audit_id: str | None = None, idempote
                 rca = enrich_rca_with_jira_history(request, rca)
                 if mode_selection.selected_mode != "agent_platform" or (agent_metadata and agent_metadata.get("fallback")):
                     decision = classify(request, rca)
+                    ml_metadata = predict_ml_classification(request, rca)
+                    decision = apply_ml_decision(decision, ml_metadata)
                 else:
                     decision = decision.copy()
                     decision["rca"] = rca
@@ -476,6 +482,7 @@ def triage_request(request: TriageRequest, audit_id: str | None = None, idempote
                         "mode_selection": mode_selection.metadata(),
                         "tool_investigation": tool_metadata,
                         "agent_platform": agent_metadata,
+                        "ml_classifier": ml_metadata,
                         "qa": qa_metadata,
                         "evidence_budget": evidence_budget_metadata,
                         "idempotency": idempotency_metadata,

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "extra_bal",
+    "accuracy": 0.7647,
+    "macro_f1": 0.5893,
+    "macro_recall": 0.5817,
+    "critical_service_down_f1": 0.4286,
+    "critical_service_down_recall": 0.4167,
+    "latency_degradation_f1": 0.4242,
+    "latency_degradation_recall": 0.3889,
+    "noisy_or_ambiguous_alert_f1": 0.915,
+    "noisy_or_ambiguous_alert_recall": 0.9396
+  },
+  {
+    "name": "rf_bal",
+    "accuracy": 0.7511,
+    "macro_f1": 0.5756,
+    "macro_recall": 0.575,
+    "critical_service_down_f1": 0.3548,
+    "critical_service_down_recall": 0.3056,
+    "latency_degradation_f1": 0.4675,
+    "latency_degradation_recall": 0.5,
+    "noisy_or_ambiguous_alert_f1": 0.9043,
+    "noisy_or_ambiguous_alert_recall": 0.9195
+  },
+  {
+    "name": "extra_shallow",
+    "accuracy": 0.7195,
+    "macro_f1": 0.5697,
+    "macro_recall": 0.5874,
+    "critical_service_down_f1": 0.3836,
+    "critical_service_down_recall": 0.3889,
+    "latency_degradation_f1": 0.4222,
+    "latency_degradation_recall": 0.5278,
+    "noisy_or_ambiguous_alert_f1": 0.9032,
+    "noisy_or_ambiguous_alert_recall": 0.8456
+  },
+  {
+    "name": "hgb",
+    "accuracy": 0.7557,
+    "macro_f1": 0.5661,
+    "macro_recall": 0.5632,
+    "critical_service_down_f1": 0.3175,
+    "critical_service_down_recall": 0.2778,
+    "latency_degradation_f1": 0.4658,
+    "latency_degradation_recall": 0.4722,
+    "noisy_or_ambiguous_alert_f1": 0.915,
+    "noisy_or_ambiguous_alert_recall": 0.9396
+  },
+  {
+    "name": "rf_shallow",
+    "accuracy": 0.6833,
+    "macro_f1": 0.5366,
+    "macro_recall": 0.5625,
+    "critical_service_down_f1": 0.3077,
+    "critical_service_down_recall": 0.2778,
+    "latency_degradation_f1": 0.449,
+    "latency_degradation_recall": 0.6111,
+    "noisy_or_ambiguous_alert_f1": 0.853,
+    "noisy_or_ambiguous_alert_recall": 0.7987
+  },
+  {
+    "name": "logreg",
+    "accuracy": 0.2896,
+    "macro_f1": 0.1994,
+    "macro_recall": 0.2626,
+    "critical_service_down_f1": 0.2,
+    "critical_service_down_recall": 0.4722,
+    "latency_degradation_f1": 0.0,
+    "latency_degradation_recall": 0.0,
+    "noisy_or_ambiguous_alert_f1": 0.3983,
+    "noisy_or_ambiguous_alert_recall": 0.3154
+  },
+  {
+    "name": "svc",
+    "accuracy": 0.1629,
+    "macro_f1": 0.0934,
+    "macro_recall": 0.3333,
+    "critical_service_down_f1": 0.0,
+    "critical_service_down_recall": 0.0,
+    "latency_degradation_f1": 0.2802,
+    "latency_degradation_recall": 1.0,
+    "noisy_or_ambiguous_alert_f1": 0.0,
+    "noisy_or_ambiguous_alert_recall": 0.0
+  }
+]

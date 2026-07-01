@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.agent_runtime import run_agent_platform
 from app.context_tools import ToolRegistry
 from app.main import TriageRequest, classify
+from app.ml_classifier import apply_ml_decision, predict_ml_classification
 from app.rca import analyze_request
 from scripts.adapt_rcaeval_case import build_triage_request, infer_service_fault
 
@@ -145,6 +146,8 @@ def run_case(case_dir: Path, map_general_to_noisy: bool, metadata_mode: str, use
     rca = analyze_request(request)
     started = time.perf_counter()
     decision = classify(request, rca)
+    ml_metadata = predict_ml_classification(request, rca)
+    decision = apply_ml_decision(decision, ml_metadata)
     agent_metadata: dict[str, Any] | None = None
     if use_agentcore:
         request, rca, decision, agent_metadata, _ = run_agent_platform(request, decision, rca, ToolRegistry())
@@ -164,6 +167,7 @@ def run_case(case_dir: Path, map_general_to_noisy: bool, metadata_mode: str, use
         "status": decision["status"],
         "confidence": decision["confidence"],
         "duration_ms": duration_ms,
+        "ml_metadata": ml_metadata,
         "agent_metadata": agent_metadata,
         "anomaly_evidence_count": len(rca.get("anomaly_evidence", [])),
         "detectors": sorted(Counter(item.get("detector", "unknown") for item in rca.get("anomaly_evidence", [])).items()),

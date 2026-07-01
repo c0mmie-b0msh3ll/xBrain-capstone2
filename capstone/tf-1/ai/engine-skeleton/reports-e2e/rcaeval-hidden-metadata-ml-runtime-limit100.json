@@ -1,0 +1,4620 @@
+{
+  "generated_at": "2026-07-01T08:26:30.836237+00:00",
+  "scope": "RCAEval benchmark for TF1 AIOps classifier/AgentCore paths.",
+  "metadata_mode": "hidden",
+  "agentcore_enabled": false,
+  "data_root": "datapack/RCAEval-v2/data",
+  "total_cases": 100,
+  "errors": [],
+  "expected_counts": {
+    "noisy_or_ambiguous_alert": 60,
+    "latency_degradation": 20,
+    "critical_service_down": 20
+  },
+  "predicted_counts": {
+    "noisy_or_ambiguous_alert": 61,
+    "latency_degradation": 18,
+    "critical_service_down": 21
+  },
+  "classification": {
+    "accuracy": 0.98,
+    "macro_precision": 0.9787,
+    "macro_recall": 0.9667,
+    "macro_f1": 0.9716,
+    "per_class": {
+      "critical_service_down": {
+        "tp": 20,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9524,
+        "recall": 1.0,
+        "f1": 0.9756
+      },
+      "latency_degradation": {
+        "tp": 18,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9474
+      },
+      "noisy_or_ambiguous_alert": {
+        "tp": 60,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9836,
+        "recall": 1.0,
+        "f1": 0.9917
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "critical_service_down": 20
+      },
+      "latency_degradation": {
+        "latency_degradation": 18,
+        "noisy_or_ambiguous_alert": 1,
+        "critical_service_down": 1
+      },
+      "noisy_or_ambiguous_alert": {
+        "noisy_or_ambiguous_alert": 60
+      }
+    }
+  },
+  "root_service_top1_accuracy": 0.77,
+  "latency_ms": {
+    "avg": 310.27,
+    "max": 508.44,
+    "min": 183.4
+  },
+  "worst_failures": [
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 249.86,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.5337,
+        "probabilities": {
+          "critical_service_down": 0.1425,
+          "latency_degradation": 0.3237,
+          "noisy_or_ambiguous_alert": 0.5337
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 320.3,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 0.6175,
+        "probabilities": {
+          "critical_service_down": 0.6175,
+          "latency_degradation": 0.1425,
+          "noisy_or_ambiguous_alert": 0.24
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    }
+  ],
+  "cases": [
+    {
+      "case": "re1ob_adservice_cpu_1",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 418.4,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_2",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 186.5,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "emailservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_3",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 196.49,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "paymentservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_4",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.86,
+      "duration_ms": 200.39,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.86,
+        "probabilities": {
+          "critical_service_down": 0.005,
+          "latency_degradation": 0.135,
+          "noisy_or_ambiguous_alert": 0.86
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_cpu_5",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 184.59,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "window_shift",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_1",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 185.66,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.6663,
+        "probabilities": {
+          "critical_service_down": 0.2625,
+          "latency_degradation": 0.6663,
+          "noisy_or_ambiguous_alert": 0.0712
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_delay_2",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 207.87,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_3",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 200.48,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.6088,
+        "probabilities": {
+          "critical_service_down": 0.33,
+          "latency_degradation": 0.6088,
+          "noisy_or_ambiguous_alert": 0.0612
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_delay_4",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 183.4,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_5",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 200.64,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.6713,
+        "probabilities": {
+          "critical_service_down": 0.2562,
+          "latency_degradation": 0.6713,
+          "noisy_or_ambiguous_alert": 0.0725
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_disk_1",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "duration_ms": 187.43,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 0.4175,
+        "probabilities": {
+          "critical_service_down": 0.4175,
+          "latency_degradation": 0.1888,
+          "noisy_or_ambiguous_alert": 0.3937
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_2",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 187.63,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_3",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 183.93,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_4",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 238.36,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9375,
+        "probabilities": {
+          "critical_service_down": 0.0425,
+          "latency_degradation": 0.02,
+          "noisy_or_ambiguous_alert": 0.9375
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_5",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 255.96,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_1",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 221.62,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_2",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 237.19,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 0.485,
+        "probabilities": {
+          "critical_service_down": 0.485,
+          "latency_degradation": 0.1087,
+          "noisy_or_ambiguous_alert": 0.4062
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_3",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 285.67,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.455,
+        "probabilities": {
+          "critical_service_down": 0.4313,
+          "latency_degradation": 0.455,
+          "noisy_or_ambiguous_alert": 0.1138
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_loss_4",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 361.87,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_5",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 316.16,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_1",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 318.7,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_2",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 313.38,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_mem_3",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 302.82,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_4",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 301.84,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "productcatalogservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_mem_5",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 295.61,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_1",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 295.63,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_cpu_2",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 419.42,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9962,
+        "probabilities": {
+          "critical_service_down": 0.0037,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.9962
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 1,
+      "detectors": [
+        [
+          "isolation_forest",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_3",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 399.78,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9912,
+        "probabilities": {
+          "critical_service_down": 0.0088,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.9912
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_4",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 326.21,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_5",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 372.46,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_1",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 316.02,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_2",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.74,
+      "duration_ms": 287.71,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.7388,
+        "probabilities": {
+          "critical_service_down": 0.0625,
+          "latency_degradation": 0.7388,
+          "noisy_or_ambiguous_alert": 0.1988
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_3",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 297.01,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 249.86,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.5337,
+        "probabilities": {
+          "critical_service_down": 0.1425,
+          "latency_degradation": 0.3237,
+          "noisy_or_ambiguous_alert": 0.5337
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_delay_5",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 302.11,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_1",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 298.49,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_2",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "duration_ms": 296.81,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.6963,
+        "probabilities": {
+          "critical_service_down": 0.12,
+          "latency_degradation": 0.1837,
+          "noisy_or_ambiguous_alert": 0.6963
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_3",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 296.95,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_4",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 407.04,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_5",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 409.76,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "isolation_forest",
+          9
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_1",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 375.19,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_2",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 342.85,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_3",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 429.65,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_4",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 322.34,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_5",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 329.88,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_1",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 314.81,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_2",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 359.03,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_mem_3",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 209.47,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_4",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 319.68,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_5",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 298.49,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_1",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 354.29,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_2",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 410.02,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_3",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 321.21,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9888,
+        "probabilities": {
+          "critical_service_down": 0.0025,
+          "latency_degradation": 0.0088,
+          "noisy_or_ambiguous_alert": 0.9888
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_4",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 252.67,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_5",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 275.56,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_1",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 380.64,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_2",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 397.23,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.6737,
+        "probabilities": {
+          "critical_service_down": 0.2512,
+          "latency_degradation": 0.6737,
+          "noisy_or_ambiguous_alert": 0.075
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_3",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 310.15,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 15,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          10
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 320.3,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 0.6175,
+        "probabilities": {
+          "critical_service_down": 0.6175,
+          "latency_degradation": 0.1425,
+          "noisy_or_ambiguous_alert": 0.24
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_5",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "duration_ms": 331.63,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 0.4913,
+        "probabilities": {
+          "critical_service_down": 0.3775,
+          "latency_degradation": 0.4913,
+          "noisy_or_ambiguous_alert": 0.1313
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_1",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 353.92,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_2",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 327.32,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9237,
+        "probabilities": {
+          "critical_service_down": 0.0425,
+          "latency_degradation": 0.0338,
+          "noisy_or_ambiguous_alert": 0.9237
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_3",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.84,
+      "duration_ms": 258.8,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.845,
+        "probabilities": {
+          "critical_service_down": 0.1075,
+          "latency_degradation": 0.0475,
+          "noisy_or_ambiguous_alert": 0.845
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_4",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.9,
+      "duration_ms": 237.66,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9038,
+        "probabilities": {
+          "critical_service_down": 0.05,
+          "latency_degradation": 0.0462,
+          "noisy_or_ambiguous_alert": 0.9038
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_5",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 323.25,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_1",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 444.47,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_2",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 362.3,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_3",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 394.04,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_4",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 246.71,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_5",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "duration_ms": 267.55,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": false,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 0.5513,
+        "probabilities": {
+          "critical_service_down": 0.5513,
+          "latency_degradation": 0.32,
+          "noisy_or_ambiguous_alert": 0.1288
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00",
+        "skipped_reason": "below_confidence_threshold"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_1",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 323.9,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_2",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 379.86,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_3",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 361.28,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_4",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 320.29,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "window_shift",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_5",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 342.04,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_1",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 401.72,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.9962,
+        "probabilities": {
+          "critical_service_down": 0.0025,
+          "latency_degradation": 0.0013,
+          "noisy_or_ambiguous_alert": 0.9962
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_2",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 301.41,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_3",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 364.63,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_4",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 370.41,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_5",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 361.21,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_delay_1",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 237.88,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_2",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 293.56,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_3",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 263.95,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_4",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 378.4,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_5",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 335.27,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "latency_degradation",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 1.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_1",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.7,
+      "duration_ms": 326.35,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.705,
+        "probabilities": {
+          "critical_service_down": 0.135,
+          "latency_degradation": 0.16,
+          "noisy_or_ambiguous_alert": 0.705
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 18,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          9
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_2",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 356.15,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_3",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 349.5,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_4",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.78,
+      "duration_ms": 259.88,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 0.7788,
+        "probabilities": {
+          "critical_service_down": 0.11,
+          "latency_degradation": 0.1113,
+          "noisy_or_ambiguous_alert": 0.7788
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_5",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 228.85,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_1",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 402.57,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          1
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_2",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 328.93,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_3",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 508.44,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_4",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 355.65,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 13,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_5",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.92,
+      "duration_ms": 357.74,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "critical_service_down",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 1.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 0.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_1",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 246.39,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_2",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 252.7,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_3",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 257.89,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_4",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 389.58,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_5",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.92,
+      "duration_ms": 351.64,
+      "ml_metadata": {
+        "enabled": true,
+        "applied": true,
+        "provider": "sklearn",
+        "model_path": "models/rca_classifier_hidden_raw_v1.joblib",
+        "prediction": "noisy_or_ambiguous_alert",
+        "confidence": 1.0,
+        "probabilities": {
+          "critical_service_down": 0.0,
+          "latency_degradation": 0.0,
+          "noisy_or_ambiguous_alert": 1.0
+        },
+        "model_metadata_mode": "hidden",
+        "model_created_at": "2026-07-01T08:16:25.397188+00:00"
+      },
+      "agent_metadata": null,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    }
+  ]
+}
