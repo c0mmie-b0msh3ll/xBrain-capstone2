@@ -1,0 +1,643 @@
+{
+  "anomaly_evidence": [
+    {
+      "detector": "threshold",
+      "metric_name": "http_latency_p95_ms",
+      "reason": "http_latency_p95_ms breached latency threshold at 2800ms.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "rolling_zscore_3sigma",
+      "metric_name": "http_latency_p95_ms",
+      "reason": "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "threshold",
+      "metric_name": "http_error_rate_percent",
+      "reason": "http_error_rate_percent breached error threshold at 12percent.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "threshold",
+      "metric_name": "redis_timeout_count",
+      "reason": "redis_timeout_count breached timeout threshold at 340count.",
+      "score": 1.0,
+      "service": "payment-api",
+      "severity": "high"
+    },
+    {
+      "detector": "log_keyword",
+      "metric_name": "logs",
+      "reason": "3 error-like log entries; sample: redis: i/o timeout while processing /checkout",
+      "score": 0.6,
+      "service": "payment-api",
+      "severity": "medium"
+    }
+  ],
+  "audit_id": "audit-837ef7ca3ca2",
+  "causal_hints": [
+    {
+      "reason": "Causal hints require at least six aligned points per compared service.",
+      "score": 0.0,
+      "type": "insufficient_points"
+    }
+  ],
+  "created_at": "2026-07-01T06:49:40.046651Z",
+  "detector_evidence": [
+    "http_latency_p95_ms=2800ms",
+    "http_error_rate_percent=12percent",
+    "redis_timeout_count=340count",
+    "redis: i/o timeout while processing /checkout",
+    "connection pool exhausted for redis client"
+  ],
+  "incident_id": "inc-payment-api-1782888580",
+  "investigation_summary": "Deterministic investigator summary: payment-api produced 5 anomaly evidence item(s). Top RCA candidate is payment-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+  "jira_payload": {
+    "description": "payment-api is showing latency degradation, likely related to timeout or recent change signals. Evidence: Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.; Representative log: redis: i/o timeout while processing /checkout; Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.; Runbook available: Synthetic scenario triage.",
+    "fields": {
+      "audit_id": "audit-837ef7ca3ca2",
+      "confidence": 0.82,
+      "correlation_id": "corr-payment-api-1782888580",
+      "owner_team": "payments-platform",
+      "status": "DIAGNOSED",
+      "suggested_assignee_account_id": null,
+      "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation."
+    },
+    "labels": [
+      "ai-triage",
+      "tenant-a",
+      "payment-api",
+      "latency_degradation"
+    ],
+    "project": "PAY",
+    "summary": "[high] payment-api latency_degradation"
+  },
+  "llm_metadata": {
+    "action_wording": {
+      "enabled": false,
+      "provider": "deterministic",
+      "skipped_reason": "deterministic_only_mode"
+    },
+    "cost_estimate": {
+      "calls": [],
+      "currency": "USD",
+      "rates": {
+        "input_cost_per_1k": 0.0,
+        "output_cost_per_1k": 0.0
+      },
+      "total_completion_tokens": 0,
+      "total_estimated_cost_usd": 0,
+      "total_prompt_tokens": 0,
+      "total_tokens": 0
+    },
+    "enabled": false,
+    "evidence_budget": {
+      "bytes_after": 1217,
+      "bytes_before": 1217,
+      "counts_after": {
+        "logs": 3,
+        "metric_points": 4,
+        "metrics": 3,
+        "traces": 0
+      },
+      "counts_before": {
+        "logs": 3,
+        "metric_points": 4,
+        "metrics": 3,
+        "traces": 0
+      },
+      "reasons": [],
+      "stages": [
+        {
+          "bytes_after": 1217,
+          "bytes_before": 1217,
+          "counts_after": {
+            "logs": 3,
+            "metric_points": 4,
+            "metrics": 3,
+            "traces": 0
+          },
+          "counts_before": {
+            "logs": 3,
+            "metric_points": 4,
+            "metrics": 3,
+            "traces": 0
+          },
+          "reasons": [],
+          "stage": "context",
+          "truncated": false
+        }
+      ],
+      "truncated": false
+    },
+    "idempotency": {
+      "request_hash": "90e4036fa1e48e954f3256a3b9a8b50231c900357acd74f7a0f6f0f2e0322673"
+    },
+    "investigation_mode": "deterministic_only",
+    "mode_selection": {
+      "agentcore_enabled": false,
+      "complexity_score": 2,
+      "planned_mode": "deterministic_only",
+      "reasons": [
+        "missing_traces",
+        "high_severity_missing_context"
+      ],
+      "selected_mode": "deterministic_only",
+      "source": "auto"
+    },
+    "provider": "deterministic",
+    "qa": {
+      "deterministic_result": "passed",
+      "enabled": true,
+      "iterations": 1,
+      "provider": "deterministic",
+      "repair_iterations": 0,
+      "result": "passed"
+    },
+    "skipped_reason": "deterministic_only_mode",
+    "tool_investigation": {
+      "enabled": false,
+      "skipped_reason": "mode_not_agent_assisted"
+    }
+  },
+  "rca_candidates": [
+    {
+      "confidence": 1.0,
+      "rank": 1,
+      "reasons": [
+        "http_latency_p95_ms breached latency threshold at 2800ms.",
+        "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+        "http_error_rate_percent breached error threshold at 12percent.",
+        "redis_timeout_count breached timeout threshold at 340count."
+      ],
+      "score": 5.05,
+      "service": "payment-api"
+    },
+    {
+      "confidence": 0.069,
+      "rank": 2,
+      "reasons": [
+        "Dependency of impacted service payment-api via log_dependency_hint."
+      ],
+      "score": 0.35,
+      "service": "redis"
+    }
+  ],
+  "report_url": "http://localhost:5173/#/reports/inc-payment-api-1782888580",
+  "request_context": {
+    "alert": {
+      "alert_id": "alert-payment-api-1782888580",
+      "description": "http_latency_p95_ms=2800ms; http_error_rate_percent=12percent; redis_timeout_count=340count",
+      "labels": {
+        "detector": "threshold_baseline_log_trace_worker"
+      },
+      "service": "payment-api",
+      "severity": "high",
+      "source": "aiops-observability-worker",
+      "started_at": "2026-07-01T06:47:40.011926Z",
+      "title": "High p95 latency and timeout signals on payment-api"
+    },
+    "correlation_id": "corr-payment-api-1782888580",
+    "environment": "sandbox",
+    "incident_id": "inc-payment-api-1782888580",
+    "logs": [
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "redis: i/o timeout while processing /checkout",
+        "service": "payment-api",
+        "trace_id": "trace-latency-001",
+        "ts": "2026-06-22T10:05:22Z"
+      },
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "connection pool exhausted for redis client",
+        "service": "payment-api",
+        "trace_id": "trace-latency-002",
+        "ts": "2026-06-22T10:05:41Z"
+      },
+      {
+        "labels": {
+          "pod": "payment-api-844c",
+          "version": "v1.2.3"
+        },
+        "level": "error",
+        "message": "context deadline exceeded calling redis dependency",
+        "service": "payment-api",
+        "trace_id": "trace-latency-003",
+        "ts": "2026-06-22T10:06:02Z"
+      }
+    ],
+    "metrics": [
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "http_latency_p95_ms",
+        "points": [
+          {
+            "ts": "2026-06-22T09:00:00Z",
+            "value": 220.0
+          },
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 2800.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "ms"
+      },
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "http_error_rate_percent",
+        "points": [
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 12.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "percent"
+      },
+      {
+        "labels": {
+          "region": "us-east-1"
+        },
+        "metric_name": "redis_timeout_count",
+        "points": [
+          {
+            "ts": "2026-06-22T10:06:00Z",
+            "value": 340.0
+          }
+        ],
+        "service": "payment-api",
+        "unit": "count"
+      }
+    ],
+    "ownership": {
+      "jira_project": "PAY",
+      "owner_team": "payments-platform",
+      "runbooks": [
+        {
+          "excerpt": "Check service health, saturation, dependency failures, trace latency, and recent deploys before rollback.",
+          "title": "Synthetic scenario triage",
+          "url": "runbook://synthetic-scenario-triage"
+        }
+      ],
+      "service": "payment-api",
+      "slack_channel": "#oncall-payments"
+    },
+    "received_at": "2026-07-01T06:49:40.011926Z",
+    "recent_deploys": [
+      {
+        "change_summary": "changed redis connection pool config",
+        "deployed_at": "2026-06-22T09:58:00Z",
+        "deployed_by": "ci",
+        "rollback_ref": "v1.2.2",
+        "service": "payment-api",
+        "version": "v1.2.3"
+      }
+    ],
+    "tenant_id": "tenant-a"
+  },
+  "service_topology": {
+    "edges": [
+      {
+        "evidence": "log_dependency_hint",
+        "source": "payment-api",
+        "target": "redis"
+      }
+    ],
+    "nodes": [
+      "payment-api",
+      "redis"
+    ],
+    "root_service": "payment-api"
+  },
+  "slack_context": {
+    "classification": "latency_degradation",
+    "confidence": 0.82,
+    "incident_id": "inc-payment-api-1782888580",
+    "severity": "high",
+    "status": "DIAGNOSED",
+    "suggested_assignee_account_id": null,
+    "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation."
+  },
+  "triage_response": {
+    "anomaly_evidence": [
+      {
+        "detector": "threshold",
+        "metric_name": "http_latency_p95_ms",
+        "reason": "http_latency_p95_ms breached latency threshold at 2800ms.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "rolling_zscore_3sigma",
+        "metric_name": "http_latency_p95_ms",
+        "reason": "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "threshold",
+        "metric_name": "http_error_rate_percent",
+        "reason": "http_error_rate_percent breached error threshold at 12percent.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "threshold",
+        "metric_name": "redis_timeout_count",
+        "reason": "redis_timeout_count breached timeout threshold at 340count.",
+        "score": 1.0,
+        "service": "payment-api",
+        "severity": "high"
+      },
+      {
+        "detector": "log_keyword",
+        "metric_name": "logs",
+        "reason": "3 error-like log entries; sample: redis: i/o timeout while processing /checkout",
+        "score": 0.6,
+        "service": "payment-api",
+        "severity": "medium"
+      }
+    ],
+    "audit_id": "audit-837ef7ca3ca2",
+    "causal_hints": [
+      {
+        "reason": "Causal hints require at least six aligned points per compared service.",
+        "score": 0.0,
+        "type": "insufficient_points"
+      }
+    ],
+    "classification": "latency_degradation",
+    "confidence": 0.82,
+    "incident_id": "inc-payment-api-1782888580",
+    "investigation_summary": "Deterministic investigator summary: payment-api produced 5 anomaly evidence item(s). Top RCA candidate is payment-api. Recent deploy, topology, metric, and log signals were scored without external LLM calls; causal hints unavailable.",
+    "llm_metadata": {
+      "action_wording": {
+        "enabled": false,
+        "provider": "deterministic",
+        "skipped_reason": "deterministic_only_mode"
+      },
+      "cost_estimate": {
+        "calls": [],
+        "currency": "USD",
+        "rates": {
+          "input_cost_per_1k": 0.0,
+          "output_cost_per_1k": 0.0
+        },
+        "total_completion_tokens": 0,
+        "total_estimated_cost_usd": 0,
+        "total_prompt_tokens": 0,
+        "total_tokens": 0
+      },
+      "enabled": false,
+      "evidence_budget": {
+        "bytes_after": 1217,
+        "bytes_before": 1217,
+        "counts_after": {
+          "logs": 3,
+          "metric_points": 4,
+          "metrics": 3,
+          "traces": 0
+        },
+        "counts_before": {
+          "logs": 3,
+          "metric_points": 4,
+          "metrics": 3,
+          "traces": 0
+        },
+        "reasons": [],
+        "stages": [
+          {
+            "bytes_after": 1217,
+            "bytes_before": 1217,
+            "counts_after": {
+              "logs": 3,
+              "metric_points": 4,
+              "metrics": 3,
+              "traces": 0
+            },
+            "counts_before": {
+              "logs": 3,
+              "metric_points": 4,
+              "metrics": 3,
+              "traces": 0
+            },
+            "reasons": [],
+            "stage": "context",
+            "truncated": false
+          }
+        ],
+        "truncated": false
+      },
+      "idempotency": {
+        "request_hash": "90e4036fa1e48e954f3256a3b9a8b50231c900357acd74f7a0f6f0f2e0322673"
+      },
+      "investigation_mode": "deterministic_only",
+      "mode_selection": {
+        "agentcore_enabled": false,
+        "complexity_score": 2,
+        "planned_mode": "deterministic_only",
+        "reasons": [
+          "missing_traces",
+          "high_severity_missing_context"
+        ],
+        "selected_mode": "deterministic_only",
+        "source": "auto"
+      },
+      "provider": "deterministic",
+      "qa": {
+        "deterministic_result": "passed",
+        "enabled": true,
+        "iterations": 1,
+        "provider": "deterministic",
+        "repair_iterations": 0,
+        "result": "passed"
+      },
+      "skipped_reason": "deterministic_only_mode",
+      "tool_investigation": {
+        "enabled": false,
+        "skipped_reason": "mode_not_agent_assisted"
+      }
+    },
+    "rca_candidates": [
+      {
+        "confidence": 1.0,
+        "rank": 1,
+        "reasons": [
+          "http_latency_p95_ms breached latency threshold at 2800ms.",
+          "http_latency_p95_ms current value 2800ms is 117.3 sigma from baseline.",
+          "http_error_rate_percent breached error threshold at 12percent.",
+          "redis_timeout_count breached timeout threshold at 340count."
+        ],
+        "score": 5.05,
+        "service": "payment-api"
+      },
+      {
+        "confidence": 0.069,
+        "rank": 2,
+        "reasons": [
+          "Dependency of impacted service payment-api via log_dependency_hint."
+        ],
+        "score": 0.35,
+        "service": "redis"
+      }
+    ],
+    "recommended_actions": [
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "logs[0]",
+          "anomaly_evidence[0]",
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]"
+        ],
+        "id": "dependency_timeout_triage",
+        "priority": 1,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Check dependency timeout signals, connection pool saturation, and slow query or cache latency logs.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Timeout and dependency evidence can explain latency without requiring immediate rollback or restart."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "anomaly_evidence[0]",
+          "logs[0]",
+          "suspected_root_cause.evidence[0]",
+          "ownership.runbooks[0]"
+        ],
+        "id": "resource_saturation_triage",
+        "priority": 2,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Check CPU, memory, thread, and connection-pool saturation before changing service capacity.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Saturation evidence can explain latency, errors, or availability loss and should be verified before remediation."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]"
+        ],
+        "id": "consult_internal_runbooks",
+        "priority": 3,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Review matching internal runbooks, known-error notes, or recent postmortems before choosing a remediation path.",
+        "type": "RUNBOOK_CHECK",
+        "why": "Internal operational knowledge is safer and more specific than generic public guidance."
+      },
+      {
+        "approval_reason": null,
+        "evidence_refs": [
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]",
+          "anomaly_evidence[0]",
+          "anomaly_evidence[1]"
+        ],
+        "id": "latency_saturation_review",
+        "priority": 4,
+        "requires_human_approval": false,
+        "risk": "low",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "Review saturation metrics, dependency latency, and trace samples before assigning remediation.",
+        "type": "HUMAN_REVIEW",
+        "why": "Latency degradation has supporting evidence, but the exact bottleneck still needs operator validation."
+      },
+      {
+        "approval_reason": "Rollback changes production state and must be approved by the owning team.",
+        "evidence_refs": [
+          "recent_deploys[0]",
+          "ownership.runbooks[0]",
+          "suspected_root_cause.evidence[0]",
+          "suspected_root_cause.evidence[1]"
+        ],
+        "id": "consider_recent_deploy_rollback",
+        "priority": 5,
+        "requires_human_approval": true,
+        "risk": "medium",
+        "runbook_ref": "runbook://synthetic-scenario-triage",
+        "summary": "If recent deploy correlation is confirmed, consider rollback through the approved runbook.",
+        "type": "ROLLBACK_CONSIDER",
+        "why": "A recent deploy overlaps with the incident window and may be related to the observed degradation."
+      }
+    ],
+    "service_topology": {
+      "edges": [
+        {
+          "evidence": "log_dependency_hint",
+          "source": "payment-api",
+          "target": "redis"
+        }
+      ],
+      "nodes": [
+        "payment-api",
+        "redis"
+      ],
+      "root_service": "payment-api"
+    },
+    "severity": "high",
+    "status": "DIAGNOSED",
+    "suggested_assignee_account_id": null,
+    "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation.",
+    "suspected_root_cause": {
+      "evidence": [
+        "Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.",
+        "Representative log: redis: i/o timeout while processing /checkout",
+        "Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.",
+        "Runbook available: Synthetic scenario triage."
+      ],
+      "summary": "payment-api is showing latency degradation, likely related to timeout or recent change signals."
+    },
+    "ticket_payload": {
+      "description": "payment-api is showing latency degradation, likely related to timeout or recent change signals. Evidence: Metrics provided: http_latency_p95_ms, http_error_rate_percent, redis_timeout_count.; Representative log: redis: i/o timeout while processing /checkout; Recent deploy v1.2.3 at 2026-06-22T09:58:00Z.; Runbook available: Synthetic scenario triage.",
+      "fields": {
+        "audit_id": "audit-837ef7ca3ca2",
+        "confidence": 0.82,
+        "correlation_id": "corr-payment-api-1782888580",
+        "owner_team": "payments-platform",
+        "status": "DIAGNOSED",
+        "suggested_assignee_account_id": null,
+        "suggestion_reason": "No Jira accountId history mapping is configured yet; route to payments-platform for human confirmation."
+      },
+      "labels": [
+        "ai-triage",
+        "tenant-a",
+        "payment-api",
+        "latency_degradation"
+      ],
+      "project": "PAY",
+      "summary": "[high] payment-api latency_degradation"
+    }
+  }
+}
