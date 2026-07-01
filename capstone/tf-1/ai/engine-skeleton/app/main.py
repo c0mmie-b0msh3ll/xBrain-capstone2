@@ -584,17 +584,19 @@ def build_audit_id(request: TriageRequest) -> str:
 
 def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[str, Any]:
     rca = rca or analyze_request(request)
-    text = " ".join(
+    alert_context_text = " ".join(
         [
             request.alert.title,
             request.alert.description or "",
             " ".join(log.message for log in request.logs),
-            " ".join(metric.metric_name for metric in request.metrics),
             " ".join((deploy.change_summary or "") for deploy in request.recent_deploys),
         ]
     ).lower()
+    anomaly_text = anomaly_signal_text(rca)
+    signal_text = f"{alert_context_text} {anomaly_text}".lower()
+    signal_scores = classification_signal_scores(request, rca, alert_context_text)
 
-    has_context = bool(request.metrics or request.logs or request.recent_deploys or has_ownership_context(request))
+    has_context = bool(request.metrics or request.logs or request.recent_deploys or anomaly_text or has_ownership_context(request))
     if not has_context:
         return {
             "status": "INSUFFICIENT_CONTEXT",
@@ -608,10 +610,9 @@ def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[
             "rca": rca,
         }
 
-    if any(token in text for token in ["noisy", "flapping", "false alarm", "ambiguous"]) or request.alert.severity in {
-        "low",
-        "unknown",
-    }:
+    if any(token in alert_context_text for token in ["noisy", "flapping", "false alarm", "ambiguous"]) or (
+        request.alert.severity in {"low", "unknown"} and not anomaly_text
+    ):
         return {
             "status": "INVESTIGATE",
             "classification": "noisy_or_ambiguous_alert",
@@ -625,7 +626,7 @@ def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[
             "rca": rca,
         }
 
-    if request.alert.severity == "critical" or any(token in text for token in ["down", "unavailable", "connection refused"]):
+    if signal_scores["critical"] > signal_scores["latency"] and signal_scores["critical"] >= 0.5:
         return {
             "status": "DIAGNOSED",
             "classification": "critical_service_down",
@@ -639,8 +640,7 @@ def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[
             "rca": rca,
         }
 
-    anomaly_text = " ".join(item.get("reason", "") for item in rca.get("anomaly_evidence", []))
-    if "latency" in text or "p95" in text or "timeout" in text or "latency" in anomaly_text.lower():
+    if signal_scores["latency"] >= 0.5 or any(token in signal_text for token in ["latency", "p95", "p90", "p50", "timeout", "duration", "delay", "slow"]):
         return {
             "status": "DIAGNOSED",
             "classification": "latency_degradation",
@@ -665,6 +665,55 @@ def classify(request: TriageRequest, rca: dict[str, Any] | None = None) -> dict[
         ],
         "rca": rca,
     }
+
+
+def anomaly_signal_text(rca: dict[str, Any], min_score: float = 0.5) -> str:
+    signals: list[str] = []
+    has_scored_evidence = False
+    for item in rca.get("anomaly_evidence", []):
+        if not isinstance(item, dict):
+            continue
+        try:
+            score = float(item.get("score", 0.0))
+        except (TypeError, ValueError):
+            score = 0.0
+        if score < min_score:
+            continue
+        has_scored_evidence = True
+        signals.extend(str(item.get(key, "")) for key in ("metric_name", "reason", "detector", "service"))
+    if not has_scored_evidence:
+        return ""
+    for candidate in rca.get("rca_candidates", [])[:3]:
+        if isinstance(candidate, dict):
+            signals.append(str(candidate.get("service", "")))
+            signals.extend(str(reason) for reason in candidate.get("reasons", [])[:2])
+    return " ".join(signal for signal in signals if signal).lower()
+
+
+def classification_signal_scores(request: TriageRequest, rca: dict[str, Any], alert_context_text: str) -> dict[str, float]:
+    scores = {"critical": 0.0, "latency": 0.0}
+    if request.alert.severity == "critical":
+        scores["critical"] += 2.0
+    if any(token in alert_context_text for token in ["down", "unavailable", "connection refused"]):
+        scores["critical"] += 1.5
+    if any(token in alert_context_text for token in ["latency", "p95", "p90", "p50", "timeout", "duration", "delay", "slow"]):
+        scores["latency"] += 0.75
+
+    for item in rca.get("anomaly_evidence", []):
+        if not isinstance(item, dict):
+            continue
+        try:
+            score = float(item.get("score", 0.0))
+        except (TypeError, ValueError):
+            score = 0.0
+        if score < 0.5:
+            continue
+        text = " ".join(str(item.get(key, "")) for key in ("metric_name", "reason", "detector")).lower()
+        if any(token in text for token in ["latency", "p95", "p90", "p50", "timeout", "duration", "delay", "slow"]):
+            scores["latency"] += score
+        if any(token in text for token in ["availability", "error_rate", "5xx", "loss", "down", "unavailable", "connection refused"]):
+            scores["critical"] += score
+    return scores
 
 
 def has_ownership_context(request: TriageRequest) -> bool:

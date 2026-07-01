@@ -473,6 +473,90 @@ def test_llm_qa_disabled_keeps_deterministic_behavior(monkeypatch) -> None:
     assert "verdict" not in metadata
 
 
+def test_classifier_uses_anomalous_metric_signals_not_full_metric_catalog() -> None:
+    body = metadata_only_triage_body()
+    body["alert"]["title"] = "Telemetry anomaly on checkout-api"
+    body["alert"]["description"] = "Telemetry-only RCAEval case"
+    body["metrics"] = [
+        {
+            "metric_name": "checkout-api_latency_p95",
+            "service": "checkout-api",
+            "unit": "ms",
+            "points": [{"ts": "1", "value": 100}, {"ts": "2", "value": 101}, {"ts": "3", "value": 100}],
+            "labels": {},
+        }
+    ]
+    request = TriageRequest.model_validate(body)
+    rca = {
+        "anomaly_evidence": [
+            {
+                "detector": "rolling_zscore_3sigma",
+                "service": "checkout-api",
+                "metric_name": "checkout-api_disk",
+                "severity": "high",
+                "score": 0.9,
+                "reason": "checkout-api_disk current value is 8.1 sigma from baseline.",
+            }
+        ],
+        "rca_candidates": [{"service": "checkout-api", "reasons": ["checkout-api_disk current value is 8.1 sigma from baseline."]}],
+    }
+
+    decision = classify(request, rca)
+
+    assert decision["classification"] != "latency_degradation"
+    assert decision["status"] == "INVESTIGATE"
+
+
+def test_classifier_maps_telemetry_only_latency_anomaly_to_latency_degradation() -> None:
+    body = metadata_only_triage_body()
+    body["alert"]["title"] = "Telemetry anomaly on checkout-api"
+    body["alert"]["description"] = "Telemetry-only RCAEval case"
+    request = TriageRequest.model_validate(body)
+    rca = {
+        "anomaly_evidence": [
+            {
+                "detector": "rolling_zscore_3sigma",
+                "service": "checkout-api",
+                "metric_name": "checkout-api_latency_p95",
+                "severity": "high",
+                "score": 0.9,
+                "reason": "checkout-api_latency_p95 current value is 7.0 sigma from baseline.",
+            }
+        ],
+        "rca_candidates": [{"service": "checkout-api", "reasons": ["checkout-api_latency_p95 current value is 7.0 sigma from baseline."]}],
+    }
+
+    decision = classify(request, rca)
+
+    assert decision["classification"] == "latency_degradation"
+    assert decision["status"] == "DIAGNOSED"
+
+
+def test_classifier_maps_telemetry_only_loss_anomaly_to_service_down() -> None:
+    body = metadata_only_triage_body()
+    body["alert"]["title"] = "Telemetry anomaly on checkout-api"
+    body["alert"]["description"] = "Telemetry-only RCAEval case"
+    request = TriageRequest.model_validate(body)
+    rca = {
+        "anomaly_evidence": [
+            {
+                "detector": "threshold",
+                "service": "checkout-api",
+                "metric_name": "checkout-api_error_rate",
+                "severity": "high",
+                "score": 1.0,
+                "reason": "checkout-api_error_rate breached error threshold at 12.",
+            }
+        ],
+        "rca_candidates": [{"service": "checkout-api", "reasons": ["checkout-api_error_rate breached error threshold at 12."]}],
+    }
+
+    decision = classify(request, rca)
+
+    assert decision["classification"] == "critical_service_down"
+    assert decision["status"] == "DIAGNOSED"
+
+
 def test_llm_qa_pass_verdict_does_not_reduce_confidence(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_QA_LLM", "true")
     monkeypatch.setattr(
