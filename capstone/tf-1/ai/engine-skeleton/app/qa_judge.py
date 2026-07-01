@@ -8,6 +8,14 @@ from app.observability import BUDGET_EXCEEDED_TOTAL, DEGRADED_MODE_TOTAL, LLM_CA
 
 
 VALID_VERDICTS = {"pass", "fail", "uncertain"}
+VALID_SUGGESTED_CLASSIFICATIONS = {
+    "critical_service_down",
+    "latency_degradation",
+    "noisy_or_ambiguous_alert",
+    "general_investigation",
+    "insufficient_context",
+}
+VALID_SUGGESTED_STATUSES = {"DIAGNOSED", "INVESTIGATE", "INSUFFICIENT_CONTEXT"}
 DEFAULT_QA_MODEL_ID = "us.amazon.nova-micro-v1:0"
 
 
@@ -109,6 +117,8 @@ def apply_llm_qa(request: Any, decision: dict[str, Any], rca: dict[str, Any], me
             "issues": merge_issues(llm_metadata.get("issues", []), verdict["issues"]),
             "rationale": verdict["rationale"],
             "required_human_review": verdict["required_human_review"],
+            "suggested_classification": verdict.get("suggested_classification"),
+            "suggested_status": verdict.get("suggested_status"),
             "confidence_delta": min(float(llm_metadata.get("confidence_delta", 0) or 0), float(verdict["confidence_delta"])),
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
@@ -141,9 +151,17 @@ def build_qa_payload(request: Any, decision: dict[str, Any], rca: dict[str, Any]
     return {
         "task": "qa_judge",
         "instruction": (
-            "Judge whether the draft AIOps diagnosis is grounded in the supplied bounded evidence. "
+            "First infer the best incident classification from bounded telemetry evidence only, then judge whether the draft AIOps "
+            "diagnosis matches that evidence-grounded classification. Do not copy the draft if the evidence conflicts. "
             "Return strict JSON only. Do not call tools, suggest commands, create tickets, post messages, or invent evidence."
         ),
+        "classification_taxonomy": {
+            "critical_service_down": "traffic loss, workload/request drop, availability/error-rate loss, or service unavailable evidence",
+            "latency_degradation": "latency, p95/p90/p50, duration, timeout, delay, or slow request evidence without stronger resource/loss signal",
+            "noisy_or_ambiguous_alert": "resource-only cpu/memory/disk signals, weak/ambiguous side effects, or insufficient evidence for outage/latency diagnosis",
+            "general_investigation": "context present but no strong fault family",
+            "insufficient_context": "no telemetry/evidence available",
+        },
         "allowed_schema": {
             "verdict": "pass|fail|uncertain",
             "issues": [
@@ -158,6 +176,8 @@ def build_qa_payload(request: Any, decision: dict[str, Any], rca: dict[str, Any]
             "confidence_delta": "number from -0.2 to 0",
             "rationale": "short evidence-grounded explanation",
             "required_human_review": True,
+            "suggested_classification": "required evidence-first classification: critical_service_down|latency_degradation|noisy_or_ambiguous_alert|general_investigation|insufficient_context",
+            "suggested_status": "required status for suggested_classification: DIAGNOSED|INVESTIGATE|INSUFFICIENT_CONTEXT",
         },
         "incident": {
             "tenant_id": request.tenant_id,
@@ -180,7 +200,7 @@ def build_qa_payload(request: Any, decision: dict[str, Any], rca: dict[str, Any]
             "deploys": compact_deploys(request),
             "runbooks": compact_runbooks(request),
             "rca_candidates": rca.get("rca_candidates", [])[:5],
-            "anomaly_evidence": rca.get("anomaly_evidence", [])[:8],
+            "anomaly_evidence": rca.get("anomaly_evidence", [])[:20],
         },
     }
 
@@ -221,6 +241,12 @@ def parse_qa_judge_response(raw_text: str, penalty_floor: float | None = None) -
         issues = []
         confidence_delta = 0.0
         required_human_review = False
+    suggested_classification = payload.get("suggested_classification")
+    if suggested_classification not in VALID_SUGGESTED_CLASSIFICATIONS:
+        suggested_classification = None
+    suggested_status = payload.get("suggested_status")
+    if suggested_status not in VALID_SUGGESTED_STATUSES:
+        suggested_status = None
 
     return {
         "verdict": verdict,
@@ -228,6 +254,8 @@ def parse_qa_judge_response(raw_text: str, penalty_floor: float | None = None) -
         "confidence_delta": confidence_delta,
         "rationale": rationale.strip() if isinstance(rationale, str) and rationale.strip() else "",
         "required_human_review": bool(required_human_review) or verdict in {"fail", "uncertain"},
+        "suggested_classification": suggested_classification,
+        "suggested_status": suggested_status,
     }
 
 
@@ -239,7 +267,7 @@ def compact_metrics(request: Any) -> list[dict[str, Any]]:
             "unit": metric.unit,
             "points": [{"ts": point.ts, "value": point.value} for point in metric.points[-3:]],
         }
-        for metric in request.metrics[:5]
+        for metric in request.metrics[:12]
     ]
 
 

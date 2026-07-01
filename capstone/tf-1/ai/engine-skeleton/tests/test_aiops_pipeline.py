@@ -31,10 +31,10 @@ from app.idempotency_store import complete_record, fail_record, read_record, req
 from app.incident_seed import IncidentSeed, build_triage_request_from_seed
 from app.investigation_router import select_investigation_mode
 from app.llm import agentcore_session_id, build_prompt_payload, investigate_with_tools, parse_tool_calls, read_agentcore_response, reword_catalog_actions
-from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits, app, build_audit_id, classify
+from app.main import MetricPoint, MetricSeries, TriageRequest, _rate_limit_hits, app, apply_qa_revision, build_audit_id, classify
 from app.observability import sanitize_log_fields
 from app.qa_judge import parse_qa_judge_response, run_qa
-from app.rca import analyze_request, detect_metric_anomalies, infer_causal_hints
+from app.rca import analyze_request, detect_metric_anomalies, detect_multivariate_changepoints, infer_causal_hints
 from app.report_store import write_report
 
 
@@ -610,6 +610,26 @@ def test_latency_metric_drop_does_not_trigger_traffic_loss() -> None:
     assert not any(item["detector"] == "traffic_loss" for item in rca["anomaly_evidence"])
 
 
+def test_multivariate_changepoint_adds_service_profile_evidence() -> None:
+    cpu = MetricSeries(
+        service="checkout-api",
+        metric_name="checkout-api_cpu",
+        unit="percent",
+        points=[MetricPoint(ts=f"2026-06-30T00:{minute:02d}:00Z", value=value) for minute, value in enumerate([20] * 12 + [75] * 4)],
+    )
+    latency = MetricSeries(
+        service="checkout-api",
+        metric_name="checkout-api_latency_p95",
+        unit="ms",
+        points=[MetricPoint(ts=f"2026-06-30T00:{minute:02d}:00Z", value=value) for minute, value in enumerate([120] * 12 + [260] * 4)],
+    )
+
+    evidence = detect_multivariate_changepoints([cpu, latency])
+
+    assert any(item["detector"] == "baro_multivariate_changepoint" for item in evidence)
+    assert {item["service"] for item in evidence} == {"checkout-api"}
+
+
 def test_llm_qa_pass_verdict_does_not_reduce_confidence(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_QA_LLM", "true")
     monkeypatch.setattr(
@@ -662,6 +682,75 @@ def test_llm_qa_fail_verdict_reduces_confidence_and_records_issues(monkeypatch) 
     assert metadata["confidence_delta"] == -0.2
     assert metadata["issues"] == ["unsupported_classification"]
     assert metadata["required_human_review"] is True
+
+
+def test_llm_qa_records_suggested_revision(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_QA_LLM", "true")
+    monkeypatch.setattr(
+        "app.qa_judge.invoke_bedrock_qa",
+        lambda model_id, payload: json.dumps(
+            {
+                "verdict": "fail",
+                "issues": ["unsupported_classification"],
+                "confidence_delta": -0.1,
+                "rationale": "Traffic loss evidence supports outage rather than latency.",
+                "required_human_review": True,
+                "suggested_classification": "critical_service_down",
+                "suggested_status": "DIAGNOSED",
+            }
+        ),
+    )
+    request = TriageRequest.model_validate(json.loads(Path("samples/latency-degradation.request.json").read_text(encoding="utf-8")))
+    rca = analyze_request(request)
+    decision = classify(request, rca)
+
+    metadata = run_qa(request, decision, rca)
+
+    assert metadata["suggested_classification"] == "critical_service_down"
+    assert metadata["suggested_status"] == "DIAGNOSED"
+
+
+def test_qa_revision_requires_explicit_enable(monkeypatch) -> None:
+    monkeypatch.delenv("AIOPS_QA_ALLOW_RECLASSIFY", raising=False)
+    decision = {
+        "status": "DIAGNOSED",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "summary": "draft",
+        "evidence": ["latency evidence"],
+    }
+    qa_metadata = {
+        "verdict": "fail",
+        "suggested_classification": "critical_service_down",
+        "suggested_status": "DIAGNOSED",
+        "rationale": "Traffic loss evidence supports outage.",
+    }
+
+    assert apply_qa_revision(decision, qa_metadata) == decision
+
+
+def test_qa_revision_applies_suggested_classification_when_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("AIOPS_QA_ALLOW_RECLASSIFY", "true")
+    decision = {
+        "status": "DIAGNOSED",
+        "classification": "latency_degradation",
+        "confidence": 0.82,
+        "summary": "draft",
+        "evidence": ["latency evidence"],
+    }
+    qa_metadata = {
+        "verdict": "fail",
+        "suggested_classification": "noisy_or_ambiguous_alert",
+        "suggested_status": "INVESTIGATE",
+        "rationale": "Resource evidence is dominant; latency is a side effect.",
+    }
+
+    revised = apply_qa_revision(decision, qa_metadata)
+
+    assert revised["classification"] == "noisy_or_ambiguous_alert"
+    assert revised["status"] == "INVESTIGATE"
+    assert revised["confidence"] == 0.65
+    assert revised["summary"].startswith("QA revised diagnosis:")
 
 
 def test_llm_qa_malformed_output_degrades_safely(monkeypatch) -> None:

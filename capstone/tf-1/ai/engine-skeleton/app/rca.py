@@ -13,8 +13,9 @@ ERROR_TOKENS = ("error", "timeout", "failed", "refused", "exhausted", "down", "d
 
 def analyze_request(request: Any) -> dict[str, Any]:
     metric_evidence = detect_metric_anomalies(request.metrics)
+    profile_evidence = detect_multivariate_changepoints(request.metrics)
     log_evidence = detect_log_anomalies(request.logs)
-    evidence = metric_evidence + log_evidence
+    evidence = metric_evidence + profile_evidence + log_evidence
     topology = infer_topology(request)
     causal_hints = infer_causal_hints(request.metrics)
     candidates = rank_rca_candidates(request, evidence, topology, causal_hints)
@@ -57,6 +58,21 @@ def detect_metric_anomalies(metrics: list[Any]) -> list[dict[str, Any]]:
             baseline_mean = mean(baseline)
             baseline_std = pstdev(baseline) if len(baseline) > 1 else max(abs(baseline_mean) * 0.1, 1.0)
             z_score = (current - baseline_mean) / baseline_std if baseline_std else 0.0
+            window = window_shift_anomaly(metric_name, values)
+            if window:
+                evidence.append(
+                    {
+                        "detector": window["detector"],
+                        "service": service,
+                        "metric_name": metric_name,
+                        "severity": window["severity"],
+                        "score": window["score"],
+                        "reason": (
+                            f"{metric_name} {window['family']} window shift detected: incident mean "
+                            f"{window['incident_mean']:.4g}{unit or ''} vs baseline {window['baseline_mean']:.4g}{unit or ''}."
+                        ),
+                    }
+                )
             drop = traffic_loss_anomaly(metric_name, baseline_mean, current)
             if drop:
                 evidence.append(
@@ -112,6 +128,98 @@ def detect_metric_anomalies(metrics: list[Any]) -> list[dict[str, Any]]:
     return evidence
 
 
+def detect_multivariate_changepoints(metrics: list[Any]) -> list[dict[str, Any]]:
+    """BARO-inspired service profile detector over bounded telemetry windows.
+
+    The full BARO method uses multivariate Bayesian online change point detection
+    plus nonparametric tests. This lightweight production path keeps the same
+    idea of scoring service-level multivariate shifts without adding a research
+    runtime dependency or changing the API contract.
+    """
+    components_by_service: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for series in metrics:
+        values = [float(point.value) for point in series.points]
+        if len(values) < 12:
+            continue
+        family = metric_family(series.metric_name.lower())
+        if family is None:
+            continue
+        component = service_profile_component(series.metric_name, family, values)
+        if component:
+            components_by_service[series.service].append(component)
+
+    evidence: list[dict[str, Any]] = []
+    for service, components in components_by_service.items():
+        family_scores: dict[str, float] = defaultdict(float)
+        strongest: dict[str, dict[str, Any]] = {}
+        for component in components:
+            family = component["family"]
+            family_scores[family] += float(component["score"])
+            if family not in strongest or component["score"] > strongest[family]["score"]:
+                strongest[family] = component
+        if not family_scores:
+            continue
+        family, score = max(family_scores.items(), key=lambda item: item[1])
+        strong_component = strongest[family]
+        if score < 0.9 and strong_component["score"] < 0.75:
+            continue
+        evidence.append(
+            {
+                "detector": "baro_multivariate_changepoint",
+                "service": service,
+                "metric_name": "service_profile",
+                "family": family.replace("_", " "),
+                "severity": "high" if score >= 1.4 else "medium",
+                "score": round(min(score / 2.0, 1.0), 3),
+                "reason": (
+                    f"{service} multivariate {family.replace('_', ' ')} profile shifted; "
+                    f"strongest metric {strong_component['metric_name']} changed from "
+                    f"{strong_component['baseline_mean']:.4g} to {strong_component['incident_mean']:.4g}."
+                ),
+            }
+        )
+    return evidence
+
+
+def service_profile_component(metric_name: str, family: str, values: list[float]) -> dict[str, Any] | None:
+    tail_count = max(4, min(10, len(values) // 4))
+    baseline = values[:-tail_count]
+    incident = values[-tail_count:]
+    if len(baseline) < 6:
+        return None
+    baseline_mean = mean(baseline)
+    incident_mean = mean(incident)
+    baseline_std = pstdev(baseline) if len(baseline) > 1 else 0.0
+    normalized_delta = abs(incident_mean - baseline_mean) / max(abs(baseline_mean), baseline_std, 1.0)
+    direction = 1 if incident_mean >= baseline_mean else -1
+
+    if family == "traffic_loss":
+        if baseline_mean <= 0:
+            return None
+        drop_ratio = (baseline_mean - min(incident)) / baseline_mean
+        if drop_ratio < 0.55:
+            return None
+        score = min(max(drop_ratio, 0.55), 1.0)
+    elif family == "latency":
+        if direction <= 0 or normalized_delta < 0.45:
+            return None
+        score = min(max(normalized_delta, 0.45), 1.0)
+    elif family.startswith("resource_"):
+        if direction <= 0 or normalized_delta < 0.35:
+            return None
+        score = min(max(normalized_delta, 0.35), 1.0)
+    else:
+        return None
+
+    return {
+        "metric_name": metric_name,
+        "family": family,
+        "score": round(score, 3),
+        "baseline_mean": baseline_mean,
+        "incident_mean": incident_mean,
+    }
+
+
 def threshold_anomaly(metric_name: str, value: float, unit: str | None) -> str | None:
     name = metric_name.lower()
     suffix = unit or ""
@@ -128,9 +236,73 @@ def threshold_anomaly(metric_name: str, value: float, unit: str | None) -> str |
     return None
 
 
+def window_shift_anomaly(metric_name: str, values: list[float]) -> dict[str, Any] | None:
+    if len(values) < 12:
+        return None
+    name = metric_name.lower()
+    tail_count = max(4, min(10, len(values) // 4))
+    baseline = values[:-tail_count]
+    incident = values[-tail_count:]
+    if len(baseline) < 6:
+        return None
+    baseline_mean = mean(baseline)
+    incident_mean = mean(incident)
+    baseline_std = pstdev(baseline) if len(baseline) > 1 else 0.0
+    normalized_delta = abs(incident_mean - baseline_mean) / max(abs(baseline_mean), baseline_std, 1.0)
+
+    family = metric_family(name)
+    if family == "traffic_loss":
+        if baseline_mean <= 0:
+            return None
+        drop_ratio = (baseline_mean - min(incident)) / baseline_mean
+        if drop_ratio >= 0.7:
+            return {
+                "detector": "window_traffic_loss",
+                "family": "traffic loss",
+                "severity": "high",
+                "score": round(min(max(drop_ratio, 0.7), 1.0), 3),
+                "baseline_mean": baseline_mean,
+                "incident_mean": incident_mean,
+            }
+        return None
+
+    thresholds = {
+        "latency": 0.7,
+        "resource_cpu": 0.55,
+        "resource_mem": 0.45,
+        "resource_disk": 0.45,
+    }
+    threshold = thresholds.get(family)
+    if threshold is None or normalized_delta < threshold:
+        return None
+    return {
+        "detector": "window_shift",
+        "family": family.replace("_", " "),
+        "severity": "high" if normalized_delta >= 1.0 else "medium",
+        "score": round(min(max(normalized_delta, 0.5), 1.0), 3),
+        "baseline_mean": baseline_mean,
+        "incident_mean": incident_mean,
+    }
+
+
+def metric_family(name: str) -> str | None:
+    if any(token in name for token in ("latency", "duration", "timeout", "delay")):
+        return "latency"
+    if "cpu" in name:
+        return "resource_cpu"
+    if any(token in name for token in ("mem", "memory")):
+        return "resource_mem"
+    if any(token in name for token in ("disk", "diskio")):
+        return "resource_disk"
+    if any(token in name for token in ("request", "requests", "traffic", "throughput", "qps", "rps", "success", "count", "rate", "workload")):
+        if not any(token in name for token in ("error", "5xx")):
+            return "traffic_loss"
+    return None
+
+
 def traffic_loss_anomaly(metric_name: str, baseline_mean: float, current: float) -> dict[str, float] | None:
     name = metric_name.lower()
-    if not any(token in name for token in ("request", "requests", "traffic", "throughput", "qps", "rps", "success", "count", "rate")):
+    if not any(token in name for token in ("request", "requests", "traffic", "throughput", "qps", "rps", "success", "count", "rate", "workload")):
         return None
     if any(token in name for token in ("latency", "duration", "timeout", "error", "5xx", "cpu", "mem", "memory", "disk")):
         return None

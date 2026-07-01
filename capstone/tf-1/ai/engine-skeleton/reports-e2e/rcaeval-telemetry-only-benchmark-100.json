@@ -1,0 +1,3452 @@
+{
+  "generated_at": "2026-07-01T04:38:07.938604+00:00",
+  "scope": "RCAEval telemetry-only benchmark; alert title/description/severity labels hidden.",
+  "data_root": "datapack/RCAEval-v2/data",
+  "total_cases": 100,
+  "errors": [],
+  "expected_counts": {
+    "noisy_or_ambiguous_alert": 60,
+    "latency_degradation": 20,
+    "critical_service_down": 20
+  },
+  "predicted_counts": {
+    "noisy_or_ambiguous_alert": 59,
+    "latency_degradation": 21,
+    "critical_service_down": 20
+  },
+  "classification": {
+    "accuracy": 0.77,
+    "macro_precision": 0.7206,
+    "macro_recall": 0.7278,
+    "macro_f1": 0.724,
+    "per_class": {
+      "critical_service_down": {
+        "tp": 12,
+        "fp": 8,
+        "fn": 8,
+        "precision": 0.6,
+        "recall": 0.6,
+        "f1": 0.6
+      },
+      "latency_degradation": {
+        "tp": 15,
+        "fp": 6,
+        "fn": 5,
+        "precision": 0.7143,
+        "recall": 0.75,
+        "f1": 0.7317
+      },
+      "noisy_or_ambiguous_alert": {
+        "tp": 50,
+        "fp": 9,
+        "fn": 10,
+        "precision": 0.8475,
+        "recall": 0.8333,
+        "f1": 0.8403
+      }
+    },
+    "confusion_matrix": {
+      "critical_service_down": {
+        "critical_service_down": 12,
+        "latency_degradation": 2,
+        "noisy_or_ambiguous_alert": 6
+      },
+      "latency_degradation": {
+        "latency_degradation": 15,
+        "critical_service_down": 2,
+        "noisy_or_ambiguous_alert": 3
+      },
+      "noisy_or_ambiguous_alert": {
+        "noisy_or_ambiguous_alert": 50,
+        "critical_service_down": 6,
+        "latency_degradation": 4
+      }
+    }
+  },
+  "root_service_top1_accuracy": 0.77,
+  "worst_failures": [
+    {
+      "case": "re1ob_adservice_delay_2",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_5",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_disk_1",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_4",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_2",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_3",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_4",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_1",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_3",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_5",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_4",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_1",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_5",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_1",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 18,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          9
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_2",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_3",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_4",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_1",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          1
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_2",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_3",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_4",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 13,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    }
+  ],
+  "cases": [
+    {
+      "case": "re1ob_adservice_cpu_1",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_2",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "emailservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_3",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "paymentservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_cpu_4",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_cpu_5",
+      "service": "adservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "window_shift",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_1",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_delay_2",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_3",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_delay_4",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_delay_5",
+      "service": "adservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_disk_1",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_2",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_3",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_4",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_disk_5",
+      "service": "adservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_1",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_2",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_3",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_loss_4",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_loss_5",
+      "service": "adservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_1",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_2",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_mem_3",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_adservice_mem_4",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "productcatalogservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_adservice_mem_5",
+      "service": "adservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_1",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_cpu_2",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 1,
+      "detectors": [
+        [
+          "isolation_forest",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_3",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_4",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_cpu_5",
+      "service": "cartservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_1",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_2",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_3",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_delay_4",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_delay_5",
+      "service": "cartservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_1",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_2",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_3",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_4",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_disk_5",
+      "service": "cartservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 14,
+      "detectors": [
+        [
+          "isolation_forest",
+          9
+        ],
+        [
+          "rolling_zscore_3sigma",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_1",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_2",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_3",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_4",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_loss_5",
+      "service": "cartservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_1",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_2",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_cartservice_mem_3",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_4",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_cartservice_mem_5",
+      "service": "cartservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          2
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_1",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_2",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_3",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_4",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_cpu_5",
+      "service": "checkoutservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_1",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_2",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_3",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 15,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          10
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_4",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_delay_5",
+      "service": "checkoutservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_1",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_2",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_3",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_shift",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_4",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_disk_5",
+      "service": "checkoutservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_1",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 11,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_2",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_3",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_4",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_loss_5",
+      "service": "checkoutservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_1",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_2",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 2,
+      "detectors": [
+        [
+          "isolation_forest",
+          2
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_3",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_4",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "window_shift",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_checkoutservice_mem_5",
+      "service": "checkoutservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "checkoutservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_1",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_2",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_3",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "main",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_4",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 5,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_cpu_5",
+      "service": "currencyservice",
+      "fault": "cpu",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_delay_1",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_2",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_3",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_4",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          6
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_delay_5",
+      "service": "currencyservice",
+      "fault": "delay",
+      "expected": "latency_degradation",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_1",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 18,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "ewma_drift",
+          2
+        ],
+        [
+          "isolation_forest",
+          9
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "traffic_loss",
+          1
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_2",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_3",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_4",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "latency_degradation",
+      "predicted": "latency_degradation",
+      "correct": false,
+      "status": "DIAGNOSED",
+      "confidence": 0.82,
+      "anomaly_evidence_count": 10,
+      "detectors": [
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_disk_5",
+      "service": "currencyservice",
+      "fault": "disk",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 8,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_1",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 3,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          1
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "cartservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_2",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.5,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "isolation_forest",
+          5
+        ],
+        [
+          "rolling_zscore_3sigma",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_3",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "general_investigation",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.55,
+      "anomaly_evidence_count": 0,
+      "detectors": [],
+      "top_rca_candidate": "adservice",
+      "root_service_top1": false
+    },
+    {
+      "case": "re1ob_currencyservice_loss_4",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": false,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 13,
+      "detectors": [
+        [
+          "isolation_forest",
+          8
+        ],
+        [
+          "rolling_zscore_3sigma",
+          4
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_loss_5",
+      "service": "currencyservice",
+      "fault": "loss",
+      "expected": "critical_service_down",
+      "raw_classification": "critical_service_down",
+      "predicted": "critical_service_down",
+      "correct": true,
+      "status": "DIAGNOSED",
+      "confidence": 0.86,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          3
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ],
+        [
+          "window_traffic_loss",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_1",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 12,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          7
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_2",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 7,
+      "detectors": [
+        [
+          "ewma_drift",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          2
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_3",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 9,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "rolling_zscore_3sigma",
+          3
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_4",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 4,
+      "detectors": [
+        [
+          "isolation_forest",
+          4
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    },
+    {
+      "case": "re1ob_currencyservice_mem_5",
+      "service": "currencyservice",
+      "fault": "mem",
+      "expected": "noisy_or_ambiguous_alert",
+      "raw_classification": "noisy_or_ambiguous_alert",
+      "predicted": "noisy_or_ambiguous_alert",
+      "correct": true,
+      "status": "INVESTIGATE",
+      "confidence": 0.48,
+      "anomaly_evidence_count": 6,
+      "detectors": [
+        [
+          "baro_multivariate_changepoint",
+          1
+        ],
+        [
+          "isolation_forest",
+          4
+        ],
+        [
+          "window_shift",
+          1
+        ]
+      ],
+      "top_rca_candidate": "currencyservice",
+      "root_service_top1": true
+    }
+  ]
+}
